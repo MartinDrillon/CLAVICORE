@@ -2,7 +2,7 @@
 ## Le projet
 > Piloter un clavecin à distance grâce à un clavier ergonomique
 
-Tout comme pour les claviers d’ordinateurs, le clavier de piano tire sa forme de contraintes physiques et d’usages très spécifiques que la tradition a figées. En s’en libérant, il est possible de concevoir une disposition plus simple à apprendre et à jouer. 
+Tout comme pour les claviers d’ordinateurs, le clavier de piano tire sa forme de contraintes physiques et d’usages très spécifiques que l’habitude a figées. En s’en libérant, il doit être possible de concevoir une disposition plus simple à apprendre et à jouer. 
 
 ## L’instrument
 La base est une copie d’une épinette italienne ancienne, vendue dans les années 70 en kit par Heugel et montée par un amateur. L’instrument est en cours de révision (modification des sautereaux, changement des cordes, réharmonisation à la plume). 
@@ -23,13 +23,13 @@ Simple matrice de touches gérée par un Pico 2. Les événements « touches pre
 Ce projet utilisera une base de clavier ergonomique (https://github.com/MartinDrillon/IteMX3-) adaptée pour recevoir une disposition de type « Wiki-Haydn ». Une présentation plus détaillée du clavier est à venir. 
 
 ## Moitié « Moteur »
-*PCB en cours de conception*
+*PCB en cours de réalisation*
 
 La carte de contrôle est basée sur un RP2354B avec un DRV8874 par solénoïde pour un contrôle bidirectionnel. Cinq cartes permettent de gérer les 49 touches du clavier. Les cartes communiquent en CAN.
 
 ![PCB](Images/PCB_STP.png)
 
-![Schéma](Images/Schéma_moteur.png)
+![Schéma](Images/Schéma_moteur.jpg)
 
 ## Les solénoïdes
 Les solénoïdes sont les éléments centraux du montage. Ils doivent être réalisés sur mesure. Ceux disponibles sur le marché sont :
@@ -53,11 +53,11 @@ Les solénoïdes sont les éléments centraux du montage. Ils doivent être réa
 - [X] Modélisation 3D de l’instrument
 - [X] Conception et impression 3D du corps de la bobine intégré sous les touches
 - [X] Premier test concluant avec un fil de 0,4 mm - 2 ampères - 24 volts
-- [ ] Conception des cartes de pilotage pour l’ensemble du clavecin *en cours*
+- [X] Conception des cartes de pilotage pour l’ensemble du clavecin
 - [ ] Conception du clavier ergonomique *en cours*
 - [ ] Programmation de l’ensemble
 - [ ] Ajustement de la bobine en fonction de la carte de pilotage
-- [ ] Réalisation artisanale de 50 bobines homogènes ! 
+- [ ] Réalisation artisanale de 50 bobines homogènes et installation du système ! 
 
 
 ![Évaluation de la force](Images/03_04_15_25.png)
