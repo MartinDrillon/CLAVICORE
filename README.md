@@ -29,8 +29,6 @@ La carte de contrôle est basée sur un RP2354B avec un DRV8874 par solénoïde 
 
 ![PCB](Images/PCB_STP.png)
 
-![Schéma](Images/Schéma_moteur.jpg)
-
 ## Les solénoïdes
 Les solénoïdes sont les éléments centraux du montage. Ils doivent être réalisés sur mesure. Ceux disponibles sur le marché sont :
 - Trop bruyants
