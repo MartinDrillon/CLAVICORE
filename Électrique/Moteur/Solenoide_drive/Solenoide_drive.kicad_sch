@@ -2580,7 +2580,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "SamacSys_Parts:B5B-XH-A_LF__SN_"
+		(symbol "SamacSys_Parts:B4B-XH-A_LF__SN_"
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -2597,7 +2597,7 @@
 					(justify left top)
 				)
 			)
-			(property "Value" "B5B-XH-A_LF__SN_"
+			(property "Value" "B4B-XH-A_LF__SN_"
 				(at 16.51 5.08 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2608,7 +2608,7 @@
 					(justify left top)
 				)
 			)
-			(property "Footprint" "SHDR5W64P0X250_1X5_1490X575X700P"
+			(property "Footprint" "B4BXHALFSN"
 				(at 16.51 -94.92 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2620,7 +2620,7 @@
 					(justify left top)
 				)
 			)
-			(property "Datasheet" "http://www.jst-mfg.com/product/pdf/eng/eXH.pdf"
+			(property "Datasheet" "https://datasheet.lcsc.com/szlcsc/JST-Sales-America-B4B-XH-A-LF-SN_C144395.pdf"
 				(at 16.51 -194.92 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2632,7 +2632,7 @@
 					(justify left top)
 				)
 			)
-			(property "Description" "XH connector, 5 way"
+			(property "Description" "CONN HEADER VERT 4POS 2.5MM"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2655,7 +2655,7 @@
 					(justify left top)
 				)
 			)
-			(property "Mouser Part Number" "N/A"
+			(property "Mouser Part Number" "306-B4BXHALFSN"
 				(at 16.51 -494.92 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2667,7 +2667,7 @@
 					(justify left top)
 				)
 			)
-			(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/JST-Commercial/B5B-XH-ALFSN?qs=IKkN%2F947nfBtEhlRye3uAw%3D%3D"
+			(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/JST-Commercial/B4B-XH-ALFSN?qs=cdbOS8ANM9CfC08d%252BywhFw%3D%3D"
 				(at 16.51 -594.92 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2691,7 +2691,7 @@
 					(justify left top)
 				)
 			)
-			(property "Manufacturer_Part_Number" "B5B-XH-A(LF)(SN)"
+			(property "Manufacturer_Part_Number" "B4B-XH-A(LF)(SN)"
 				(at 16.51 -794.92 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2703,10 +2703,10 @@
 					(justify left top)
 				)
 			)
-			(symbol "B5B-XH-A_LF__SN__1_1"
+			(symbol "B4B-XH-A_LF__SN__1_1"
 				(rectangle
 					(start 5.08 2.54)
-					(end 15.24 -12.7)
+					(end 15.24 -10.16)
 					(stroke
 						(width 0.254)
 						(type default)
@@ -2787,17 +2787,173 @@
 						)
 					)
 				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "SamacSys_Parts:BLM18PG121SN1D"
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "FB"
+				(at 16.51 7.62 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Value" "BLM18PG121SN1D"
+				(at 16.51 5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Footprint" "BLM18SP221SN1B"
+				(at 16.51 -94.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Datasheet" "http://www.murata.com/~/media/webrenewal/support/library/catalog/products/emc/emifil/c31e.ashx?la=en-gb"
+				(at 16.51 -194.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Description" "Ferrite bead SMD 0603 120R 2A Murata Ferrite Bead (Chip Ferrite Bead), 1.6 x 0.8 x 0.8mm (0603), 120 impedance at 100 MHz"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Height" "0.95"
+				(at 16.51 -394.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Mouser Part Number" "81-BLM18PG121SN1D"
+				(at 16.51 -494.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/Murata-Electronics/BLM18PG121SN1D?qs=tY8e8KZalarVxhnmnUYZ1A%3D%3D"
+				(at 16.51 -594.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Manufacturer_Name" "Murata Electronics"
+				(at 16.51 -694.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Manufacturer_Part_Number" "BLM18PG121SN1D"
+				(at 16.51 -794.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(symbol "BLM18PG121SN1D_1_1"
+				(rectangle
+					(start 5.08 2.54)
+					(end 15.24 -5.08)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
 				(pin passive line
-					(at 0 -10.16 0)
+					(at 0 0 0)
 					(length 5.08)
-					(name "5"
+					(name "1"
 						(effects
 							(font
 								(size 1.27 1.27)
 							)
 						)
 					)
-					(number "5"
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -2.54 0)
+					(length 5.08)
+					(name "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -4322,7 +4478,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "SamacSys_Parts:IHLP2525CZER100M11"
+		(symbol "SamacSys_Parts:EEE-FK1H100P"
 			(pin_names
 				(hide yes)
 			)
@@ -4331,8 +4487,8 @@
 			(on_board yes)
 			(in_pos_files yes)
 			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "L"
-				(at 16.51 6.35 0)
+			(property "Reference" "C"
+				(at 8.89 6.35 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -4342,8 +4498,8 @@
 					(justify left top)
 				)
 			)
-			(property "Value" "IHLP2525CZER100M11"
-				(at 16.51 3.81 0)
+			(property "Value" "EEE-FK1H100P"
+				(at 8.89 3.81 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -4353,20 +4509,8 @@
 					(justify left top)
 				)
 			)
-			(property "Footprint" "INDPM6965X300N"
-				(at 16.51 -96.19 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left top)
-				)
-			)
-			(property "Datasheet" "https://componentsearchengine.com/Datasheets/2/IHLP2525CZER100M11.pdf"
-				(at 16.51 -196.19 0)
+			(property "Footprint" "EEE1AA101SP"
+				(at 8.89 -96.19 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(hide yes)
@@ -4377,7 +4521,19 @@
 					(justify left top)
 				)
 			)
-			(property "Description" "Vishay IHLP2525CZ-11 Series Shielded Wire-wound SMD Inductor with a Metal Composite Core, 10 uH +/-20% Wire-Wound 4A Idc"
+			(property "Datasheet" "http://industrial.panasonic.com/cdbs/www-data/pdf/RDE0000/ABA0000C1181.pdf"
+				(at 8.89 -196.19 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Description" "Panasonic 10uF 50V dc Aluminium Electrolytic Capacitor, Surface Mount 6.3 (Dia.) x 5.8mm +105C 6.3mm 1.8mm"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -4388,8 +4544,8 @@
 					)
 				)
 			)
-			(property "Height" "3"
-				(at 16.51 -396.19 0)
+			(property "Height" "7.8"
+				(at 8.89 -396.19 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(hide yes)
@@ -4400,8 +4556,8 @@
 					(justify left top)
 				)
 			)
-			(property "Mouser Part Number" "70-IHLP2525CZER100M1"
-				(at 16.51 -496.19 0)
+			(property "Mouser Part Number" "667-EEE-FK1H100P"
+				(at 8.89 -496.19 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(hide yes)
@@ -4412,8 +4568,8 @@
 					(justify left top)
 				)
 			)
-			(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/Vishay-Dale/IHLP2525CZER100M11?qs=gMuw6kkpPFi7WFZ9cEKRAA%3D%3D"
-				(at 16.51 -596.19 0)
+			(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/Panasonic/EEE-FK1H100P?qs=qE6bgDGEOCvem0jOvVm3BQ%3D%3D"
+				(at 8.89 -596.19 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(hide yes)
@@ -4424,8 +4580,8 @@
 					(justify left top)
 				)
 			)
-			(property "Manufacturer_Name" "Vishay"
-				(at 16.51 -696.19 0)
+			(property "Manufacturer_Name" "Panasonic"
+				(at 8.89 -696.19 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(hide yes)
@@ -4436,8 +4592,8 @@
 					(justify left top)
 				)
 			)
-			(property "Manufacturer_Part_Number" "IHLP2525CZER100M11"
-				(at 16.51 -796.19 0)
+			(property "Manufacturer_Part_Number" "EEE-FK1H100P"
+				(at 8.89 -796.19 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(hide yes)
@@ -4448,11 +4604,11 @@
 					(justify left top)
 				)
 			)
-			(symbol "IHLP2525CZER100M11_1_1"
-				(arc
-					(start 5.08 0)
-					(mid 6.35 1.219)
-					(end 7.62 0)
+			(symbol "EEE-FK1H100P_1_1"
+				(polyline
+					(pts
+						(xy 2.54 0) (xy 5.08 0)
+					)
 					(stroke
 						(width 0.254)
 						(type default)
@@ -4461,10 +4617,10 @@
 						(type none)
 					)
 				)
-				(arc
-					(start 7.62 0)
-					(mid 8.89 1.219)
-					(end 10.16 0)
+				(polyline
+					(pts
+						(xy 4.064 1.778) (xy 4.064 0.762)
+					)
 					(stroke
 						(width 0.254)
 						(type default)
@@ -4473,10 +4629,10 @@
 						(type none)
 					)
 				)
-				(arc
-					(start 10.16 0)
-					(mid 11.43 1.219)
-					(end 12.7 0)
+				(polyline
+					(pts
+						(xy 4.572 1.27) (xy 3.556 1.27)
+					)
 					(stroke
 						(width 0.254)
 						(type default)
@@ -4485,10 +4641,33 @@
 						(type none)
 					)
 				)
-				(arc
-					(start 12.7 0)
-					(mid 13.97 1.219)
-					(end 15.24 0)
+				(rectangle
+					(start 5.08 2.54)
+					(end 5.842 -2.54)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(polyline
+					(pts
+						(xy 7.62 2.54) (xy 7.62 -2.54) (xy 6.858 -2.54) (xy 6.858 2.54) (xy 7.62 2.54)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 7.62 0) (xy 10.16 0)
+					)
 					(stroke
 						(width 0.254)
 						(type default)
@@ -4499,8 +4678,8 @@
 				)
 				(pin passive line
 					(at 0 0 0)
-					(length 5.08)
-					(name "1"
+					(length 2.54)
+					(name "+"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -4516,9 +4695,9 @@
 					)
 				)
 				(pin passive line
-					(at 20.32 0 180)
-					(length 5.08)
-					(name "2"
+					(at 12.7 0 180)
+					(length 2.54)
+					(name "-"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -6370,6 +6549,220 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "SamacSys_Parts:SRP6060FA-100M"
+			(pin_names
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "L"
+				(at 16.51 6.35 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Value" "SRP6060FA-100M"
+				(at 16.51 3.81 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Footprint" "SRP6060FA4R7M"
+				(at 16.51 -96.19 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Datasheet" "https://www.bourns.com/docs/Product-Datasheets/SRP6060FA.pdf"
+				(at 16.51 -196.19 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Description" "Fixed Inductors 10uH 20% 7A"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Height" ""
+				(at 16.51 -396.19 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Mouser Part Number" "652-SRP6060FA-100M"
+				(at 16.51 -496.19 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/Bourns/SRP6060FA-100M?qs=MLItCLRbWswWwLPgN68odg%3D%3D"
+				(at 16.51 -596.19 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Manufacturer_Name" "Bourns"
+				(at 16.51 -696.19 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Manufacturer_Part_Number" "SRP6060FA-100M"
+				(at 16.51 -796.19 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(symbol "SRP6060FA-100M_1_1"
+				(arc
+					(start 5.08 0)
+					(mid 6.35 1.219)
+					(end 7.62 0)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start 7.62 0)
+					(mid 8.89 1.219)
+					(end 10.16 0)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start 10.16 0)
+					(mid 11.43 1.219)
+					(end 12.7 0)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start 12.7 0)
+					(mid 13.97 1.219)
+					(end 15.24 0)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at 0 0 0)
+					(length 5.08)
+					(name "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.32 0 180)
+					(length 5.08)
+					(name "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "SamacSys_Parts:TCAN332DR"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -7108,6 +7501,204 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "SamacSys_Parts:TS-1088-AR02016"
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "S"
+				(at 19.05 7.62 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Value" "TS-1088-AR02016"
+				(at 19.05 5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Footprint" "TS1088AR02016"
+				(at 19.05 -94.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Datasheet" "https://www.xunpudianzi.com/uploads/pdf/TS-1088-ARXXX.pdf"
+				(at 19.05 -194.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Description" "Tact Switch"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Height" "2"
+				(at 19.05 -394.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Manufacturer_Name" "XUNPU"
+				(at 19.05 -494.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Manufacturer_Part_Number" "TS-1088-AR02016"
+				(at 19.05 -594.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Mouser Part Number" ""
+				(at 19.05 -694.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Mouser Price/Stock" ""
+				(at 19.05 -794.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Arrow Part Number" ""
+				(at 19.05 -894.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(property "Arrow Price/Stock" ""
+				(at 19.05 -994.92 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left top)
+				)
+			)
+			(symbol "TS-1088-AR02016_1_1"
+				(rectangle
+					(start 5.08 2.54)
+					(end 17.78 -5.08)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(pin passive line
+					(at 0 0 0)
+					(length 5.08)
+					(name "COM"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -2.54 0)
+					(length 5.08)
+					(name "NO"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "power:+1V1"
 			(power global)
 			(pin_numbers
@@ -7376,8 +7967,8 @@
 		(uuid "075453ce-7404-4259-9e47-5542d249e02f")
 	)
 	(rectangle
-		(start 92.456 322.834)
-		(end 277.876 406.654)
+		(start 64.516 322.58)
+		(end 249.936 406.4)
 		(stroke
 			(width 0)
 			(type default)
@@ -7760,6 +8351,12 @@
 		(uuid "21aaeda6-12b7-484b-a8e4-9faac88c8ebc")
 	)
 	(junction
+		(at 292.1 422.91)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "227bfc0f-218b-49bf-a8a5-b1e7eef85ea8")
+	)
+	(junction
 		(at 636.27 87.63)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -7770,6 +8367,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "25d5df37-e14f-482d-afa3-9a5e6957895c")
+	)
+	(junction
+		(at 341.63 421.64)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "2689a3ef-8616-4a05-946c-22ae7635787c")
 	)
 	(junction
 		(at 213.36 497.84)
@@ -8066,12 +8669,6 @@
 		(uuid "81b660e7-24c7-4da3-9608-eae3894e3d03")
 	)
 	(junction
-		(at 119.38 358.14)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "8406bbd7-76cc-4d01-ba26-eb01055666a7")
-	)
-	(junction
 		(at 223.52 210.82)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -8124,6 +8721,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "8b95d7c8-fd46-4798-9b62-32b0bedfe5eb")
+	)
+	(junction
+		(at 285.75 422.91)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "8c16cfe4-1e18-4cf4-b93d-60aebec5fda1")
 	)
 	(junction
 		(at 264.16 87.63)
@@ -8198,6 +8801,12 @@
 		(uuid "9ee097a4-9beb-4365-bd25-6d7f8013b74b")
 	)
 	(junction
+		(at 104.14 358.14)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "a0c6180f-cb87-479d-b1af-1d3dfa0efde3")
+	)
+	(junction
 		(at 473.71 335.28)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -8252,6 +8861,12 @@
 		(uuid "b192f233-df90-4a77-9083-711e3a8724a4")
 	)
 	(junction
+		(at 335.28 421.64)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "b1a59e90-b0cb-48a9-887a-47b0401fb002")
+	)
+	(junction
 		(at 405.13 153.67)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -8262,12 +8877,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "b28acc95-61a6-498e-ba20-e18188c7eaa1")
-	)
-	(junction
-		(at 237.49 439.42)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "b3d920da-5f70-4ae4-a944-930a168144cb")
 	)
 	(junction
 		(at 617.22 417.83)
@@ -8370,6 +8979,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "cd2b06e0-be60-4313-a5fd-bff2e3bb7971")
+	)
+	(junction
+		(at 119.38 358.14)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "cd6805d6-c09e-4b13-bbd8-63290db83285")
 	)
 	(junction
 		(at 410.21 407.67)
@@ -8574,10 +9189,6 @@
 		(uuid "62d5a3fe-cc82-45df-a634-a91d4a8e7246")
 	)
 	(no_connect
-		(at 261.62 177.8)
-		(uuid "63cce17c-e88f-4d83-8963-7bcc22cbaafd")
-	)
-	(no_connect
 		(at 110.49 548.64)
 		(uuid "683ab2e7-88d4-450e-bf02-a1b249a498e7")
 	)
@@ -8590,6 +9201,10 @@
 		(uuid "7f650980-b0f4-4d2f-a077-03065681ae72")
 	)
 	(no_connect
+		(at 261.62 162.56)
+		(uuid "9af22128-8afe-4247-ad09-8a2571676e42")
+	)
+	(no_connect
 		(at 231.14 109.22)
 		(uuid "a539e091-641f-441f-b098-f1c66d7e9709")
 	)
@@ -8600,10 +9215,6 @@
 	(no_connect
 		(at 154.94 488.95)
 		(uuid "b5fce2de-45b6-46b0-b46d-92915e11ae8a")
-	)
-	(no_connect
-		(at 261.62 154.94)
-		(uuid "c0910a49-199c-46b3-83c8-a0e40c55c014")
 	)
 	(no_connect
 		(at 110.49 530.86)
@@ -8620,10 +9231,6 @@
 	(no_connect
 		(at 218.44 109.22)
 		(uuid "e0ca0877-108b-4c25-8014-4c2fc5323b50")
-	)
-	(no_connect
-		(at 261.874 162.56)
-		(uuid "f6beb456-28d2-47b2-87b1-edcbd793eed6")
 	)
 	(wire
 		(pts
@@ -8854,6 +9461,26 @@
 			(type default)
 		)
 		(uuid "0e63059d-2954-447c-bf2e-abd4e9a15c3e")
+	)
+	(wire
+		(pts
+			(xy 331.47 421.64) (xy 335.28 421.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0f149848-466d-4fa7-a255-acfc24d693f1")
+	)
+	(wire
+		(pts
+			(xy 86.36 358.14) (xy 104.14 358.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0f44f63c-223b-4609-9bfc-212ef386bded")
 	)
 	(wire
 		(pts
@@ -9507,6 +10134,16 @@
 	)
 	(wire
 		(pts
+			(xy 281.94 422.91) (xy 285.75 422.91)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2ddb2be9-f99c-4307-81e6-9849e8bdb6b4")
+	)
+	(wire
+		(pts
 			(xy 461.01 64.77) (xy 458.47 64.77)
 		)
 		(stroke
@@ -9557,7 +10194,7 @@
 	)
 	(wire
 		(pts
-			(xy 106.68 358.14) (xy 119.38 358.14)
+			(xy 80.01 358.14) (xy 83.82 358.14)
 		)
 		(stroke
 			(width 0)
@@ -9714,6 +10351,16 @@
 			(type default)
 		)
 		(uuid "3bf7dc6f-3440-4eda-8e26-acfdf387d405")
+	)
+	(wire
+		(pts
+			(xy 292.1 422.91) (xy 298.45 422.91)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3c70a214-99b8-46d0-8da8-ed9945bbd316")
 	)
 	(wire
 		(pts
@@ -10347,6 +10994,16 @@
 	)
 	(wire
 		(pts
+			(xy 262.89 300.99) (xy 266.7 300.99)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5a18a418-9872-4934-88c1-1713b1522194")
+	)
+	(wire
+		(pts
 			(xy 467.36 87.63) (xy 472.44 87.63)
 		)
 		(stroke
@@ -10434,6 +11091,16 @@
 			(type default)
 		)
 		(uuid "5c7e24b2-e4ec-4183-b934-123ae2e19ef3")
+	)
+	(wire
+		(pts
+			(xy 104.14 358.14) (xy 119.38 358.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5cb5abbe-8087-4e2d-a6e8-163f7c5105c5")
 	)
 	(wire
 		(pts
@@ -10704,6 +11371,16 @@
 			(type default)
 		)
 		(uuid "68e18ada-1c0a-4920-85e9-be3ddfca0566")
+	)
+	(wire
+		(pts
+			(xy 104.14 370.84) (xy 119.38 370.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "696737af-8688-4d3d-a7ee-f921fb9ee6c8")
 	)
 	(wire
 		(pts
@@ -11024,6 +11701,16 @@
 			(type default)
 		)
 		(uuid "7b0b73e7-7307-4850-847e-bab16d61b84f")
+	)
+	(wire
+		(pts
+			(xy 331.47 419.1) (xy 335.28 419.1)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7c545946-c959-4f47-8340-8144b2262df0")
 	)
 	(wire
 		(pts
@@ -11737,6 +12424,16 @@
 	)
 	(wire
 		(pts
+			(xy 341.63 421.64) (xy 347.98 421.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a07ced6c-11ff-4a23-a220-e9d0c91c721d")
+	)
+	(wire
+		(pts
 			(xy 472.44 499.11) (xy 477.52 499.11)
 		)
 		(stroke
@@ -11937,16 +12634,6 @@
 	)
 	(wire
 		(pts
-			(xy 237.49 439.42) (xy 241.3 439.42)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a9bb8a78-f47b-4a7e-ad92-4e59d187c69a")
-	)
-	(wire
-		(pts
 			(xy 462.28 229.87) (xy 459.74 229.87)
 		)
 		(stroke
@@ -12054,6 +12741,16 @@
 			(type default)
 		)
 		(uuid "af715e68-9957-4592-931d-e88531ba5269")
+	)
+	(wire
+		(pts
+			(xy 285.75 422.91) (xy 292.1 422.91)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "afc70535-32d5-4d9e-957e-d028c69b0f8f")
 	)
 	(wire
 		(pts
@@ -12237,7 +12934,7 @@
 	)
 	(wire
 		(pts
-			(xy 233.68 439.42) (xy 237.49 439.42)
+			(xy 281.94 420.37) (xy 285.75 420.37)
 		)
 		(stroke
 			(width 0)
@@ -12494,6 +13191,16 @@
 			(type default)
 		)
 		(uuid "c243707b-e6ea-45ce-8c98-acdd38c08a13")
+	)
+	(wire
+		(pts
+			(xy 335.28 421.64) (xy 341.63 421.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c2ca8de8-cc32-4e76-8cfb-46356704e3cf")
 	)
 	(wire
 		(pts
@@ -14045,6 +14752,16 @@
 		)
 		(uuid "1340ab94-272c-4da1-9d8f-06ecaf4670e0")
 	)
+	(label "FREQ OSC"
+		(at 266.7 300.99 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "18cd94aa-e25c-4ca1-a82c-f6ca2946eeb2")
+	)
 	(label "PWM3"
 		(at 421.64 312.42 180)
 		(effects
@@ -14485,16 +15202,6 @@
 		)
 		(uuid "4a64e857-ebaa-41ff-9088-51d264dc9484")
 	)
-	(label "RUN"
-		(at 241.3 439.42 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "4abaa38d-85ed-4eca-9a60-a37b67a05e94")
-	)
 	(label "GND_TSP"
 		(at 148.59 353.06 180)
 		(effects
@@ -14564,6 +15271,16 @@
 			(justify right bottom)
 		)
 		(uuid "51d09dff-d16a-478d-934d-56ad0fa66d37")
+	)
+	(label "Bouton test"
+		(at 261.62 177.8 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "528baf5e-28e5-4636-94bb-ac660ac0f472")
 	)
 	(label "S0"
 		(at 105.41 551.18 180)
@@ -14775,6 +15492,16 @@
 		)
 		(uuid "6e8eb588-e59a-47aa-9221-39461817752d")
 	)
+	(label "Bouton test"
+		(at 347.98 421.64 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "6eeea383-368c-466c-9447-88a76d3b2ada")
+	)
 	(label "SENS4"
 		(at 425.45 397.51 180)
 		(effects
@@ -14884,6 +15611,16 @@
 			(justify right bottom)
 		)
 		(uuid "77dd3b5c-37ac-445d-a2f7-36f8aee2c359")
+	)
+	(label "RUN"
+		(at 298.45 422.91 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "79e1ea46-ae2e-4d97-b0c6-cc8ddec5cac3")
 	)
 	(label "SENS6"
 		(at 91.44 196.85 0)
@@ -15444,6 +16181,16 @@
 			(justify right bottom)
 		)
 		(uuid "cf2c770e-deef-4423-a666-7fb52ed91720")
+	)
+	(label "FREQ OSC"
+		(at 261.62 154.94 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "cf5faad5-4160-48a7-b59a-cefc9bc28b9a")
 	)
 	(label "nSLEEP"
 		(at 195.58 167.64 180)
@@ -16655,6 +17402,30 @@
 			)
 		)
 	)
+	(global_label "3.3VIN"
+		(shape input)
+		(at 341.63 429.26 270)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "81fb10fc-69a9-4462-9b5a-a974c716786d")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 341.63 438.2929 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+	)
 	(global_label "24VIN"
 		(shape input)
 		(at 515.62 499.11 0)
@@ -16729,7 +17500,7 @@
 	)
 	(global_label "24VIN"
 		(shape input)
-		(at 106.68 358.14 180)
+		(at 80.01 358.14 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -16739,7 +17510,31 @@
 		)
 		(uuid "8a1685c3-0e62-4fe4-b818-ba8345819ce7")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 98.2519 358.14 0)
+			(at 71.5819 358.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+	)
+	(global_label "3.3VIN"
+		(shape input)
+		(at 292.1 430.53 270)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "8d69f36d-c58b-468e-8227-3a7cb491a0c8")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 292.1 439.5629 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -18115,6 +18910,88 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R")
+		(at 285.75 416.56 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "012ab754-a40e-4a3a-89f8-8d93003b931e")
+		(property "Reference" "R33"
+			(at 288.29 415.2899 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "R1K"
+			(at 288.29 417.8299 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 283.972 416.56 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 285.75 416.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 285.75 416.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "8c7998a4-4ef4-4d21-83d8-d6d3cf93d769")
+		)
+		(pin "1"
+			(uuid "8251b307-9bbe-4257-98f7-49f350958648")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "R33")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 481.33 430.53 0)
 		(unit 1)
@@ -18198,9 +19075,9 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(uuid "02f7b84b-2be6-4e1e-a415-aa521577a23a")
 		(property "Reference" "TP2"
@@ -19342,9 +20219,9 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(uuid "0ccef2a7-0406-43ac-8c2e-484ecd3e3de6")
 		(property "Reference" "TP4"
@@ -21015,7 +21892,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "1d0f233b-8d29-435f-a03d-b6c29e1682b1")
@@ -22916,7 +23793,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "2602dd0f-9e0c-4068-b69e-ff04b81c3993")
@@ -23749,7 +24626,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "2bb8a008-844d-4a7c-9fc4-47c2b83132c8")
@@ -23896,6 +24773,84 @@
 			(project "Solenoide_drive"
 				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
 					(reference "IC12")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 335.28 411.48 180)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "2cd5304b-6a74-4e08-b36c-2e5543f06874")
+		(property "Reference" "#PWR0135"
+			(at 335.28 405.13 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 335.28 406.4 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 335.28 411.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 335.28 411.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 335.28 411.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "d4e3a0cf-6dee-4442-9876-da1cba4de429")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "#PWR0135")
 					(unit 1)
 				)
 			)
@@ -26521,84 +27476,6 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 237.49 426.72 180)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "42f43b56-c450-4b86-a305-9c68f2da4af6")
-		(property "Reference" "#PWR0130"
-			(at 237.49 420.37 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 237.49 421.64 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1 1)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 237.49 426.72 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 237.49 426.72 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 237.49 426.72 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "1e008346-0c72-47ff-b808-7c605cd5dc0a")
-		)
-		(instances
-			(project "Solenoide_drive"
-				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
-					(reference "#PWR0130")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
 		(at 175.26 533.4 180)
 		(unit 1)
 		(body_style 1)
@@ -26903,9 +27780,9 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(uuid "487bbf93-b4b8-40cc-98b6-8053debafe7d")
 		(property "Reference" "TP1"
@@ -27248,7 +28125,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp yes)
 		(fields_autoplaced yes)
 		(uuid "498b87ef-bf64-44e4-9f28-1564c1c8074b")
@@ -27616,6 +28493,84 @@
 			(project "Solenoide_drive"
 				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
 					(reference "C62")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 285.75 435.61 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "4da70c07-18ee-45c0-a3d3-9b3605ea63f3")
+		(property "Reference" "#PWR0141"
+			(at 285.75 441.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 285.75 440.69 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 285.75 435.61 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 285.75 435.61 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 285.75 435.61 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "729bfe4a-9a42-4c8f-b81e-6eccbced3480")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "#PWR0141")
 					(unit 1)
 				)
 			)
@@ -28464,6 +29419,87 @@
 			(project "Solenoide_drive"
 				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
 					(reference "#PWR031")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 292.1 426.72 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "548a7445-9cba-430c-9f2e-4c21346f2f85")
+		(property "Reference" "R34"
+			(at 294.386 427.736 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10k"
+			(at 294.386 430.276 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 290.322 426.72 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "https://www.royalohm.com/assets/pdf/products/smd/1.pdf"
+			(at 292.1 426.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 292.1 426.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "6876bb77-3125-48fe-9637-7f6707798efb")
+		)
+		(pin "2"
+			(uuid "559b5b02-086a-479a-a7e8-0885d7d5f477")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "R34")
 					(unit 1)
 				)
 			)
@@ -29904,9 +30940,9 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(uuid "5c538284-b024-4899-b637-9875bdfb6647")
 		(property "Reference" "TP3"
@@ -31456,6 +32492,149 @@
 	)
 	(symbol
 		(lib_id "SamacSys_Parts:CC0603KRX7R9BB104")
+		(at 335.28 421.64 270)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "63b12ff6-1136-4e7f-90ad-40db67e1f4e8")
+		(property "Reference" "C104"
+			(at 328.168 426.466 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "0.1uF"
+			(at 327.66 428.752 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+			(at 239.09 430.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Datasheet" "https://www.digikey.com/en/products/detail/yageo/CC0603KRX7R9BB104/2103082"
+			(at 139.09 430.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Description" "0.1 F +/-10% 50V Ceramic Capacitor X7R 0603 (1608 Metric)"
+			(at 335.28 421.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Height" "0.9"
+			(at -60.91 430.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Part Number" "603-CC603KRX7R9BB104"
+			(at -160.91 430.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/YAGEO/CC0603KRX7R9BB104?qs=vTakOoo5QyLvVCYM2ge8LQ%3D%3D"
+			(at -260.91 430.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Name" "Yageo Group"
+			(at -360.91 430.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Part_Number" "CC0603KRX7R9BB104"
+			(at -460.91 430.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "1"
+			(uuid "f4c6a09b-7282-42a3-bd7c-e1fb57843418")
+		)
+		(pin "2"
+			(uuid "78294f76-7e6d-4827-9e3e-64658febcfdf")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "C104")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "SamacSys_Parts:CC0603KRX7R9BB104")
 		(at 177.8 340.36 270)
 		(unit 1)
 		(body_style 1)
@@ -32065,7 +33244,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "69fefdb8-fa3c-418b-9052-a594ad6377d9")
@@ -32271,9 +33450,9 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(uuid "6a8753ff-aafa-4b01-9b20-5a05c3568f43")
 		(property "Reference" "TP6"
@@ -32515,7 +33694,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "6d3d168e-ae3f-41bb-88a7-3637629856e4")
@@ -32886,6 +34065,84 @@
 			(project "Solenoide_drive"
 				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
 					(reference "#PWR074")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector:TestPoint")
+		(at 262.89 300.99 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(in_pos_files no)
+		(dnp no)
+		(uuid "6e0ec3e4-c7a3-4d08-a502-00ac6a071eae")
+		(property "Reference" "TP7"
+			(at 261.366 292.354 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "TestPoint"
+			(at 261.366 294.894 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "SamacSys:TestPoint_Pad_D1.0mm_Silkless"
+			(at 267.97 300.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 267.97 300.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "test point"
+			(at 262.89 300.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "c4199c2f-71b4-4387-8620-de5882ead60d")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "TP7")
 					(unit 1)
 				)
 			)
@@ -34895,7 +36152,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "7ceff327-5e0d-404b-bf3d-0cfd6a5a5acc")
@@ -36770,84 +38027,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector:TestPoint")
-		(at 264.16 300.99 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "8aa18e21-ff17-4ea5-a9da-1f38770065de")
-		(property "Reference" "TP7"
-			(at 262.636 292.354 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "TestPoint"
-			(at 262.636 294.894 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "SamacSys:TestPoint_Pad_D4.0mm_Silkless"
-			(at 269.24 300.99 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 269.24 300.99 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "test point"
-			(at 264.16 300.99 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "469bab51-b654-4eaf-b6e8-cddc1246baa1")
-		)
-		(instances
-			(project "Solenoide_drive"
-				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
-					(reference "TP7")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:GND")
 		(at 563.88 331.47 0)
 		(unit 1)
@@ -37512,6 +38691,150 @@
 			(project "Solenoide_drive"
 				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
 					(reference "#PWR0108")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "SamacSys_Parts:BLM18PG121SN1D")
+		(at 83.82 358.14 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "916032e1-9f3d-45f8-ba68-e9abef1e7493")
+		(property "Reference" "FB1"
+			(at 90.17 346.7099 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "BLM18PG121SN1D"
+			(at 90.17 349.2499 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "BLM18SP221SN1B"
+			(at 178.74 341.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Datasheet" "http://www.murata.com/~/media/webrenewal/support/library/catalog/products/emc/emifil/c31e.ashx?la=en-gb"
+			(at 278.74 341.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Description" "Ferrite bead SMD 0603 120R 2A Murata Ferrite Bead (Chip Ferrite Bead), 1.6 x 0.8 x 0.8mm (0603), 120 impedance at 100 MHz"
+			(at 83.82 358.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Height" "0.95"
+			(at 478.74 341.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Part Number" "81-BLM18PG121SN1D"
+			(at 578.74 341.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/Murata-Electronics/BLM18PG121SN1D?qs=tY8e8KZalarVxhnmnUYZ1A%3D%3D"
+			(at 678.74 341.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Name" "Murata Electronics"
+			(at 778.74 341.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Part_Number" "BLM18PG121SN1D"
+			(at 878.74 341.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "2"
+			(uuid "f04dc7d4-c938-473a-a80c-f2101dad9c0f")
+		)
+		(pin "1"
+			(uuid "2c84ba31-e4c0-4591-b9e2-0ca44453135a")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "FB1")
 					(unit 1)
 				)
 			)
@@ -38416,6 +39739,84 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 335.28 434.34 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "94cf19ca-599b-4882-815c-acf965e3fcdc")
+		(property "Reference" "#PWR0142"
+			(at 335.28 440.69 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 335.28 439.42 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 335.28 434.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 335.28 434.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 335.28 434.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "a8d05959-2897-4f26-8ba6-a663f0f8e197")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "#PWR0142")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "SamacSys_Parts:B2B-XH-AM_LF__SN_")
 		(at 444.5 111.76 270)
 		(unit 1)
@@ -39015,157 +40416,6 @@
 			(project "Solenoide_drive"
 				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
 					(reference "C40")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "SamacSys_Parts:B5B-XH-A_LF__SN_")
-		(at 233.68 449.58 180)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp yes)
-		(fields_autoplaced yes)
-		(uuid "98a0af75-3c27-4c4c-a469-a9fe8b5bec98")
-		(property "Reference" "J16"
-			(at 223.52 431.8 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "B5B-XH-A_LF__SN_"
-			(at 223.52 434.34 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "SamacSys:SHDR5W64P0X250_1X5_1490X575X700P"
-			(at 217.17 354.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Datasheet" "http://www.jst-mfg.com/product/pdf/eng/eXH.pdf"
-			(at 217.17 254.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Description" "XH connector, 5 way"
-			(at 233.68 449.58 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Height" "7"
-			(at 217.17 54.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Mouser Part Number" "N/A"
-			(at 217.17 -45.34 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/JST-Commercial/B5B-XH-ALFSN?qs=IKkN%2F947nfBtEhlRye3uAw%3D%3D"
-			(at 217.17 -145.34 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Manufacturer_Name" "JST (JAPAN SOLDERLESS TERMINALS)"
-			(at 217.17 -245.34 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Manufacturer_Part_Number" "B5B-XH-A(LF)(SN)"
-			(at 217.17 -345.34 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(pin "5"
-			(uuid "b414f58e-43d2-48a3-a692-9ebe2093f805")
-		)
-		(pin "3"
-			(uuid "c6d6e462-52c2-4b11-a5c3-b0d4cf5a5ccb")
-		)
-		(pin "4"
-			(uuid "5a9566d7-3f7b-4cc2-a349-e47304d612dc")
-		)
-		(pin "2"
-			(uuid "4a06733c-1384-4590-83f3-99842380dd18")
-		)
-		(pin "1"
-			(uuid "37d000ba-69ed-4406-b501-3d4a01da3114")
-		)
-		(instances
-			(project "Solenoide_drive"
-				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
-					(reference "J16")
 					(unit 1)
 				)
 			)
@@ -42051,9 +43301,9 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(uuid "af636ea1-1a57-4375-a0ab-158b2de71b4b")
 		(property "Reference" "TP5"
@@ -42621,6 +43871,172 @@
 		)
 	)
 	(symbol
+		(lib_id "SamacSys_Parts:TS-1088-AR02016")
+		(at 331.47 421.64 180)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "b5a772b2-00bf-4679-bca3-6ccccf1f2895")
+		(property "Reference" "S2"
+			(at 320.04 411.48 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TS-1088-AR02016"
+			(at 320.04 414.02 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "TS1088AR02016"
+			(at 312.42 326.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Datasheet" "https://www.xunpudianzi.com/uploads/pdf/TS-1088-ARXXX.pdf"
+			(at 312.42 226.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Description" "Tact Switch"
+			(at 331.47 421.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Height" "2"
+			(at 312.42 26.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Name" "XUNPU"
+			(at 312.42 -73.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Part_Number" "TS-1088-AR02016"
+			(at 312.42 -173.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Part Number" ""
+			(at 312.42 -273.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Price/Stock" ""
+			(at 312.42 -373.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Arrow Part Number" ""
+			(at 312.42 -473.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Arrow Price/Stock" ""
+			(at 312.42 -573.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "1"
+			(uuid "d3639eb3-f1b4-41db-8a93-8499336e6fa7")
+		)
+		(pin "2"
+			(uuid "d4ed5d22-b380-44fd-a57d-80419fcc74cd")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "S2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "SamacSys_Parts:470U_50V_RVT1H471M1213")
 		(at 497.84 499.11 90)
 		(unit 1)
@@ -42799,149 +44215,6 @@
 			(project "Solenoide_drive"
 				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
 					(reference "#PWR069")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "SamacSys_Parts:CC0603KRX7R9BB104")
-		(at 237.49 439.42 90)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "b70f1671-c371-419b-a64f-09a2d1727d7d")
-		(property "Reference" "C99"
-			(at 243.586 433.324 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1 1)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "0.1uF"
-			(at 244.094 431.038 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1 1)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
-			(at 333.68 430.53 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Datasheet" "https://www.digikey.com/en/products/detail/yageo/CC0603KRX7R9BB104/2103082"
-			(at 433.68 430.53 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Description" "0.1 F +/-10% 50V Ceramic Capacitor X7R 0603 (1608 Metric)"
-			(at 237.49 439.42 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Height" "0.9"
-			(at 633.68 430.53 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Mouser Part Number" "603-CC603KRX7R9BB104"
-			(at 733.68 430.53 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/YAGEO/CC0603KRX7R9BB104?qs=vTakOoo5QyLvVCYM2ge8LQ%3D%3D"
-			(at 833.68 430.53 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Manufacturer_Name" "Yageo Group"
-			(at 933.68 430.53 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Manufacturer_Part_Number" "CC0603KRX7R9BB104"
-			(at 1033.68 430.53 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(pin "1"
-			(uuid "299321dc-c97c-4d69-b6f0-b1dc061d9142")
-		)
-		(pin "2"
-			(uuid "00414215-9795-4c50-9ea6-1eb390da9bbf")
-		)
-		(instances
-			(project "Solenoide_drive"
-				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
-					(reference "C99")
 					(unit 1)
 				)
 			)
@@ -44396,7 +45669,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "c17dcb47-e387-4fe0-95b7-13f6cda2557e")
@@ -45068,7 +46341,7 @@
 		)
 	)
 	(symbol
-		(lib_id "SamacSys_Parts:IHLP2525CZER100M11")
+		(lib_id "SamacSys_Parts:SRP6060FA-100M")
 		(at 177.8 340.36 0)
 		(unit 1)
 		(body_style 1)
@@ -45080,7 +46353,7 @@
 		(fields_autoplaced yes)
 		(uuid "c6701b61-8637-4d30-ba38-09805dc06481")
 		(property "Reference" "L1"
-			(at 187.96 335.28 0)
+			(at 187.96 334.01 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -45090,7 +46363,7 @@
 			)
 		)
 		(property "Value" "10uH"
-			(at 187.96 337.82 0)
+			(at 187.96 336.55 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -45099,7 +46372,7 @@
 				)
 			)
 		)
-		(property "Footprint" "SamacSys:INDPM6965X300N"
+		(property "Footprint" "SRP6060FA4R7M"
 			(at 194.31 436.55 0)
 			(hide yes)
 			(show_name no)
@@ -45111,7 +46384,7 @@
 				(justify left top)
 			)
 		)
-		(property "Datasheet" "https://componentsearchengine.com/Datasheets/2/IHLP2525CZER100M11.pdf"
+		(property "Datasheet" "https://www.bourns.com/docs/Product-Datasheets/SRP6060FA.pdf"
 			(at 194.31 536.55 0)
 			(hide yes)
 			(show_name no)
@@ -45123,7 +46396,7 @@
 				(justify left top)
 			)
 		)
-		(property "Description" "Vishay IHLP2525CZ-11 Series Shielded Wire-wound SMD Inductor with a Metal Composite Core, 10 uH +/-20% Wire-Wound 4A Idc"
+		(property "Description" "Fixed Inductors 10uH 20% 7A"
 			(at 177.8 340.36 0)
 			(hide yes)
 			(show_name no)
@@ -45146,7 +46419,7 @@
 				(justify left top)
 			)
 		)
-		(property "Mouser Part Number" "70-IHLP2525CZER100M1"
+		(property "Mouser Part Number" "652-SRP6060FA-100M"
 			(at 194.31 836.55 0)
 			(hide yes)
 			(show_name no)
@@ -45158,7 +46431,7 @@
 				(justify left top)
 			)
 		)
-		(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/Vishay-Dale/IHLP2525CZER100M11?qs=gMuw6kkpPFi7WFZ9cEKRAA%3D%3D"
+		(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/Bourns/SRP6060FA-100M?qs=MLItCLRbWswWwLPgN68odg%3D%3D"
 			(at 194.31 936.55 0)
 			(hide yes)
 			(show_name no)
@@ -45170,7 +46443,7 @@
 				(justify left top)
 			)
 		)
-		(property "Manufacturer_Name" "Vishay"
+		(property "Manufacturer_Name" "Bourns"
 			(at 194.31 1036.55 0)
 			(hide yes)
 			(show_name no)
@@ -45182,7 +46455,7 @@
 				(justify left top)
 			)
 		)
-		(property "Manufacturer_Part_Number" "IHLP2525CZER100M11"
+		(property "Manufacturer_Part_Number" "SRP6060FA-100M"
 			(at 194.31 1136.55 0)
 			(hide yes)
 			(show_name no)
@@ -45360,7 +46633,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(uuid "c8989058-42de-44c1-b268-bd3fa7b7eda6")
 		(property "Reference" "D1"
@@ -45930,6 +47203,149 @@
 		)
 	)
 	(symbol
+		(lib_id "SamacSys_Parts:CC0603KRX7R9BB104")
+		(at 285.75 422.91 270)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "cb41c3ba-b6c6-4407-8d1e-032c560061dd")
+		(property "Reference" "C99"
+			(at 278.638 427.736 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "0.1uF"
+			(at 278.13 430.022 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+			(at 189.56 431.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Datasheet" "https://www.digikey.com/en/products/detail/yageo/CC0603KRX7R9BB104/2103082"
+			(at 89.56 431.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Description" "0.1 F +/-10% 50V Ceramic Capacitor X7R 0603 (1608 Metric)"
+			(at 285.75 422.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Height" "0.9"
+			(at -110.44 431.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Part Number" "603-CC603KRX7R9BB104"
+			(at -210.44 431.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/YAGEO/CC0603KRX7R9BB104?qs=vTakOoo5QyLvVCYM2ge8LQ%3D%3D"
+			(at -310.44 431.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Name" "Yageo Group"
+			(at -410.44 431.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Part_Number" "CC0603KRX7R9BB104"
+			(at -510.44 431.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "1"
+			(uuid "ee871879-1be2-4611-951e-2585303b72c4")
+		)
+		(pin "2"
+			(uuid "a3d47f64-9123-4472-a74c-efa3cccc5ad6")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "C99")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "SamacSys_Parts:470U_50V_RVT1H471M1213")
 		(at 497.84 417.83 90)
 		(unit 1)
@@ -46331,6 +47747,154 @@
 			(project "Solenoide_drive"
 				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
 					(reference "#PWR024")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "SamacSys_Parts:B4B-XH-A_LF__SN_")
+		(at 233.68 449.58 180)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files no)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "cd6ab993-5b7f-431e-a5d6-bf50e335f8de")
+		(property "Reference" "J16"
+			(at 223.52 434.34 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "B4B-XH-A_LF__SN_"
+			(at 223.52 436.88 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "B4BXHALFSN"
+			(at 217.17 354.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Datasheet" "https://datasheet.lcsc.com/szlcsc/JST-Sales-America-B4B-XH-A-LF-SN_C144395.pdf"
+			(at 217.17 254.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Description" "CONN HEADER VERT 4POS 2.5MM"
+			(at 233.68 449.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Height" "7"
+			(at 217.17 54.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Part Number" "306-B4BXHALFSN"
+			(at 217.17 -45.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/JST-Commercial/B4B-XH-ALFSN?qs=cdbOS8ANM9CfC08d%252BywhFw%3D%3D"
+			(at 217.17 -145.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Name" "JST (JAPAN SOLDERLESS TERMINALS)"
+			(at 217.17 -245.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Part_Number" "B4B-XH-A(LF)(SN)"
+			(at 217.17 -345.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "4"
+			(uuid "4ee0f71c-5270-4c4c-9642-cdbafe3885cb")
+		)
+		(pin "1"
+			(uuid "9de5788c-153a-4942-9360-724dc895dc8f")
+		)
+		(pin "2"
+			(uuid "037064cc-c967-417f-9111-380efc1c01a2")
+		)
+		(pin "3"
+			(uuid "53c4e844-669d-4de8-8910-fe0c94691ead")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "J16")
 					(unit 1)
 				)
 			)
@@ -47017,6 +48581,84 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 285.75 412.75 180)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "d236880d-0e03-4670-8ab8-3e7e451e5bc1")
+		(property "Reference" "#PWR0130"
+			(at 285.75 406.4 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 285.75 407.67 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 285.75 412.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 285.75 412.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 285.75 412.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "70325ca3-aa94-43f1-a2e8-5e9f3fc00c04")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "#PWR0130")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "SamacSys_Parts:CC0603KRX7R9BB104")
 		(at 472.44 87.63 90)
 		(unit 1)
@@ -47544,7 +49186,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "dba44a2f-394c-4d03-8336-4c6274ba05d7")
@@ -50345,6 +51987,172 @@
 		)
 	)
 	(symbol
+		(lib_id "SamacSys_Parts:TS-1088-AR02016")
+		(at 281.94 422.91 180)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "f0ca806d-46e3-473f-aec9-434f8a414833")
+		(property "Reference" "S1"
+			(at 270.51 412.75 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TS-1088-AR02016"
+			(at 270.51 415.29 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "TS1088AR02016"
+			(at 262.89 327.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Datasheet" "https://www.xunpudianzi.com/uploads/pdf/TS-1088-ARXXX.pdf"
+			(at 262.89 227.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Description" "Tact Switch"
+			(at 281.94 422.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Height" "2"
+			(at 262.89 27.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Name" "XUNPU"
+			(at 262.89 -72.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Part_Number" "TS-1088-AR02016"
+			(at 262.89 -172.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Part Number" ""
+			(at 262.89 -272.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Price/Stock" ""
+			(at 262.89 -372.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Arrow Part Number" ""
+			(at 262.89 -472.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Arrow Price/Stock" ""
+			(at 262.89 -572.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "1"
+			(uuid "f93745a7-bb41-457a-9970-0e70a6d9feaf")
+		)
+		(pin "2"
+			(uuid "fb9dbcab-7adc-4ce0-bc14-56ccd8b6f5b4")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "S1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "SamacSys_Parts:CC0603KRX7R9BB104")
 		(at 615.95 254 90)
 		(unit 1)
@@ -50729,7 +52537,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(in_pos_files yes)
+		(in_pos_files no)
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "f284f3d6-0a2c-4fb3-beb0-0eb659fb5f43")
@@ -51264,6 +53072,231 @@
 			(project "Solenoide_drive"
 				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
 					(reference "#PWR015")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 335.28 415.29 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "f49564c3-1395-45dd-813d-ec1e80d98180")
+		(property "Reference" "R35"
+			(at 337.82 414.0199 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "R1K"
+			(at 337.82 416.5599 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 333.502 415.29 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 335.28 415.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 335.28 415.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "94718db4-039c-4871-96c5-cc25bb59f219")
+		)
+		(pin "1"
+			(uuid "378e34e6-3bb0-4f19-8871-1211b02e743d")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "R35")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "SamacSys_Parts:EEE-FK1H100P")
+		(at 104.14 358.14 270)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files no)
+		(dnp no)
+		(uuid "f67375b8-afd4-4f76-b6a4-9b7768a29e08")
+		(property "Reference" "C103"
+			(at 85.598 363.474 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "EEE-FK1H100P"
+			(at 85.598 366.014 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "EEE1AA101SP"
+			(at 7.95 367.03 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Datasheet" "http://industrial.panasonic.com/cdbs/www-data/pdf/RDE0000/ABA0000C1181.pdf"
+			(at -92.05 367.03 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Description" "Panasonic 10uF 50V dc Aluminium Electrolytic Capacitor, Surface Mount 6.3 (Dia.) x 5.8mm +105C 6.3mm 1.8mm"
+			(at 104.14 358.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Height" "7.8"
+			(at -292.05 367.03 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Part Number" "667-EEE-FK1H100P"
+			(at -392.05 367.03 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/Panasonic/EEE-FK1H100P?qs=qE6bgDGEOCvem0jOvVm3BQ%3D%3D"
+			(at -492.05 367.03 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Name" "Panasonic"
+			(at -592.05 367.03 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Manufacturer_Part_Number" "EEE-FK1H100P"
+			(at -692.05 367.03 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "1"
+			(uuid "7219a7a9-8ceb-490f-aeac-033f2d2d1a09")
+		)
+		(pin "2"
+			(uuid "71b52a1a-a77d-405e-a9e2-9e3920b12f8f")
+		)
+		(instances
+			(project "Solenoide_drive"
+				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
+					(reference "C103")
 					(unit 1)
 				)
 			)
@@ -51805,8 +53838,8 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 264.16 300.99 90)
+		(lib_id "Device:R")
+		(at 341.63 425.45 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -51814,32 +53847,31 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "fcb24536-0b11-4e4e-bf00-aa61abae6f6a")
-		(property "Reference" "#PWR0135"
-			(at 270.51 300.99 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 267.97 300.99 90)
+		(uuid "fbcc0543-d16e-4262-9ce6-e13b0ddbd226")
+		(property "Reference" "R36"
+			(at 343.916 426.466 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1 1)
 				)
-				(justify right)
+				(justify left)
 			)
 		)
-		(property "Footprint" ""
-			(at 264.16 300.99 0)
+		(property "Value" "10k"
+			(at 343.916 429.006 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1 1)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 339.852 425.45 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -51849,8 +53881,8 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
-			(at 264.16 300.99 0)
+		(property "Datasheet" "https://www.royalohm.com/assets/pdf/products/smd/1.pdf"
+			(at 341.63 425.45 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -51860,8 +53892,8 @@
 				)
 			)
 		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 264.16 300.99 0)
+		(property "Description" "Resistor"
+			(at 341.63 425.45 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -51872,12 +53904,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "01009e6c-9cbf-4f5e-b9d6-bebc13ae40f4")
+			(uuid "1ba0f181-7200-46b8-90f3-693f0502d437")
+		)
+		(pin "2"
+			(uuid "2b56ea1a-6fa6-4776-8a17-7fd66e9c10a9")
 		)
 		(instances
 			(project "Solenoide_drive"
 				(path "/2a707b5c-0fdd-4882-9804-89ee3c8390a7"
-					(reference "#PWR0135")
+					(reference "R36")
 					(unit 1)
 				)
 			)

@@ -52,19 +52,19 @@
         "zones": {
           "border_display_style": 0,
           "border_hatch_pitch": 0.5,
-          "corner_radius": 2.0,
-          "corner_smoothing": 2,
+          "corner_radius": 0.0,
+          "corner_smoothing": 0,
           "fill_mode": 0,
           "hatch_gap": 1.5,
           "hatch_orientation": 0.0,
           "hatch_smoothing_level": 0,
           "hatch_smoothing_value": 0.1,
           "hatch_thickness": 1.0,
-          "min_clearance": 0.5,
+          "min_clearance": 0.3,
           "min_island_area": 10.0,
           "min_thickness": 0.5,
           "pad_connection": 2,
-          "remove_islands": 0,
+          "remove_islands": 1,
           "thermal_relief_gap": 0.5,
           "thermal_relief_spoke_width": 0.5
         }
@@ -585,7 +585,7 @@
       "plot": "",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "../../Solenoide_drive.step",
+      "step": "../../Solenoide_drive_final.step",
       "svg": "",
       "vrml": ""
     },
@@ -717,7 +717,7 @@
         "uuid": "2a707b5c-0fdd-4882-9804-89ee3c8390a7"
       }
     ],
-    "used_designators": "J11-17,IC13-18,R25-32,C31,C37,C45,C48,C56,C60,C68,C73,C79-102,D1,#PWR3,#PWR5,#PWR14,#PWR32,#PWR38,#PWR46,#PWR54,#PWR62,#PWR70,#PWR78,#PWR86,#PWR95,#PWR97-140,H1-4,TP1-7,F1",
+    "used_designators": "J11-17,IC13-18,R25-36,C31,C37,C45,C48,C56,C60,C68,C73,C79-104,D1,#PWR3,#PWR5,#PWR14,#PWR32,#PWR38,#PWR46,#PWR54,#PWR62,#PWR70,#PWR78,#PWR86,#PWR95,#PWR97-142,H1-4,TP1-7,F1,FB1,S1-2",
     "variants": []
   },
   "sheets": [
