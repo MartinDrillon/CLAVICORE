@@ -15,8 +15,16 @@ Le système électronique sera intégré au corps de l’instrument.
 
 ## L’automatisation
 
+## Moitié « Moteur »
+*PCB en cours de fabrication*
+
+La carte de contrôle est basée sur un RP2354B avec un DRV8874 par solénoïde pour un contrôle bidirectionnel. Cinq cartes permettent de gérer les 49 touches du clavier. Les cartes communiquent en CAN.
+
+![PCB](Images/PCB_STP.png)
+
+
 ### Moitié « Clavier »
-*PCB en cours de conception*
+*PCB en cours de fabrication*
 
 Simple matrice de touches gérée par un Pico 2. Les événements « touches pressées » sont communiqués en CAN avec la partie « moteur » du système. Ils pourront également être transmis en MIDI à un ordinateur.
 
@@ -25,12 +33,6 @@ Ce projet utilisera une base de clavier ergonomique (https://github.com/MartinDr
 ![PCB](Images/Clavier_drive_1_3D.png)
 
 
-## Moitié « Moteur »
-*PCB en cours de réalisation*
-
-La carte de contrôle est basée sur un RP2354B avec un DRV8874 par solénoïde pour un contrôle bidirectionnel. Cinq cartes permettent de gérer les 49 touches du clavier. Les cartes communiquent en CAN.
-
-![PCB](Images/PCB_STP.png)
 
 ## Les solénoïdes
 Les solénoïdes sont les éléments centraux du montage. Ils doivent être réalisés sur mesure. Ceux disponibles sur le marché sont :
