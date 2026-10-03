@@ -2,10 +2,10 @@
 ## Le projet
 > Piloter un clavecin à distance grâce à un clavier ergonomique
 
-Tout comme pour les claviers d’ordinateurs, le clavier de piano tire sa forme de contraintes physiques et d’usages très spécifiques que l’habitude a figées. En s’en libérant, il doit être possible de concevoir une disposition plus simple à apprendre et à jouer. 
+La disposition physique des touches d’un instrument à clavier classique est héritée de contraintes matérielles et d’usage spécifiques à une époque. En s’en libérant, il doit être possible de concevoir une disposition plus simple à apprendre et à jouer. 
 
 ## L’instrument
-La base est une copie d’une épinette italienne ancienne, vendue dans les années 70 en kit par Heugel et montée par un amateur. L’instrument est en cours de révision (modification des sautereaux, changement des cordes, réharmonisation à la plume). 
+La base est une copie d’une épinette italienne de 1601, vendue dans les années 70 en kit par Heugel et montée par un amateur. L’instrument a été révisé (changement des cordes, réharmonisation à la plume, rebouchage de fente sur la table d’harmonie). 
 
 Le système électronique sera intégré au corps de l’instrument.
 
@@ -22,6 +22,9 @@ Simple matrice de touches gérée par un Pico 2. Les événements « touches pre
 
 Ce projet utilisera une base de clavier ergonomique (https://github.com/MartinDrillon/IteMX3-) adaptée pour recevoir une disposition de type « Wiki-Haydn ». Une présentation plus détaillée du clavier est à venir. 
 
+![PCB](Images/Clavier_drive_1_3D.png)
+
+
 ## Moitié « Moteur »
 *PCB en cours de réalisation*
 
@@ -37,7 +40,7 @@ Les solénoïdes sont les éléments centraux du montage. Ils doivent être réa
 - Trop chers (~5 € pièce pour la référence la plus proche du besoin)
 
 ### Le cahier des charges
-- Bobine de 30 mm x 15 mm Ø max, intégrée au corps du clavecin, pour être invisible et conserver la possibilité de jouer normalement.   
+- Bobine de 28 mm x 15 mm Ø max, intégrée au corps du clavecin, pour être invisible et conserver la possibilité de jouer normalement.   
 - Noyau constitué d’un aimant néodyme de 13 mm x 6 mm Ø N48 fixé sous la touche.
 - Alimentation en 24 volts, courant de 1,5 à 3 ampères
     - Au-delà, la chauffe de la bobine et la puissance nécessaire à un accord deviennent trop importantes
@@ -51,10 +54,9 @@ Les solénoïdes sont les éléments centraux du montage. Ils doivent être réa
 - [X] Modélisation 3D de l’instrument
 - [X] Conception et impression 3D du corps de la bobine intégré sous les touches
 - [X] Premier test concluant avec un fil de 0,4 mm - 2 ampères - 24 volts
-- [X] Conception des cartes de pilotage pour l’ensemble du clavecin
-- [ ] Conception du clavier ergonomique *en cours*
-- [ ] Programmation de l’ensemble
-- [ ] Ajustement de la bobine en fonction de la carte de pilotage
+- [X] Conception des cartes de pilotage pour l’ensemble du clavecin *pcb en cours de fabrication*
+- [X] Conception du clavier ergonomique *pcb en cours de fabrication*
+- [ ] Programmation de l’ensemble *en cours*
 - [ ] Réalisation artisanale de 50 bobines homogènes et installation du système ! 
 
 
