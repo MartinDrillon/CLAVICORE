@@ -2,8 +2,6 @@
 ## Le projet
 > Piloter un clavecin à distance grâce à un clavier ergonomique
 
-La disposition physique des touches d’un instrument à clavier classique est héritée de contraintes matérielles et d’usage spécifiques à une époque. En s’en libérant, il doit être possible de concevoir une disposition plus simple à apprendre et à jouer. 
-
 ## L’instrument
 La base est une copie d’une épinette italienne de 1601, vendue dans les années 70 en kit par Heugel et montée par un amateur. L’instrument a été révisé (changement des cordes, réharmonisation à la plume, rebouchage de fente sur la table d’harmonie). 
 
@@ -48,8 +46,21 @@ Les solénoïdes sont les éléments centraux du montage. Ils doivent être réa
     - Au-delà, la chauffe de la bobine et la puissance nécessaire à un accord deviennent trop importantes
     - En deçà, la force n’est pas suffisante ou le nombre de spires devient trop élevé
 - Fil d’un diamètre de 0,3 à 0,4 mm. 
-    - Au-delà, la quantité de cuivre par bobine devient trop importante (coût, encombrement, bobinage complexe à réaliser à cause de l’augmentation du nombre de spires).
+    - Au-delà, la quantité de cuivre par bobine devient trop importante (coût, encombrement, bobinage complexe).
     - En deçà, la force est trop faible ou la chauffe est trop élevée. 
+
+### Le prototype
+
+
+![bobine de côté](Images/bob1.jpg)
+![bobine plan](Images/bob2.jpg)
+
+Le mandrin est imprimé en 3D avec une résine industrielle résistante à 120°. Sa section est ovoïde pour permettre le mouvement de l’aimant (qui n’est pas parfaitement vertical, la touche s’enfonçant avec un angle) tout en minimisant l’écart avec les spires. La paroi intérieure ne fait que 0,8mm d’épaisseur. Ce prototype tire environ 2,9 ampères pour 14 couches et un fil de 0,35mm. 
+
+La force max estimée est de 3N, soit environ le double de ce qui est nécessaire au pincement d’une corde. Cette marge devra permettre de garantir la réactivité du système et de compenser la perte de puissance causée par l’échauffement. La force exacte appliquée sera de toute façon controllé en PWM (par exemple 100% pour le pincement, puis très limité pour le maintien de la corde). Ces éléments devront être validés avec un premier prototype fonctionnel.
+
+![Évaluation de la force](Images/Graph_bobine.png)
+
 
 ## L’état d’avancement 
 - [X] Génération d’un script Magpylib pour réaliser un premier dimensionnement des solénoïdes 
@@ -62,5 +73,4 @@ Les solénoïdes sont les éléments centraux du montage. Ils doivent être réa
 - [ ] Réalisation artisanale de 50 bobines homogènes et installation du système ! 
 
 
-![Évaluation de la force](Images/03_04_15_25.png)
 ![3D Bobine Clavecin](Images/3DBobineClavecin.png)
