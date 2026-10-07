@@ -37,7 +37,7 @@ Les solénoïdes sont les éléments centraux du montage. Ils doivent être réa
 - Trop bruyants
 - Trop encombrants
 - Trop puissants ou trop faibles
-- Trop chers (~5 € pièce pour la référence la plus proche du besoin)
+- Trop chers (~5 € pièce pour la référence la plus adaptée)
 
 ### Le cahier des charges
 - Bobine de 28 mm x 15 mm Ø max, intégrée au corps du clavecin, pour être invisible et conserver la possibilité de jouer normalement.   
