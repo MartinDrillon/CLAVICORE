@@ -28,17 +28,42 @@ add_custom_target(clavier_pinmap
 
 add_executable(clavier
     src/main.c
+    src/can_link.c
     src/keycode.c
     src/keymap.c
     src/matrix_scan.c
     src/midi.c
     src/note_state.c
+    src/sysex_uid.c
+    src/usb_log.c
     src/usb_descriptors.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol/can_protocol.c
 )
 
+# can2040 (ADR-0002) : sous-module git épinglé v1.7.0. Jamais de copie fabriquée.
+set(CAN2040_DIR ${CMAKE_CURRENT_LIST_DIR}/../common/can2040)
+if(NOT EXISTS ${CAN2040_DIR}/src/can2040.c)
+    message(FATAL_ERROR
+        "Sous-module can2040 absent (${CAN2040_DIR}).\n"
+        "Depuis la racine du depot, lancer :\n"
+        "  git submodule update --init --recursive\n"
+        "ou, s'il n'est pas encore declare :\n"
+        "  git submodule add https://github.com/KevinOConnor/can2040 firmware/common/can2040\n"
+        "  git -C firmware/common/can2040 checkout v1.7.0")
+endif()
+add_library(can2040 STATIC ${CAN2040_DIR}/src/can2040.c)
+target_include_directories(can2040 PUBLIC ${CAN2040_DIR}/src)
+target_compile_definitions(can2040 PUBLIC PICO_RP2350)  # exigé par can2040 pour la famille RP2350
+target_compile_options(can2040 PRIVATE -O2)             # can2040 exige -O2 minimum
+target_link_libraries(can2040 PUBLIC pico_stdlib hardware_pio hardware_irq hardware_clocks)
+if(TARGET cmsis_core)
+    target_link_libraries(can2040 PUBLIC cmsis_core)
+endif()
+
 # Pinmap regeneration is manual so normal firmware builds do not require KiCad exports.
-target_include_directories(clavier PRIVATE src)
-target_link_libraries(clavier PRIVATE pico_stdlib hardware_gpio tinyusb_device tinyusb_board)
+# shared/protocol : source unique du protocole CAN et du format de table UID.
+target_include_directories(clavier PRIVATE src ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol)
+target_link_libraries(clavier PRIVATE pico_stdlib hardware_gpio hardware_irq hardware_sync hardware_clocks can2040 tinyusb_device tinyusb_board)
 
 pico_enable_stdio_uart(clavier 0)
 pico_add_extra_outputs(clavier)

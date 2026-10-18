@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/picotoolBuild"
+		},
+		{
+			"file" : "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/picotoolBuild.rule"
+		},
+		{
+			"file" : "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/picotoolBuild-complete.rule"
+		},
+		{
+			"file" : "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-build.rule"
+		},
+		{
+			"file" : "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-configure.rule"
+		},
+		{
+			"file" : "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-download.rule"
+		},
+		{
+			"file" : "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-install.rule"
+		},
+		{
+			"file" : "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-mkdir.rule"
+		},
+		{
+			"file" : "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-patch.rule"
+		},
+		{
+			"file" : "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-test.rule"
+		},
+		{
+			"file" : "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"picotoolBuild"
+		],
+		"name" : "picotoolBuild"
+	}
+}

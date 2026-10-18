@@ -3,11 +3,16 @@
 enum {
     ITF_NUM_MIDI = 0,
     ITF_NUM_MIDI_STREAMING,
+    ITF_NUM_CDC,
+    ITF_NUM_CDC_DATA,
     ITF_NUM_TOTAL,
 };
 
 #define EPNUM_MIDI 0x01u
-#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_MIDI_DESC_LEN)
+#define EPNUM_CDC_NOTIF 0x82u
+#define EPNUM_CDC_OUT 0x03u
+#define EPNUM_CDC_IN 0x83u
+#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_MIDI_DESC_LEN + TUD_CDC_DESC_LEN)
 
 static const tusb_desc_device_t device_descriptor = {
     .bLength = sizeof(tusb_desc_device_t),
@@ -18,7 +23,7 @@ static const tusb_desc_device_t device_descriptor = {
     .bDeviceProtocol = MISC_PROTOCOL_IAD,
     .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
     .idVendor = 0xCAFE,
-    .idProduct = 0x4010,
+    .idProduct = 0x4011,
     .bcdDevice = 0x0100,
     .iManufacturer = 0x01,
     .iProduct = 0x02,
@@ -30,6 +35,7 @@ static const uint8_t configuration_descriptor[] = {
     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN,
                           TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
     TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 0, EPNUM_MIDI, 0x80u | EPNUM_MIDI, 64),
+    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT, EPNUM_CDC_IN, 64),
 };
 
 const uint8_t *tud_descriptor_device_cb(void) {
@@ -46,6 +52,7 @@ static const char *const string_descriptors[] = {
     "Clavicore",
     "Clavicore Keyboard",
     "Clavicore-001",
+    "Clavicore Log",
 };
 
 const uint16_t *tud_descriptor_string_cb(uint8_t index, uint16_t language_id) {

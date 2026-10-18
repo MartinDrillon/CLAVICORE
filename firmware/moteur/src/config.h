@@ -3,7 +3,9 @@
 // Ne PAS dériver ce fichier du pinmap généré (Netlist/netlist_to_pinmap.py) :
 // les noms de net générés reprennent "SENS", explicitement rejeté par l'ADR-0001
 // pour ne pas laisser croire à une mesure de courant par canal.
-// Périmètre Phase 2a uniquement : un seul canal, pas de CAN, pas de machine à états.
+// Périmètre Phase 2a : un seul canal (canal 0), pas de CAN, pas de multi-canal (2b).
+// Machine à états pull/hold/release dans solenoid_driver.c (constantes dans
+// solenoid_profile.h) et feature clock-test (clock_test.c) incluses.
 #ifndef MOTEUR_CONFIG_H
 #define MOTEUR_CONFIG_H
 
@@ -21,5 +23,26 @@
 
 // Bouton de test, actif bas.
 #define MOTEUR_TEST_BUTTON_GPIO 34u
+
+// Net /FREQ OSC (GPIO41, pinmap.generated_drive.yaml) : sortie du clock-test,
+// diagnostic uniquement (feature clock-test-mode1). Hors HAL solénoïde.
+#define MOTEUR_CLOCK_TEST_GPIO 41u
+
+// Fréquence cible du clock-test : 1 MHz (clk_sys/150 pour clk_sys = 150 MHz).
+#define MOTEUR_CLOCK_TEST_FREQ_HZ 1000000u
+
+// --- CAN (ADR-0002, ADR-0003) : spécifique à la carte Moteur -------------------
+// Bloc PIO et GPIO imposés par le câblage (/RXD = GPIO46, /TXD = GPIO47,
+// Docs/specs/CAN.md). Constantes du protocole (IDs, débit...) : shared/protocol.
+#define MOTEUR_CAN_PIO_NUM 0u
+#define MOTEUR_CAN_GPIO_RX 46u
+#define MOTEUR_CAN_GPIO_TX 47u
+// Priorité IRQ la plus haute côté application (ADR-0002).
+#define MOTEUR_CAN_IRQ_PRIORITY 0u
+
+// Version du firmware, annoncée dans la trame B (0..127 chacun).
+#define MOTEUR_FW_MAJOR 0u
+#define MOTEUR_FW_MINOR 1u
+#define MOTEUR_FW_PATCH 0u
 
 #endif  // MOTEUR_CONFIG_H

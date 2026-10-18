@@ -1,0 +1,13 @@
+# Target labels
+ pioasmBuild
+# Source files and their labels
+D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_status_led/CMakeFiles/pioasmBuild
+D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_status_led/CMakeFiles/pioasmBuild.rule
+D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_status_led/CMakeFiles/pioasmBuild-complete.rule
+D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-build.rule
+D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-configure.rule
+D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-download.rule
+D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-install.rule
+D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-mkdir.rule
+D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-patch.rule
+D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-update.rule

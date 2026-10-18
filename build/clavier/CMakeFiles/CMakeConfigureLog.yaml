@@ -1,0 +1,553 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineSystem.cmake:200 (message)"
+      - "CMakeLists.txt:9 (project)"
+    message: |
+      The target system is: PICO -  - cortex-m33
+      The host system is: Windows - 10.0.26200 - AMD64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:9 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/arm-none-eabi-gcc.exe 
+      Build flags: -mcpu=cortex-m33;-mthumb;-march=armv8-m.main+fp+dsp;-mcmse;-mfloat-abi=softfp;-ftls-model=local-exec
+      Id flags:  
+      
+      The output was:
+      1
+      C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\\libc.a(libc_a-exit.o): in function `exit':
+      exit.c:(.text.exit+0x14): undefined reference to `_exit'
+      C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\\libc.a(libc_a-closer.o): in function `_close_r':
+      closer.c:(.text._close_r+0xc): undefined reference to `_close'
+      C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\\libc.a(libc_a-lseekr.o): in function `_lseek_r':
+      lseekr.c:(.text._lseek_r+0x14): undefined reference to `_lseek'
+      C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\\libc.a(libc_a-readr.o): in function `_read_r':
+      readr.c:(.text._read_r+0x14): undefined reference to `_read'
+      C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\\libc.a(libc_a-writer.o): in function `_write_r':
+      writer.c:(.text._write_r+0x14): undefined reference to `_write'
+      C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\\libc.a(libc_a-sbrkr.o): in function `_sbrk_r':
+      sbrkr.c:(.text._sbrk_r+0xc): undefined reference to `_sbrk'
+      collect2.exe: error: ld returned 1 exit status
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:9 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/arm-none-eabi-gcc.exe 
+      Build flags: -mcpu=cortex-m33;-mthumb;-march=armv8-m.main+fp+dsp;-mcmse;-mfloat-abi=softfp;-ftls-model=local-exec
+      Id flags: -c 
+      
+      The output was:
+      0
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.o"
+      
+      The C compiler identification is GNU, found in:
+        D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/CMakeFiles/3.31.4/CompilerIdC/CMakeCCompilerId.o
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:9 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/arm-none-eabi-g++.exe 
+      Build flags: -mcpu=cortex-m33;-mthumb;-march=armv8-m.main+fp+dsp;-mcmse;-mfloat-abi=softfp;-ftls-model=local-exec
+      Id flags:  
+      
+      The output was:
+      1
+      C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\\libc.a(libc_a-exit.o): in function `exit':
+      exit.c:(.text.exit+0x14): undefined reference to `_exit'
+      C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\\libc.a(libc_a-closer.o): in function `_close_r':
+      closer.c:(.text._close_r+0xc): undefined reference to `_close'
+      C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\\libc.a(libc_a-lseekr.o): in function `_lseek_r':
+      lseekr.c:(.text._lseek_r+0x14): undefined reference to `_lseek'
+      C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\\libc.a(libc_a-readr.o): in function `_read_r':
+      readr.c:(.text._read_r+0x14): undefined reference to `_read'
+      C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\\libc.a(libc_a-writer.o): in function `_write_r':
+      writer.c:(.text._write_r+0x14): undefined reference to `_write'
+      C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\\libc.a(libc_a-sbrkr.o): in function `_sbrk_r':
+      sbrkr.c:(.text._sbrk_r+0xc): undefined reference to `_sbrk'
+      collect2.exe: error: ld returned 1 exit status
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:9 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler: C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/arm-none-eabi-g++.exe 
+      Build flags: -mcpu=cortex-m33;-mthumb;-march=armv8-m.main+fp+dsp;-mcmse;-mfloat-abi=softfp;-ftls-model=local-exec
+      Id flags: -c 
+      
+      The output was:
+      0
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.o"
+      
+      The CXX compiler identification is GNU, found in:
+        D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/CMakeFiles/3.31.4/CompilerIdCXX/CMakeCXXCompilerId.o
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:1237 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineASMCompiler.cmake:135 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "CMakeLists.txt:9 (project)"
+    message: |
+      Checking whether the ASM compiler is GNU using "--version" matched "(GNU assembler)|(GCC)|(Free Software Foundation)":
+      arm-none-eabi-gcc.exe (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 14.2.1 20241119
+      Copyright (C) 2024 Free Software Foundation, Inc.
+      This is free software; see the source for copying conditions.  There is NO
+      warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:9 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/CMakeFiles/CMakeScratch/TryCompile-a9nu2w"
+      binary: "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/CMakeFiles/CMakeScratch/TryCompile-a9nu2w"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "-mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec"
+      CMAKE_C_FLAGS_DEBUG: "-Og -g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "C:/Users/marti/.pico-sdk/sdk/2.3.1/cmake"
+      PICO_SDK_PATH: "C:/Users/marti/.pico-sdk/sdk/2.3.1"
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/CMakeFiles/CMakeScratch/TryCompile-a9nu2w'
+        
+        Run Build Command(s): C:/ProgramData/chocolatey/bin/ninja.exe -v cmTC_3f72e
+        [1/2] "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-gcc.exe"   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec    -v -o CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj -c "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeCCompilerABI.c"
+        Using built-in specs.
+        COLLECT_GCC=C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-gcc.exe
+        Target: arm-none-eabi
+        Configured with: /data/jenkins/workspace/GNU-toolchain/arm-14/src/gcc/configure --target=arm-none-eabi --prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install --with-gmp=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpfr=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpc=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-isl=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --disable-shared --disable-nls --disable-threads --disable-tls --enable-checking=release --enable-languages=c,c++,fortran --with-newlib --with-gnu-as --with-headers=yes --with-gnu-ld --with-native-system-header-dir=/include --with-sysroot=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install/arm-none-eabi --with-bugurl=https://bugs.linaro.org/ --with-multilib-list=aprofile,rmprofile --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --enable-mingw-wildcard --host=i686-w64-mingw32 --with-pkgversion='Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)'
+        Thread model: single
+        Supported LTO compression algorithms: zlib
+        gcc version 14.2.1 20241119 (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-v' '-o' 'CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_3f72e.dir/'
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/cc1.exe -quiet -v -imultilib thumb/v8-m.main+fp/softfp -iprefix C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/ -isysroot C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi -D__USES_INITFINI__ C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_3f72e.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=softfp -mlibarch=armv8-m.main+dsp+fp -march=armv8-m.main+dsp+fp -version -ftls-model=local-exec -o C:\\Users\\marti\\AppData\\Local\\Temp\\cc2dQggg.s
+        GNU C17 (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) version 14.2.1 20241119 (arm-none-eabi)
+        	compiled by GNU C version 9.3-win32 20200320, GMP version 6.2.1, MPFR version 3.1.6, MPC version 1.0.3, isl version isl-0.15-1-g835ea3a-GMP
+        
+        GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+        ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/include"
+        ignoring nonexistent directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install/lib/gcc/arm-none-eabi/14.2.1/../../../../include"
+        ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/include-fixed"
+        ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include"
+        ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include-fixed
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include
+        End of search list.
+        Compiler executable checksum: 63ce4b303c7eb47a24bbf869f5c70b36
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-v' '-o' 'CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_3f72e.dir/'
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/as.exe -v -march=armv8-m.main+dsp+fp -mfloat-abi=softfp -meabi=5 -o CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj C:\\Users\\marti\\AppData\\Local\\Temp\\cc2dQggg.s
+        GNU assembler version 2.43.1 (arm-none-eabi) using BFD version (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 2.43.1.20241119
+        COMPILER_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/
+        LIBRARY_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/\x0d
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-v' '-o' 'CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.'\x0d
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-gcc.exe" -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec -Wl,--build-id=none -nostdlib -v CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj -o cmTC_3f72e.elf   && cd ."
+        Using built-in specs.
+        COLLECT_GCC=C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-gcc.exe
+        COLLECT_LTO_WRAPPER=C:/PROGRA~2/Arm\\ GNU\\ Toolchain\\ arm-none-eabi/14.2\\ rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/lto-wrapper.exe
+        Target: arm-none-eabi
+        Configured with: /data/jenkins/workspace/GNU-toolchain/arm-14/src/gcc/configure --target=arm-none-eabi --prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install --with-gmp=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpfr=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpc=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-isl=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --disable-shared --disable-nls --disable-threads --disable-tls --enable-checking=release --enable-languages=c,c++,fortran --with-newlib --with-gnu-as --with-headers=yes --with-gnu-ld --with-native-system-header-dir=/include --with-sysroot=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install/arm-none-eabi --with-bugurl=https://bugs.linaro.org/ --with-multilib-list=aprofile,rmprofile --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --enable-mingw-wildcard --host=i686-w64-mingw32 --with-pkgversion='Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)'
+        Thread model: single
+        Supported LTO compression algorithms: zlib
+        gcc version 14.2.1 20241119 (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 
+        COMPILER_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/
+        LIBRARY_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-nostdlib' '-v' '-o' 'cmTC_3f72e.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_3f72e.elf.'
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/collect2.exe -plugin C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/liblto_plugin.dll -plugin-opt=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/lto-wrapper.exe -plugin-opt=-fresolution=C:\\Users\\marti\\AppData\\Local\\Temp\\ccERLNuz.res --sysroot=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi -X -o cmTC_3f72e.elf -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1 -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib --build-id=none CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj
+        C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: warning: cannot find entry symbol _start; defaulting to 00008000\x0d
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-nostdlib' '-v' '-o' 'cmTC_3f72e.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_3f72e.elf.'\x0d
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:9 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include]
+          add: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include-fixed]
+          add: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include]
+        end of search list found
+        collapse include dir [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include] ==> [C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/arm-none-eabi/14.2.1/include]
+        collapse include dir [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include-fixed] ==> [C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/arm-none-eabi/14.2.1/include-fixed]
+        collapse include dir [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include] ==> [C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/arm-none-eabi/include]
+        implicit include dirs: [C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/arm-none-eabi/14.2.1/include;C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/arm-none-eabi/14.2.1/include-fixed;C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/arm-none-eabi/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:9 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: 'D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/CMakeFiles/CMakeScratch/TryCompile-a9nu2w']
+        ignore line: []
+        ignore line: [Run Build Command(s): C:/ProgramData/chocolatey/bin/ninja.exe -v cmTC_3f72e]
+        ignore line: [[1/2] "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-gcc.exe"   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec    -v -o CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj -c "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeCCompilerABI.c"]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-gcc.exe]
+        ignore line: [Target: arm-none-eabi]
+        ignore line: [Configured with: /data/jenkins/workspace/GNU-toolchain/arm-14/src/gcc/configure --target=arm-none-eabi --prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install --with-gmp=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpfr=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpc=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-isl=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --disable-shared --disable-nls --disable-threads --disable-tls --enable-checking=release --enable-languages=c,c++,fortran --with-newlib --with-gnu-as --with-headers=yes --with-gnu-ld --with-native-system-header-dir=/include --with-sysroot=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install/arm-none-eabi --with-bugurl=https://bugs.linaro.org/ --with-multilib-list=aprofile,rmprofile --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --enable-mingw-wildcard --host=i686-w64-mingw32 --with-pkgversion='Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)']
+        ignore line: [Thread model: single]
+        ignore line: [Supported LTO compression algorithms: zlib]
+        ignore line: [gcc version 14.2.1 20241119 (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) ]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-v' '-o' 'CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_3f72e.dir/']
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/cc1.exe -quiet -v -imultilib thumb/v8-m.main+fp/softfp -iprefix C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/ -isysroot C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi -D__USES_INITFINI__ C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_3f72e.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=softfp -mlibarch=armv8-m.main+dsp+fp -march=armv8-m.main+dsp+fp -version -ftls-model=local-exec -o C:\\Users\\marti\\AppData\\Local\\Temp\\cc2dQggg.s]
+        ignore line: [GNU C17 (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) version 14.2.1 20241119 (arm-none-eabi)]
+        ignore line: [	compiled by GNU C version 9.3-win32 20200320  GMP version 6.2.1  MPFR version 3.1.6  MPC version 1.0.3  isl version isl-0.15-1-g835ea3a-GMP]
+        ignore line: []
+        ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
+        ignore line: [ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/include"]
+        ignore line: [ignoring nonexistent directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install/lib/gcc/arm-none-eabi/14.2.1/../../../../include"]
+        ignore line: [ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/include-fixed"]
+        ignore line: [ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include"]
+        ignore line: [ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include]
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include-fixed]
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include]
+        ignore line: [End of search list.]
+        ignore line: [Compiler executable checksum: 63ce4b303c7eb47a24bbf869f5c70b36]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-v' '-o' 'CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_3f72e.dir/']
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/as.exe -v -march=armv8-m.main+dsp+fp -mfloat-abi=softfp -meabi=5 -o CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj C:\\Users\\marti\\AppData\\Local\\Temp\\cc2dQggg.s]
+        ignore line: [GNU assembler version 2.43.1 (arm-none-eabi) using BFD version (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 2.43.1.20241119]
+        ignore line: [COMPILER_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/]
+        ignore line: [LIBRARY_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/\x0d]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-v' '-o' 'CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.'\x0d]
+        ignore line: [[2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-gcc.exe" -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec -Wl --build-id=none -nostdlib -v CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj -o cmTC_3f72e.elf   && cd ."]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-gcc.exe]
+        ignore line: [COLLECT_LTO_WRAPPER=C:/PROGRA~2/Arm\\ GNU\\ Toolchain\\ arm-none-eabi/14.2\\ rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/lto-wrapper.exe]
+        ignore line: [Target: arm-none-eabi]
+        ignore line: [Configured with: /data/jenkins/workspace/GNU-toolchain/arm-14/src/gcc/configure --target=arm-none-eabi --prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install --with-gmp=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpfr=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpc=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-isl=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --disable-shared --disable-nls --disable-threads --disable-tls --enable-checking=release --enable-languages=c,c++,fortran --with-newlib --with-gnu-as --with-headers=yes --with-gnu-ld --with-native-system-header-dir=/include --with-sysroot=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install/arm-none-eabi --with-bugurl=https://bugs.linaro.org/ --with-multilib-list=aprofile,rmprofile --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --enable-mingw-wildcard --host=i686-w64-mingw32 --with-pkgversion='Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)']
+        ignore line: [Thread model: single]
+        ignore line: [Supported LTO compression algorithms: zlib]
+        ignore line: [gcc version 14.2.1 20241119 (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) ]
+        ignore line: [COMPILER_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/]
+        ignore line: [LIBRARY_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-nostdlib' '-v' '-o' 'cmTC_3f72e.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_3f72e.elf.']
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/collect2.exe -plugin C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/liblto_plugin.dll -plugin-opt=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/lto-wrapper.exe -plugin-opt=-fresolution=C:\\Users\\marti\\AppData\\Local\\Temp\\ccERLNuz.res --sysroot=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi -X -o cmTC_3f72e.elf -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1 -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib --build-id=none CMakeFiles/cmTC_3f72e.dir/CMakeCCompilerABI.c.obj]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: warning: cannot find entry symbol _start]
+        ignore line: [ defaulting to 00008000\x0d]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-nostdlib' '-v' '-o' 'cmTC_3f72e.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_3f72e.elf.'\x0d]
+        ignore line: []
+        ignore line: []
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: []
+        implicit fwks: []
+      
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:9 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/CMakeFiles/CMakeScratch/TryCompile-y169jj"
+      binary: "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/CMakeFiles/CMakeScratch/TryCompile-y169jj"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "-mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec"
+      CMAKE_CXX_FLAGS_DEBUG: "-Og -g"
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "C:/Users/marti/.pico-sdk/sdk/2.3.1/cmake"
+      PICO_SDK_PATH: "C:/Users/marti/.pico-sdk/sdk/2.3.1"
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/CMakeFiles/CMakeScratch/TryCompile-y169jj'
+        
+        Run Build Command(s): C:/ProgramData/chocolatey/bin/ninja.exe -v cmTC_17e30
+        [1/2] "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-g++.exe"   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec    -v -o CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj -c "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeCXXCompilerABI.cpp"
+        Using built-in specs.
+        COLLECT_GCC=C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-g++.exe
+        Target: arm-none-eabi
+        Configured with: /data/jenkins/workspace/GNU-toolchain/arm-14/src/gcc/configure --target=arm-none-eabi --prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install --with-gmp=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpfr=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpc=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-isl=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --disable-shared --disable-nls --disable-threads --disable-tls --enable-checking=release --enable-languages=c,c++,fortran --with-newlib --with-gnu-as --with-headers=yes --with-gnu-ld --with-native-system-header-dir=/include --with-sysroot=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install/arm-none-eabi --with-bugurl=https://bugs.linaro.org/ --with-multilib-list=aprofile,rmprofile --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --enable-mingw-wildcard --host=i686-w64-mingw32 --with-pkgversion='Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)'
+        Thread model: single
+        Supported LTO compression algorithms: zlib
+        gcc version 14.2.1 20241119 (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-v' '-o' 'CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_17e30.dir/'
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/cc1plus.exe -quiet -v -imultilib thumb/v8-m.main+fp/softfp -iprefix C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/ -isysroot C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi -D__USES_INITFINI__ C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_17e30.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=softfp -mlibarch=armv8-m.main+dsp+fp -march=armv8-m.main+dsp+fp -version -ftls-model=local-exec -o C:\\Users\\marti\\AppData\\Local\\Temp\\ccI6i6Im.s
+        GNU C++17 (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) version 14.2.1 20241119 (arm-none-eabi)
+        	compiled by GNU C version 9.3-win32 20200320, GMP version 6.2.1, MPFR version 3.1.6, MPC version 1.0.3, isl version isl-0.15-1-g835ea3a-GMP
+        
+        GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+        ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1"
+        ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1/arm-none-eabi/thumb/v8-m.main+fp/softfp"
+        ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1/backward"
+        ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/include"
+        ignoring nonexistent directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install/lib/gcc/arm-none-eabi/14.2.1/../../../../include"
+        ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/include-fixed"
+        ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include"
+        ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1/arm-none-eabi/thumb/v8-m.main+fp/softfp
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1/backward
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include-fixed
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include
+        End of search list.
+        Compiler executable checksum: dad18755456eb98fd3f9411f1449dfa2
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-v' '-o' 'CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_17e30.dir/'
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/as.exe -v -march=armv8-m.main+dsp+fp -mfloat-abi=softfp -meabi=5 -o CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj C:\\Users\\marti\\AppData\\Local\\Temp\\ccI6i6Im.s
+        GNU assembler version 2.43.1 (arm-none-eabi) using BFD version (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 2.43.1.20241119
+        COMPILER_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/
+        LIBRARY_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/\x0d
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-v' '-o' 'CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.'\x0d
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-g++.exe" -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec -Wl,--build-id=none -nostdlib -v CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj -o cmTC_17e30.elf   && cd ."
+        Using built-in specs.
+        COLLECT_GCC=C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-g++.exe
+        COLLECT_LTO_WRAPPER=C:/PROGRA~2/Arm\\ GNU\\ Toolchain\\ arm-none-eabi/14.2\\ rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/lto-wrapper.exe
+        Target: arm-none-eabi
+        Configured with: /data/jenkins/workspace/GNU-toolchain/arm-14/src/gcc/configure --target=arm-none-eabi --prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install --with-gmp=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpfr=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpc=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-isl=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --disable-shared --disable-nls --disable-threads --disable-tls --enable-checking=release --enable-languages=c,c++,fortran --with-newlib --with-gnu-as --with-headers=yes --with-gnu-ld --with-native-system-header-dir=/include --with-sysroot=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install/arm-none-eabi --with-bugurl=https://bugs.linaro.org/ --with-multilib-list=aprofile,rmprofile --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --enable-mingw-wildcard --host=i686-w64-mingw32 --with-pkgversion='Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)'
+        Thread model: single
+        Supported LTO compression algorithms: zlib
+        gcc version 14.2.1 20241119 (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 
+        COMPILER_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/
+        LIBRARY_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/;C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-nostdlib' '-v' '-o' 'cmTC_17e30.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_17e30.elf.'
+         C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/collect2.exe -plugin C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/liblto_plugin.dll -plugin-opt=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/lto-wrapper.exe -plugin-opt=-fresolution=C:\\Users\\marti\\AppData\\Local\\Temp\\ccCV9hKE.res --sysroot=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi -X -o cmTC_17e30.elf -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1 -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib --build-id=none CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj
+        C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: warning: cannot find entry symbol _start; defaulting to 00008000\x0d
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-nostdlib' '-v' '-o' 'cmTC_17e30.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_17e30.elf.'\x0d
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:9 (project)"
+    message: |
+      Parsed CXX implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1]
+          add: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1/arm-none-eabi/thumb/v8-m.main+fp/softfp]
+          add: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1/backward]
+          add: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include]
+          add: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include-fixed]
+          add: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include]
+        end of search list found
+        collapse include dir [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1] ==> [C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/arm-none-eabi/include/c++/14.2.1]
+        collapse include dir [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1/arm-none-eabi/thumb/v8-m.main+fp/softfp] ==> [C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/arm-none-eabi/include/c++/14.2.1/arm-none-eabi/thumb/v8-m.main+fp/softfp]
+        collapse include dir [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1/backward] ==> [C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/arm-none-eabi/include/c++/14.2.1/backward]
+        collapse include dir [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include] ==> [C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/arm-none-eabi/14.2.1/include]
+        collapse include dir [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include-fixed] ==> [C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/arm-none-eabi/14.2.1/include-fixed]
+        collapse include dir [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include] ==> [C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/arm-none-eabi/include]
+        implicit include dirs: [C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/arm-none-eabi/include/c++/14.2.1;C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/arm-none-eabi/include/c++/14.2.1/arm-none-eabi/thumb/v8-m.main+fp/softfp;C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/arm-none-eabi/include/c++/14.2.1/backward;C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/arm-none-eabi/14.2.1/include;C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/arm-none-eabi/14.2.1/include-fixed;C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/arm-none-eabi/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:9 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: 'D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/CMakeFiles/CMakeScratch/TryCompile-y169jj']
+        ignore line: []
+        ignore line: [Run Build Command(s): C:/ProgramData/chocolatey/bin/ninja.exe -v cmTC_17e30]
+        ignore line: [[1/2] "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-g++.exe"   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec    -v -o CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj -c "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeCXXCompilerABI.cpp"]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-g++.exe]
+        ignore line: [Target: arm-none-eabi]
+        ignore line: [Configured with: /data/jenkins/workspace/GNU-toolchain/arm-14/src/gcc/configure --target=arm-none-eabi --prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install --with-gmp=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpfr=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpc=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-isl=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --disable-shared --disable-nls --disable-threads --disable-tls --enable-checking=release --enable-languages=c,c++,fortran --with-newlib --with-gnu-as --with-headers=yes --with-gnu-ld --with-native-system-header-dir=/include --with-sysroot=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install/arm-none-eabi --with-bugurl=https://bugs.linaro.org/ --with-multilib-list=aprofile,rmprofile --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --enable-mingw-wildcard --host=i686-w64-mingw32 --with-pkgversion='Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)']
+        ignore line: [Thread model: single]
+        ignore line: [Supported LTO compression algorithms: zlib]
+        ignore line: [gcc version 14.2.1 20241119 (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) ]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-v' '-o' 'CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_17e30.dir/']
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/cc1plus.exe -quiet -v -imultilib thumb/v8-m.main+fp/softfp -iprefix C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/ -isysroot C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi -D__USES_INITFINI__ C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_17e30.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=softfp -mlibarch=armv8-m.main+dsp+fp -march=armv8-m.main+dsp+fp -version -ftls-model=local-exec -o C:\\Users\\marti\\AppData\\Local\\Temp\\ccI6i6Im.s]
+        ignore line: [GNU C++17 (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) version 14.2.1 20241119 (arm-none-eabi)]
+        ignore line: [	compiled by GNU C version 9.3-win32 20200320  GMP version 6.2.1  MPFR version 3.1.6  MPC version 1.0.3  isl version isl-0.15-1-g835ea3a-GMP]
+        ignore line: []
+        ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
+        ignore line: [ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1"]
+        ignore line: [ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1/arm-none-eabi/thumb/v8-m.main+fp/softfp"]
+        ignore line: [ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1/backward"]
+        ignore line: [ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/include"]
+        ignore line: [ignoring nonexistent directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install/lib/gcc/arm-none-eabi/14.2.1/../../../../include"]
+        ignore line: [ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/include-fixed"]
+        ignore line: [ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/lib/gcc/../../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include"]
+        ignore line: [ignoring duplicate directory "C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1]
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1/arm-none-eabi/thumb/v8-m.main+fp/softfp]
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include/c++/14.2.1/backward]
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include]
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/include-fixed]
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/include]
+        ignore line: [End of search list.]
+        ignore line: [Compiler executable checksum: dad18755456eb98fd3f9411f1449dfa2]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-v' '-o' 'CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_17e30.dir/']
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/as.exe -v -march=armv8-m.main+dsp+fp -mfloat-abi=softfp -meabi=5 -o CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj C:\\Users\\marti\\AppData\\Local\\Temp\\ccI6i6Im.s]
+        ignore line: [GNU assembler version 2.43.1 (arm-none-eabi) using BFD version (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 2.43.1.20241119]
+        ignore line: [COMPILER_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/]
+        ignore line: [LIBRARY_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/\x0d]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-v' '-o' 'CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.'\x0d]
+        ignore line: [[2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-g++.exe" -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec -Wl --build-id=none -nostdlib -v CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj -o cmTC_17e30.elf   && cd ."]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-g++.exe]
+        ignore line: [COLLECT_LTO_WRAPPER=C:/PROGRA~2/Arm\\ GNU\\ Toolchain\\ arm-none-eabi/14.2\\ rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/lto-wrapper.exe]
+        ignore line: [Target: arm-none-eabi]
+        ignore line: [Configured with: /data/jenkins/workspace/GNU-toolchain/arm-14/src/gcc/configure --target=arm-none-eabi --prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install --with-gmp=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpfr=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-mpc=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-isl=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --disable-shared --disable-nls --disable-threads --disable-tls --enable-checking=release --enable-languages=c,c++,fortran --with-newlib --with-gnu-as --with-headers=yes --with-gnu-ld --with-native-system-header-dir=/include --with-sysroot=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/install/arm-none-eabi --with-bugurl=https://bugs.linaro.org/ --with-multilib-list=aprofile,rmprofile --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --with-libiconv-prefix=/data/jenkins/workspace/GNU-toolchain/arm-14/build-mingw-arm-none-eabi/host-tools --enable-mingw-wildcard --host=i686-w64-mingw32 --with-pkgversion='Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)']
+        ignore line: [Thread model: single]
+        ignore line: [Supported LTO compression algorithms: zlib]
+        ignore line: [gcc version 14.2.1 20241119 (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) ]
+        ignore line: [COMPILER_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/]
+        ignore line: [LIBRARY_PATH=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-nostdlib' '-v' '-o' 'cmTC_17e30.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_17e30.elf.']
+        ignore line: [ C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/collect2.exe -plugin C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/liblto_plugin.dll -plugin-opt=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../libexec/gcc/arm-none-eabi/14.2.1/lto-wrapper.exe -plugin-opt=-fresolution=C:\\Users\\marti\\AppData\\Local\\Temp\\ccCV9hKE.res --sysroot=C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi -X -o cmTC_17e30.elf -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1 -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib -LC:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../arm-none-eabi/lib --build-id=none CMakeFiles/cmTC_17e30.dir/CMakeCXXCompilerABI.cpp.obj]
+        ignore line: [C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: warning: cannot find entry symbol _start]
+        ignore line: [ defaulting to 00008000\x0d]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-ftls-model=local-exec' '-nostdlib' '-v' '-o' 'cmTC_17e30.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_17e30.elf.'\x0d]
+        ignore line: []
+        ignore line: []
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: []
+        implicit fwks: []
+      
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_thread_local/CMakeLists.txt:53 (try_compile)"
+      - "C:/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_thread_local/CMakeLists.txt:85 (pico_detect_tls_type)"
+    directories:
+      source: "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_thread_local/CMakeFiles/CMakeTmp"
+      binary: "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_thread_local/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "-mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec"
+      CMAKE_C_FLAGS_DEBUG: "-Og -g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "C:/Users/marti/.pico-sdk/sdk/2.3.1/cmake"
+      PICO_SDK_PATH: "C:/Users/marti/.pico-sdk/sdk/2.3.1"
+    buildResult:
+      variable: "CAN_COMPILE_TLS"
+      cached: true
+      stdout: |
+        Change Dir: 'D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_thread_local/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): C:/ProgramData/chocolatey/bin/ninja.exe -v cmTC_c141c
+        [1/2] "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-gcc.exe"   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec  -std=gnu11 -o CMakeFiles/cmTC_c141c.dir/tls_check.c.obj -c "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_thread_local/tls_check.c"
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\CMake\\bin\\cmake.exe" -E rm -f libcmTC_c141c.a && "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-ar.exe" qc libcmTC_c141c.a  CMakeFiles/cmTC_c141c.dir/tls_check.c.obj && "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-ranlib.exe" libcmTC_c141c.a && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/CMakeLists.txt:64 (try_compile)"
+    directories:
+      source: "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_clib_interface/CMakeFiles/CMakeTmp"
+      binary: "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_clib_interface/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "-mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec"
+      CMAKE_C_FLAGS_DEBUG: "-Og -g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "C:/Users/marti/.pico-sdk/sdk/2.3.1/cmake"
+      PICO_SDK_PATH: "C:/Users/marti/.pico-sdk/sdk/2.3.1"
+    buildResult:
+      variable: "CLIB_MATCHED"
+      cached: true
+      stdout: |
+        Change Dir: 'D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_clib_interface/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): C:/ProgramData/chocolatey/bin/ninja.exe -v cmTC_9e723
+        [1/2] "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-gcc.exe" -Dnewlib=1  -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp -ftls-model=local-exec  -std=gnu11 -o CMakeFiles/cmTC_9e723.dir/clib_check.c.obj -c "D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2_common/pico_clib_interface/clib_check.c"
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\CMake\\bin\\cmake.exe" -E rm -f libcmTC_9e723.a && "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-ar.exe" qc libcmTC_9e723.a  CMakeFiles/cmTC_9e723.dir/clib_check.c.obj && "C:\\PROGRA~2\\Arm GNU Toolchain arm-none-eabi\\14.2 rel1\\bin\\arm-none-eabi-ranlib.exe" libcmTC_9e723.a && cd ."
+        
+      exitCode: 0
+...

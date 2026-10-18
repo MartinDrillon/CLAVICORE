@@ -173,6 +173,8 @@ const char *keycode_name(keycode_t keycode) {
                 default:
                     return "A_invalid";
             }
+        case KEYCODE_GET_UID:
+            return "GET_UID";
         default:
             return "invalid";
     }
