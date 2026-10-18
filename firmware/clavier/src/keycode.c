@@ -175,6 +175,8 @@ const char *keycode_name(keycode_t keycode) {
             }
         case KEYCODE_GET_UID:
             return "GET_UID";
+        case KEYCODE_MAINTENANCE_TOGGLE:
+            return "MAINT";
         default:
             return "invalid";
     }

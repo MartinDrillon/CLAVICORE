@@ -25,11 +25,22 @@ typedef struct {
     uint32_t reasm_full;
     uint32_t events_dropped;
     uint32_t reports_emitted;
+    uint32_t note_sent;
+    uint32_t note_dropped;
+    uint32_t note_tx_fail;
+    uint32_t boot_missing;
+    uint32_t boot_unknown;
 } can_link_stats_t;
 
 void can_link_init(void);
 void can_link_poll(void);
 can_link_request_result_t can_link_request_uid(void);
+bool can_link_has_valid_table(void);
+bool can_link_selftest_active(void);
+bool can_link_note_on(uint8_t midi_note, uint8_t velocity);
+bool can_link_note_off(uint8_t midi_note);
+bool can_link_maintenance_push_start(uint8_t midi_note);
+bool can_link_maintenance_push_stop(uint8_t midi_note, bool timed_out);
 void can_link_set_note_activity(bool any_note_active, uint32_t last_note_event_ms);
 can_link_stats_t can_link_stats(void);
 

@@ -25,6 +25,7 @@ typedef enum {
     SOLENOID_STATE_DIR_TO_PULL,
     SOLENOID_STATE_REST,
     SOLENOID_STATE_PROBE,
+    SOLENOID_STATE_MAINTENANCE,
     SOLENOID_STATE_FAULT,
 } solenoid_state_t;
 
@@ -33,6 +34,7 @@ typedef enum {
     SOLENOID_ERR_BUSY,            // canal non IDLE (déjà actif, retour, repos)
     SOLENOID_ERR_FAULT,           // état FAULT verrouillé
     SOLENOID_ERR_SLEEP,           // global_sleep non actif ou réveil pas terminé
+    SOLENOID_ERR_REST,            // repos minimal non écoulé
     SOLENOID_ERR_PARAM,           // paramètre invalide
     SOLENOID_ERR_PWM,             // init PWM impossible
     SOLENOID_ERR_FAULT_PERSISTS,  // reset refusé : NFAULT toujours bas
@@ -51,6 +53,7 @@ typedef struct {
     solenoid_state_t state;
     solenoid_fault_t fault;
     uint32_t state_start_us;
+    uint32_t rest_duration_us;
     bool note_off_pending;    // note_off reçu pendant PULL
     bool hold_timed_out;      // dernière phase HOLD coupée par la limite HOLD_MAX
 } solenoid_driver_t;
@@ -77,6 +80,11 @@ solenoid_result_t solenoid_driver_note_off(solenoid_driver_t *drv, uint32_t now_
 // Impulsion de test PULL seule, bornée par le driver. Refusée si le canal n'est
 // pas IDLE, si global_sleep n'est pas prêt, ou si un défaut est déjà actif.
 solenoid_result_t solenoid_driver_probe_start(solenoid_driver_t *drv, uint32_t now_us);
+
+// Poussée maintenance unidirectionnelle, bornée par le driver (duty + durée).
+// Refusée si le canal n'est pas IDLE, si le repos maintenance n'est pas écoulé,
+// si global_sleep n'est pas prêt, ou si un défaut est déjà actif.
+solenoid_result_t solenoid_driver_push_start(solenoid_driver_t *drv, uint32_t now_us);
 
 // À appeler à chaque tour de boucle principale.
 void solenoid_driver_tick(solenoid_driver_t *drv, uint32_t now_us);

@@ -13,6 +13,11 @@
 #include "solenoid_driver.h"
 
 #define BUTTON_DEBOUNCE_US 20000u
+#define MANUAL_TEST_CHANNEL_COUNT 2u
+
+static const uint8_t MANUAL_TEST_CHANNELS[MANUAL_TEST_CHANNEL_COUNT] = {0u, 11u};
+static uint8_t manual_test_next_index = 0u;
+static uint8_t manual_test_active_channel = 0u;
 
 static const unsigned int PWM_GPIOS[MOTEUR_CHANNEL_COUNT] = {
     MOTEUR_PWM_CHANNEL0_GPIO,  MOTEUR_PWM_CHANNEL1_GPIO,  MOTEUR_PWM_CHANNEL2_GPIO,
@@ -35,9 +40,9 @@ static const unsigned int FAULT_GPIOS[MOTEUR_CHANNEL_COUNT] = {
     MOTEUR_FAULT_CHANNEL9_GPIO,  MOTEUR_FAULT_CHANNEL10_GPIO, MOTEUR_FAULT_CHANNEL11_GPIO,
 };
 
-static void report_result(const char *action, solenoid_result_t result) {
+static void report_result(uint8_t channel, const char *action, solenoid_result_t result) {
     if (result != SOLENOID_OK) {
-        printf("[solenoide0] %s refuse: %s\n", action, solenoid_result_name(result));
+        printf("[solenoide%u] %s refuse: %s\n", (unsigned)channel, action, solenoid_result_name(result));
     }
 }
 
@@ -88,9 +93,9 @@ int main(void) {
     solenoid_fault_t last_fault = SOLENOID_FAULT_NONE;
     bool last_timeout = false;
 
-    // Choix documenté : l'appui court garde le test manuel canal 0, l'appui long
-    // 3 s coupe ce test puis émet 0x402 dès que tous les canaux sont revenus IDLE.
-    // Le clock-test 5 s reste accessible sur le même bouton.
+    // Choix documenté : l'appui court alterne le test manuel sur les canaux 0 et 11,
+    // l'appui long 3 s coupe ce test puis émet 0x402 dès que tous les canaux sont
+    // revenus IDLE. Le clock-test 5 s reste accessible sur le même bouton.
     printf("[moteur] Livraison 1 prete. Etat canal0: %s\n", solenoid_state_name(last_state));
 
     while (true) {
@@ -112,23 +117,27 @@ int main(void) {
 
         const clock_test_event_t clk_event = clock_test_update(stable_pressed, now_us);
         if (clk_event == CLK_TEST_EVENT_ENTERED) {
-            report_result("note_off (entree clock-test)", solenoid_driver_note_off(&drivers[0], now_us));
+            report_result(manual_test_active_channel, "note_off (entree clock-test)",
+                          solenoid_driver_note_off(&drivers[manual_test_active_channel], now_us));
             ignore_until_release = true;
         } else if (clk_event == CLK_TEST_EVENT_EXITED) {
             ignore_until_release = true;
         }
 
         if (rising && !ignore_until_release) {
-            if (solenoid_driver_state(&drivers[0]) == SOLENOID_STATE_FAULT) {
-                report_result("reset defaut", solenoid_driver_reset_fault(&drivers[0], now_us));
+            manual_test_active_channel = MANUAL_TEST_CHANNELS[manual_test_next_index];
+            if (solenoid_driver_state(&drivers[manual_test_active_channel]) == SOLENOID_STATE_FAULT) {
+                report_result(manual_test_active_channel, "reset defaut",
+                              solenoid_driver_reset_fault(&drivers[manual_test_active_channel], now_us));
             } else {
-                report_result("note_on", solenoid_driver_note_on(&drivers[0], 0u, now_us));
+                report_result(manual_test_active_channel, "note_on",
+                              solenoid_driver_note_on(&drivers[manual_test_active_channel], 0u, now_us));
             }
         }
 
         if (ipropi_selftest_button_update(stable_pressed, now_us)) {
-            report_result("note_off (declenchement selftest)",
-                          solenoid_driver_note_off(&drivers[0], now_us));
+            report_result(manual_test_active_channel, "note_off (declenchement selftest)",
+                          solenoid_driver_note_off(&drivers[manual_test_active_channel], now_us));
             selftest_trigger_pending = true;
             ignore_until_release = true;
             selftest_logged = false;
@@ -136,7 +145,9 @@ int main(void) {
 
         if (falling) {
             if (!ignore_until_release) {
-                report_result("note_off", solenoid_driver_note_off(&drivers[0], now_us));
+                report_result(manual_test_active_channel, "note_off",
+                              solenoid_driver_note_off(&drivers[manual_test_active_channel], now_us));
+                manual_test_next_index = (uint8_t)((manual_test_next_index + 1u) % MANUAL_TEST_CHANNEL_COUNT);
             }
             ignore_until_release = false;
             selftest_logged = false;

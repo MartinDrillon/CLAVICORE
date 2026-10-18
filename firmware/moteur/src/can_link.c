@@ -13,6 +13,7 @@
 #define RX_RING_SIZE 16u
 #define RX_RING_MASK (RX_RING_SIZE - 1u)
 #define POLL_MAX_RX_ENTRIES 4u
+#define RAW_FRAME_SPACING_US CAN_ANNOUNCE_SLOT_US
 
 typedef struct {
     uint32_t notify;
@@ -35,12 +36,18 @@ static bool started;
 static uint8_t board_uid[CAN_UID_SIZE];
 static uint16_t board_tag;
 static can_link_stats_t stats;
+static solenoid_driver_t *board_drivers;
+static uint8_t board_driver_count;
+static uint16_t local_occupation_bitmap;
 
 static bool announce_pending;
 static announce_kind_t announce_kind;
 static uint8_t reply_to;
 static uint32_t announce_due_us;
 static ipropi_selftest_result_t selftest_result;
+static bool raw_reports_pending;
+static uint8_t raw_report_index;
+static uint32_t raw_report_due_us;
 
 static void can_rx_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg) {
     (void)cd;
@@ -86,7 +93,58 @@ static bool send_frame(uint32_t id, uint8_t dlc, const uint8_t *data) {
     return true;
 }
 
-static void send_announce(void) {
+static bool channel_is_locally_occupied(uint8_t channel) {
+    return channel < CAN_IPROPI_CHANNEL_COUNT &&
+           (local_occupation_bitmap & ((uint16_t)1u << channel)) != 0u;
+}
+
+static void handle_solenoid_command(const struct can2040_msg *msg, uint32_t now_us) {
+    can_solenoid_command_t command;
+    const can_proto_result_t result =
+        can_decode_solenoid_command(msg->data, (uint8_t)msg->dlc, &command);
+    solenoid_result_t driver_result;
+
+    if (result == CAN_PROTO_BAD_DLC) {
+        ++stats.rx_bad_dlc;
+        return;
+    }
+    if (result != CAN_PROTO_OK) {
+        ++stats.rx_bad_value;
+        return;
+    }
+    if (command.uid_tag != board_tag) {
+        ++stats.solenoid_ignored_tag;
+        return;
+    }
+    if (command.channel >= board_driver_count || board_drivers == NULL) {
+        ++stats.solenoid_bad_channel;
+        return;
+    }
+    if (ipropi_selftest_is_running()) {
+        ++stats.solenoid_selftest_blocked;
+        return;
+    }
+    if (!channel_is_locally_occupied(command.channel)) {
+        ++stats.solenoid_unoccupied;
+        return;
+    }
+
+    if (command.command == CAN_SOLENOID_COMMAND_ON) {
+        driver_result =
+            solenoid_driver_note_on(&board_drivers[command.channel], command.velocity, now_us);
+    } else if (command.command == CAN_SOLENOID_COMMAND_PUSH_ON) {
+        driver_result = solenoid_driver_push_start(&board_drivers[command.channel], now_us);
+    } else {
+        driver_result = solenoid_driver_note_off(&board_drivers[command.channel], now_us);
+    }
+    if (driver_result == SOLENOID_OK) {
+        ++stats.solenoid_commands_ok;
+    } else {
+        ++stats.solenoid_rejected;
+    }
+}
+
+static void send_announce(uint32_t now_us) {
     uint8_t data[CAN_DLC_ANNOUNCE_STATUS];
     bool ok = true;
 
@@ -114,12 +172,52 @@ static void send_announce(void) {
             !send_frame(CAN_ID_BOARD_ANNOUNCE_STATUS, CAN_DLC_ANNOUNCE_STATUS, data)) {
             ok = false;
         } else {
-            selftest_result.report_ready = false;
+            if (selftest_result.raw_count > 0u) {
+                raw_reports_pending = true;
+                raw_report_index = 0u;
+                raw_report_due_us = now_us + RAW_FRAME_SPACING_US;
+            } else {
+                selftest_result.report_ready = false;
+            }
         }
     }
 
     if (ok) {
         ++stats.announces_sent;
+    }
+}
+
+static void send_raw_report_if_due(uint32_t now_us) {
+    uint8_t data[CAN_DLC_IPROPI_RAW];
+
+    if (!raw_reports_pending || (int32_t)(now_us - raw_report_due_us) < 0) {
+        return;
+    }
+    if (raw_report_index >= selftest_result.raw_count) {
+        raw_reports_pending = false;
+        selftest_result.report_ready = false;
+        selftest_result.raw_count = 0u;
+        return;
+    }
+    if (can_encode_ipropi_raw(data, &selftest_result.raw_reports[raw_report_index]) != CAN_PROTO_OK) {
+        raw_reports_pending = false;
+        selftest_result.report_ready = false;
+        selftest_result.raw_count = 0u;
+        ++stats.tx_fail;
+        return;
+    }
+    if (!send_frame(CAN_ID_IPROPI_RAW, CAN_DLC_IPROPI_RAW, data)) {
+        ++stats.raw_reports_deferred;
+        return;
+    }
+
+    ++stats.raw_reports_sent;
+    ++raw_report_index;
+    raw_report_due_us = now_us + RAW_FRAME_SPACING_US;
+    if (raw_report_index >= selftest_result.raw_count) {
+        raw_reports_pending = false;
+        selftest_result.report_ready = false;
+        selftest_result.raw_count = 0u;
     }
 }
 
@@ -134,6 +232,9 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {
     }
 
     switch (msg->id) {
+    case CAN_ID_SOLENOID_COMMAND:
+        handle_solenoid_command(msg, now_us);
+        return;
     case CAN_ID_UID_REQUEST: {
         can_uid_request_t request;
         const can_proto_result_t result = can_decode_uid_request(msg->data, (uint8_t)msg->dlc, &request);
@@ -153,7 +254,8 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {
             can_decode_ipropi_selftest_request(msg->data, (uint8_t)msg->dlc, &request);
         if (result == CAN_PROTO_OK) {
             ++stats.requests_served;
-            if (ipropi_selftest_start(request.request_id)) {
+            if (!announce_pending && !raw_reports_pending && !selftest_result.report_ready &&
+                ipropi_selftest_start_request(&request)) {
                 arm_announce(ANNOUNCE_KIND_SELFTEST_REPLY, request.request_id, now_us);
             } else {
                 ++stats.rx_bad_value;
@@ -169,6 +271,7 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {
     case CAN_ID_BOARD_ANNOUNCE_UID:
     case CAN_ID_BOARD_ANNOUNCE_INFO:
     case CAN_ID_BOARD_ANNOUNCE_STATUS:
+    case CAN_ID_IPROPI_RAW:
         ++stats.rx_ignored;
         return;
     default:
@@ -184,12 +287,20 @@ void can_link_init(const uint8_t uid[BOARD_IDENTITY_UID_SIZE], solenoid_driver_t
     }
     memcpy(board_uid, uid, CAN_UID_SIZE);
     board_tag = can_uid_tag(board_uid);
+    board_drivers = drivers;
+    board_driver_count = driver_count;
+    local_occupation_bitmap = driver_count >= CAN_IPROPI_CHANNEL_COUNT
+                                  ? CAN_OCCUPATION_BITS_MASK
+                                  : (uint16_t)((1u << driver_count) - 1u);
     memset(&stats, 0, sizeof(stats));
     rx_head = 0u;
     rx_tail = 0u;
     isr_rx_overrun = 0u;
     announce_pending = false;
     selftest_result = (ipropi_selftest_result_t){0};
+    raw_reports_pending = false;
+    raw_report_index = 0u;
+    raw_report_due_us = 0u;
 
     ipropi_selftest_init(drivers, driver_count, board_tag);
 
@@ -227,15 +338,19 @@ void can_link_poll(uint32_t now_us) {
     }
 
     ipropi_selftest_tick(now_us);
-    (void)ipropi_selftest_take_result(&selftest_result);
+    if (ipropi_selftest_take_result(&selftest_result) &&
+        selftest_result.report.test_status == CAN_SELFTEST_STATUS_OK) {
+        local_occupation_bitmap = selftest_result.report.occupation_bits;
+    }
 
     if (announce_pending && announce_kind == ANNOUNCE_KIND_SELFTEST_REPLY && !selftest_result.report_ready) {
         return;
     }
     if (announce_pending && (int32_t)(now_us - announce_due_us) >= 0) {
         announce_pending = false;
-        send_announce();
+        send_announce(now_us);
     }
+    send_raw_report_if_due(now_us);
 }
 
 bool can_link_send_selftest_trigger(void) {

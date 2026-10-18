@@ -20,6 +20,14 @@ typedef struct {
     uint32_t announces_sent;
     uint32_t requests_served;
     uint32_t triggers_sent;
+    uint32_t raw_reports_sent;
+    uint32_t raw_reports_deferred;
+    uint32_t solenoid_commands_ok;
+    uint32_t solenoid_ignored_tag;
+    uint32_t solenoid_bad_channel;
+    uint32_t solenoid_unoccupied;
+    uint32_t solenoid_rejected;
+    uint32_t solenoid_selftest_blocked;
 } can_link_stats_t;
 
 void can_link_init(const uint8_t uid[BOARD_IDENTITY_UID_SIZE], solenoid_driver_t *drivers,

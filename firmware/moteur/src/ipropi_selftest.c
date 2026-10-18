@@ -4,6 +4,14 @@
 #include "hardware/gpio.h"
 
 #include "config.h"
+#include "solenoid_profile.h"
+
+#define US_PER_MS 1000u
+
+_Static_assert(IPROPI_SELFTEST_RAW_SAMPLES > 0u, "IPROPI raw samples must be non-zero");
+_Static_assert(IPROPI_SELFTEST_ADC_SAMPLE_DELAY_US <
+                   (SOLENOID_PROBE_DURATION_MS * US_PER_MS),
+               "ADC sample delay must fit inside SOLENOID_PROBE_DURATION_MS");
 
 typedef enum {
     SELFTEST_IDLE = 0,
@@ -26,7 +34,11 @@ static bool g_button_prev_pressed;
 static bool g_button_consumed;
 static uint32_t g_button_since_us;
 static bool g_result_ready;
+static bool g_calibration_mode;
+static uint16_t g_idle_avg;
 static can_announce_status_t g_result;
+static can_ipropi_raw_t g_raw_reports[CAN_IPROPI_CHANNEL_COUNT];
+static uint8_t g_raw_count;
 
 static void mux_disable(void) {
     gpio_put(MOTEUR_MUX_EN_GPIO, true);
@@ -40,8 +52,20 @@ static void mux_select_channel(uint8_t channel) {
     gpio_put(MOTEUR_MUX_S3_GPIO, (mux_input & 0x08u) != 0u);
 }
 
-static bool threshold_is_default(void) {
-    return IPROPI_SELFTEST_THRESHOLD_ADC == IPROPI_SELFTEST_THRESHOLD_ADC_DEFAULT;
+static uint16_t average_adc_samples(void) {
+    uint32_t sum = 0u;
+
+    for (uint8_t i = 0u; i < IPROPI_SELFTEST_RAW_SAMPLES; ++i) {
+        sum += adc_read();
+    }
+    return (uint16_t)((sum + (IPROPI_SELFTEST_RAW_SAMPLES / 2u)) / IPROPI_SELFTEST_RAW_SAMPLES);
+}
+
+static uint16_t occupancy_delta_adc(uint16_t probe_avg, uint16_t idle_avg) {
+    if (probe_avg <= idle_avg) {
+        return 0u;
+    }
+    return (uint16_t)(probe_avg - idle_avg);
 }
 
 static bool fault_is_active(uint8_t channel) {
@@ -79,7 +103,13 @@ void ipropi_selftest_init(solenoid_driver_t *drivers, uint8_t driver_count, uint
     g_button_consumed = false;
     g_button_since_us = 0u;
     g_result_ready = false;
+    g_calibration_mode = false;
+    g_idle_avg = 0u;
     g_result = (can_announce_status_t){0};
+    g_raw_count = 0u;
+    for (uint8_t i = 0u; i < CAN_IPROPI_CHANNEL_COUNT; ++i) {
+        g_raw_reports[i] = (can_ipropi_raw_t){0};
+    }
 
     gpio_init(MOTEUR_MUX_EN_GPIO);
     gpio_put(MOTEUR_MUX_EN_GPIO, true);
@@ -110,8 +140,7 @@ bool ipropi_selftest_start(uint8_t request_id) {
         .uid_tag = g_uid_tag,
         .occupation_bits = 0u,
         .reply_to = request_id,
-        .test_status = threshold_is_default() ? CAN_SELFTEST_STATUS_UNCALIBRATED
-                                              : CAN_SELFTEST_STATUS_OK,
+        .test_status = CAN_SELFTEST_STATUS_OK,
         .fault_bits = 0u,
     };
 
@@ -124,10 +153,24 @@ bool ipropi_selftest_start(uint8_t request_id) {
 
     g_channel = 0u;
     g_sample_taken = false;
+    g_calibration_mode = false;
+    g_idle_avg = 0u;
+    g_raw_count = 0u;
+    for (uint8_t i = 0u; i < CAN_IPROPI_CHANNEL_COUNT; ++i) {
+        g_raw_reports[i] = (can_ipropi_raw_t){0};
+    }
     mux_select_channel(g_channel);
     gpio_put(MOTEUR_MUX_EN_GPIO, false);
     g_state_since_us = 0u;
     g_state = SELFTEST_MUX_SETTLING;
+    return true;
+}
+
+static bool ipropi_selftest_start_internal(const can_ipropi_selftest_request_t *request) {
+    if (request == NULL || !ipropi_selftest_start(request->request_id)) {
+        return false;
+    }
+    g_calibration_mode = request->calibration_mode;
     return true;
 }
 
@@ -144,10 +187,20 @@ void ipropi_selftest_tick(uint32_t now_us) {
         if ((uint32_t)(now_us - g_state_since_us) < IPROPI_SELFTEST_MUX_SETTLE_US) {
             return;
         }
+        g_idle_avg = average_adc_samples();
         if (solenoid_driver_probe_start(&g_drivers[g_channel], now_us) != SOLENOID_OK) {
             g_result.occupation_bits = non_idle_bits();
             finish_now(CAN_SELFTEST_STATUS_ABORTED);
             return;
+        }
+        if (g_calibration_mode && g_channel < CAN_IPROPI_CHANNEL_COUNT) {
+            g_raw_reports[g_channel] = (can_ipropi_raw_t){
+                .uid_tag = g_uid_tag,
+                .reply_to = g_result.reply_to,
+                .channel = g_channel,
+                .idle_avg = g_idle_avg,
+                .probe_avg = 0u,
+            };
         }
         g_sample_taken = false;
         g_state_since_us = now_us;
@@ -158,17 +211,26 @@ void ipropi_selftest_tick(uint32_t now_us) {
         if (!g_sample_taken &&
             (uint32_t)(now_us - g_state_since_us) >= IPROPI_SELFTEST_ADC_SAMPLE_DELAY_US) {
             const bool fault = fault_is_active(g_channel);
-            const uint16_t sample = adc_read();
+            const uint16_t probe_avg = average_adc_samples();
+            const uint16_t delta_adc = occupancy_delta_adc(probe_avg, g_idle_avg);
+
+            if (g_calibration_mode && g_channel < CAN_IPROPI_CHANNEL_COUNT) {
+                g_raw_reports[g_channel].probe_avg = probe_avg;
+                if (g_raw_count < (g_channel + 1u)) {
+                    g_raw_count = (uint8_t)(g_channel + 1u);
+                }
+            }
 
             if (fault) {
                 g_result.fault_bits |= (uint16_t)(1u << g_channel);
                 g_result.occupation_bits &= (uint16_t)~(uint16_t)(1u << g_channel);
-            } else if (sample >= IPROPI_SELFTEST_THRESHOLD_ADC) {
+            } else if (delta_adc >= IPROPI_SELFTEST_THRESHOLD_DELTA_ADC) {
                 g_result.occupation_bits |= (uint16_t)(1u << g_channel);
             }
             g_sample_taken = true;
         }
-        if (solenoid_driver_state(&g_drivers[g_channel]) == SOLENOID_STATE_IDLE) {
+        if (solenoid_driver_state(&g_drivers[g_channel]) == SOLENOID_STATE_IDLE ||
+            solenoid_driver_state(&g_drivers[g_channel]) == SOLENOID_STATE_FAULT) {
             g_state = SELFTEST_WAIT_IDLE;
         }
         return;
@@ -201,9 +263,23 @@ bool ipropi_selftest_take_result(ipropi_selftest_result_t *out) {
     }
     out->report_ready = true;
     out->report = g_result;
+    out->raw_count = g_raw_count;
+    for (uint8_t i = 0u; i < CAN_IPROPI_CHANNEL_COUNT; ++i) {
+        out->raw_reports[i] = g_raw_reports[i];
+    }
     g_result_ready = false;
+    g_calibration_mode = false;
+    g_idle_avg = 0u;
+    g_raw_count = 0u;
     g_result = (can_announce_status_t){0};
+    for (uint8_t i = 0u; i < CAN_IPROPI_CHANNEL_COUNT; ++i) {
+        g_raw_reports[i] = (can_ipropi_raw_t){0};
+    }
     return true;
+}
+
+bool ipropi_selftest_start_request(const can_ipropi_selftest_request_t *request) {
+    return ipropi_selftest_start_internal(request);
 }
 
 bool ipropi_selftest_is_running(void) {

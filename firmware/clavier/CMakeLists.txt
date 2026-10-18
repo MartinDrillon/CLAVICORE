@@ -12,6 +12,8 @@ pico_sdk_init()
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
+option(CLAVIER_SELFTEST_CALIBRATION "Emet la calibration IPROPI_RAW lors des auto-tests demandes" OFF)
+
 set(PINMAP_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/../../Netlist/netlist_to_pinmap.py)
 set(PINMAP_NETLIST ${CMAKE_CURRENT_LIST_DIR}/../../Électrique/Clavier/Clavier_drive_1/Clavier_drive_1.xml)
 set(PINMAP_HEADER ${CMAKE_CURRENT_LIST_DIR}/src/hal/pinmap.generated.h)
@@ -29,6 +31,7 @@ add_custom_target(clavier_pinmap
 add_executable(clavier
     src/main.c
     src/can_link.c
+    src/commissioning.c
     src/keycode.c
     src/keymap.c
     src/matrix_scan.c
@@ -38,6 +41,7 @@ add_executable(clavier
     src/usb_log.c
     src/usb_descriptors.c
     ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol/can_protocol.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol/commissioning_table.c
 )
 
 # can2040 (ADR-0002) : sous-module git épinglé v1.7.0. Jamais de copie fabriquée.
@@ -63,7 +67,12 @@ endif()
 # Pinmap regeneration is manual so normal firmware builds do not require KiCad exports.
 # shared/protocol : source unique du protocole CAN et du format de table UID.
 target_include_directories(clavier PRIVATE src ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol)
-target_link_libraries(clavier PRIVATE pico_stdlib hardware_gpio hardware_irq hardware_sync hardware_clocks can2040 tinyusb_device tinyusb_board)
+target_link_libraries(clavier PRIVATE pico_stdlib hardware_gpio hardware_irq hardware_sync hardware_clocks hardware_flash pico_flash can2040 tinyusb_device tinyusb_board)
+if(CLAVIER_SELFTEST_CALIBRATION)
+    target_compile_definitions(clavier PRIVATE CLAVIER_SELFTEST_CALIBRATION=1)
+else()
+    target_compile_definitions(clavier PRIVATE CLAVIER_SELFTEST_CALIBRATION=0)
+endif()
 
 pico_enable_stdio_uart(clavier 0)
 pico_add_extra_outputs(clavier)

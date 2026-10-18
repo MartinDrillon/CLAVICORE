@@ -7,8 +7,9 @@
 // persistante (Phase 4) la remplacera.
 //
 // Chaîne CAN : nœud 1 = Clavier (absent de cette table), nœuds 2..6 = les 5 cartes
-// Moteur. Convention provisoire : position = numéro de nœud - 2 (0..4), de l'aigu
-// vers le grave ; la position 4 (nœud 6) porte les notes les plus graves.
+// Moteur. Convention provisoire : position = numéro de nœud - 2 (0..4) ; la
+// position 0 porte les touches les plus GRAVES, la position la plus haute (4)
+// les plus AIGUËS (la carte en position 4 s'occupe des touches 49 à descendre).
 // UID relevés avec tests/can_phase3_uid.md (ordre id[0]..id[7]). Entrée vide :
 // {{{0}}, UID_POSITION_EMPTY}. Le rattachement UID -> position se vérifie avec le
 // Ligne [UID] (champ pos) : 0x7F = UID absent de la table.
@@ -19,8 +20,8 @@ static const uid_position_entry_t uid_position_table[UID_POSITION_COUNT] = {
     {{{0}}, UID_POSITION_EMPTY},  // position 0 : nœud 2
     {{{0}}, UID_POSITION_EMPTY},  // position 1 : nœud 3
     {{{0}}, UID_POSITION_EMPTY},  // position 2 : nœud 4
-    {{{0}}, UID_POSITION_EMPTY},  // position 3 : nœud 5
-    {{{0xA3, 0xFA, 0x4C, 0x99, 0xCA, 0x52, 0x6F, 0x4B}}, 4},  // position 4 : nœud 6 (graves)
+    {{{0x05, 0xA5, 0x97, 0xF4, 0x7A, 0x4D, 0xA9, 0x2E}}, 3},  // position 3 : nœud 5
+    {{{0xA3, 0xFA, 0x4C, 0x99, 0xCA, 0x52, 0x6F, 0x4B}}, 4},  // position 4 : nœud 6 (aigus)
 };
 
 #endif

@@ -10,10 +10,12 @@
 // Limites vérifiées à la compilation : un profil incohérent ne compile pas.
 _Static_assert(SOLENOID_PULL_DUTY_PERCENT <= 100u && SOLENOID_HOLD_DUTY_PERCENT <= 100u &&
                    SOLENOID_RELEASE_DUTY_PERCENT <= 100u && SOLENOID_PROBE_DUTY_PERCENT <= 100u &&
-                   SOLENOID_DUTY_MAX_PERCENT <= 100u && SOLENOID_PROBE_DUTY_MAX_PERCENT <= 100u,
+                   SOLENOID_MAINT_DUTY_PERCENT <= 100u &&
+                   SOLENOID_DUTY_MAX_PERCENT <= 100u && SOLENOID_PROBE_DUTY_MAX_PERCENT <= 100u &&
+                   SOLENOID_MAINT_DUTY_MAX_PERCENT <= 100u,
                "duty > 100 %");
 _Static_assert(SOLENOID_HOLD_MAX_MS > 0u && SOLENOID_PULL_DURATION_MS > 0u &&
-                   SOLENOID_PROBE_DURATION_MS > 0u,
+                   SOLENOID_PROBE_DURATION_MS > 0u && SOLENOID_MAINT_MAX_MS > 0u,
                "durées nulles");
 _Static_assert(SOLENOID_DIR_LEVEL_PULL != SOLENOID_DIR_LEVEL_RELEASE, "polarités PULL/RELEASE identiques");
 
@@ -37,6 +39,17 @@ static uint32_t probe_duty_percent(void) {
     const uint32_t capped = SOLENOID_PROBE_DUTY_PERCENT > SOLENOID_PROBE_DUTY_MAX_PERCENT
                                 ? SOLENOID_PROBE_DUTY_MAX_PERCENT
                                 : SOLENOID_PROBE_DUTY_PERCENT;
+    return clamp_duty(capped);
+}
+
+static uint32_t maint_duration_us(void) {
+    return SOLENOID_MAINT_MAX_MS * US_PER_MS;
+}
+
+static uint32_t maint_duty_percent(void) {
+    const uint32_t capped = SOLENOID_MAINT_DUTY_PERCENT > SOLENOID_MAINT_DUTY_MAX_PERCENT
+                                ? SOLENOID_MAINT_DUTY_MAX_PERCENT
+                                : SOLENOID_MAINT_DUTY_PERCENT;
     return clamp_duty(capped);
 }
 
@@ -81,6 +94,12 @@ static void cut_output(solenoid_driver_t *drv) {
     pwm_hal_disable(&drv->pwm_channel);
 }
 
+static void begin_rest(solenoid_driver_t *drv, uint32_t now_us, uint32_t rest_ms) {
+    cut_output(drv);
+    drv->rest_duration_us = rest_ms * US_PER_MS;
+    set_state(drv, SOLENOID_STATE_REST, now_us);
+}
+
 static void enter_fault(solenoid_driver_t *drv, solenoid_fault_t fault, uint32_t now_us) {
     cut_output(drv);
     drv->fault = fault;
@@ -104,6 +123,7 @@ solenoid_result_t solenoid_driver_init(solenoid_driver_t *drv, unsigned int pwm_
     drv->fault = SOLENOID_FAULT_NONE;
     drv->note_off_pending = false;
     drv->hold_timed_out = false;
+    drv->rest_duration_us = SOLENOID_MIN_REST_MS * US_PER_MS;
 
     gpio_init(dir_gpio);
     gpio_put(dir_gpio, SOLENOID_DIR_LEVEL_PULL);
@@ -132,6 +152,9 @@ solenoid_result_t solenoid_driver_note_on(solenoid_driver_t *drv, uint8_t veloci
     if (drv->state == SOLENOID_STATE_FAULT) {
         return SOLENOID_ERR_FAULT;
     }
+    if (drv->state == SOLENOID_STATE_REST) {
+        return SOLENOID_ERR_REST;
+    }
     if (!global_ready(now_us)) {
         return SOLENOID_ERR_SLEEP;
     }
@@ -159,6 +182,8 @@ solenoid_result_t solenoid_driver_note_off(solenoid_driver_t *drv, uint32_t now_
         drv->note_off_pending = true;  // PULL va à son terme puis relâche
     } else if (drv->state == SOLENOID_STATE_HOLD) {
         begin_release(drv, now_us);
+    } else if (drv->state == SOLENOID_STATE_MAINTENANCE) {
+        begin_rest(drv, now_us, SOLENOID_MAINT_MIN_REST_MS);
     }
     return SOLENOID_OK;
 }
@@ -169,6 +194,9 @@ solenoid_result_t solenoid_driver_probe_start(solenoid_driver_t *drv, uint32_t n
     }
     if (drv->state == SOLENOID_STATE_FAULT) {
         return SOLENOID_ERR_FAULT;
+    }
+    if (drv->state == SOLENOID_STATE_REST) {
+        return SOLENOID_ERR_REST;
     }
     if (!global_ready(now_us)) {
         return SOLENOID_ERR_SLEEP;
@@ -186,6 +214,35 @@ solenoid_result_t solenoid_driver_probe_start(solenoid_driver_t *drv, uint32_t n
     pwm_hal_set_duty_percent(&drv->pwm_channel, probe_duty_percent());
     pwm_hal_enable(&drv->pwm_channel);
     set_state(drv, SOLENOID_STATE_PROBE, now_us);
+    return SOLENOID_OK;
+}
+
+solenoid_result_t solenoid_driver_push_start(solenoid_driver_t *drv, uint32_t now_us) {
+    if (drv == NULL) {
+        return SOLENOID_ERR_PARAM;
+    }
+    if (drv->state == SOLENOID_STATE_FAULT) {
+        return SOLENOID_ERR_FAULT;
+    }
+    if (drv->state == SOLENOID_STATE_REST) {
+        return SOLENOID_ERR_REST;
+    }
+    if (!global_ready(now_us)) {
+        return SOLENOID_ERR_SLEEP;
+    }
+    if (drv->state != SOLENOID_STATE_IDLE) {
+        return SOLENOID_ERR_BUSY;
+    }
+    if (!gpio_get(drv->fault_gpio)) {
+        enter_fault(drv, SOLENOID_FAULT_NFAULT, now_us);
+        return SOLENOID_ERR_FAULT;
+    }
+    drv->note_off_pending = false;
+    drv->hold_timed_out = false;
+    gpio_put(drv->dir_gpio, SOLENOID_DIR_LEVEL_PULL);
+    pwm_hal_set_duty_percent(&drv->pwm_channel, maint_duty_percent());
+    pwm_hal_enable(&drv->pwm_channel);
+    set_state(drv, SOLENOID_STATE_MAINTENANCE, now_us);
     return SOLENOID_OK;
 }
 
@@ -208,8 +265,12 @@ void solenoid_driver_tick(solenoid_driver_t *drv, uint32_t now_us) {
     switch (drv->state) {
     case SOLENOID_STATE_PROBE:
         if (elapsed(now_us, drv->state_start_us, probe_duration_us())) {
-            pwm_hal_disable(&drv->pwm_channel);
-            set_state(drv, SOLENOID_STATE_REST, now_us);
+            begin_rest(drv, now_us, SOLENOID_MIN_REST_MS);
+        }
+        break;
+    case SOLENOID_STATE_MAINTENANCE:
+        if (elapsed(now_us, drv->state_start_us, maint_duration_us())) {
+            begin_rest(drv, now_us, SOLENOID_MAINT_MIN_REST_MS);
         }
         break;
     case SOLENOID_STATE_PULL:
@@ -244,12 +305,11 @@ void solenoid_driver_tick(solenoid_driver_t *drv, uint32_t now_us) {
     case SOLENOID_STATE_DIR_TO_PULL:
         if (elapsed(now_us, drv->state_start_us, SOLENOID_DIR_SAFETY_DELAY_US)) {
             gpio_put(drv->dir_gpio, SOLENOID_DIR_LEVEL_PULL);  // duty nul : sûr
-            pwm_hal_disable(&drv->pwm_channel);
-            set_state(drv, SOLENOID_STATE_REST, now_us);
+            begin_rest(drv, now_us, SOLENOID_MIN_REST_MS);
         }
         break;
     case SOLENOID_STATE_REST:
-        if (elapsed(now_us, drv->state_start_us, SOLENOID_MIN_REST_MS * US_PER_MS)) {
+        if (elapsed(now_us, drv->state_start_us, drv->rest_duration_us)) {
             set_state(drv, SOLENOID_STATE_IDLE, now_us);
         }
         break;
@@ -305,6 +365,7 @@ const char *solenoid_state_name(solenoid_state_t state) {
     case SOLENOID_STATE_DIR_TO_PULL: return "DIR_TO_PULL";
     case SOLENOID_STATE_REST: return "REST";
     case SOLENOID_STATE_PROBE: return "PROBE";
+    case SOLENOID_STATE_MAINTENANCE: return "MAINTENANCE";
     case SOLENOID_STATE_FAULT: return "FAULT";
     default: return "?";
     }
@@ -316,6 +377,7 @@ const char *solenoid_result_name(solenoid_result_t result) {
     case SOLENOID_ERR_BUSY: return "BUSY";
     case SOLENOID_ERR_FAULT: return "FAULT";
     case SOLENOID_ERR_SLEEP: return "SLEEP";
+    case SOLENOID_ERR_REST: return "REST";
     case SOLENOID_ERR_PARAM: return "PARAM";
     case SOLENOID_ERR_PWM: return "PWM";
     case SOLENOID_ERR_FAULT_PERSISTS: return "FAULT_PERSISTS";

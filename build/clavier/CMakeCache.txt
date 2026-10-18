@@ -17,6 +17,9 @@
 //Compile les keycodes de diagnostic (TEST_SYSEX)
 CLAVIER_ENABLE_TEST_KEYCODES:BOOL=ON
 
+//Emet la calibration IPROPI_RAW lors des auto-tests demandes
+CLAVIER_SELFTEST_CALIBRATION:BOOL=ON
+
 //Path to a program.
 CMAKE_ADDR2LINE:FILEPATH=C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/arm-none-eabi-addr2line.exe
 

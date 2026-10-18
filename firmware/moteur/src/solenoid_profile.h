@@ -28,8 +28,14 @@
 #define SOLENOID_RELEASE_DUTY_PERCENT 50u  // à ajuster empiriquement sur prototype
 
 // --- Phase PROBE (auto-test IPROPI) -----------------------------------------
-#define SOLENOID_PROBE_DURATION_MS 3u
-#define SOLENOID_PROBE_DUTY_PERCENT 20u
+#define SOLENOID_PROBE_DURATION_MS 3u     // validé empiriquement 2026-10-18
+#define SOLENOID_PROBE_DUTY_PERCENT 20u   // validé empiriquement 2026-10-18
+
+// --- Phase MAINTENANCE (push only) ------------------------------------------
+#define SOLENOID_MAINT_DUTY_PERCENT 50u
+#define SOLENOID_MAINT_MAX_MS 10000u
+#define SOLENOID_MAINT_DUTY_MAX_PERCENT 100u
+#define SOLENOID_MAINT_MIN_REST_MS 2000u
 
 // --- Polarité de DIR_CHANNEL (PH/IN2) ----------------------------------------
 // Niveau logique 0/1 de dir_channel pour chaque phase (à confirmer au banc).
