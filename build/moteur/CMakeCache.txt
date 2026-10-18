@@ -271,7 +271,7 @@ MOTEUR_ENABLE_CLOCK_TEST:BOOL=ON
 PICO_BOARD:STRING=moteur_rp2354b
 
 //PICO board header directories
-PICO_BOARD_HEADER_DIRS:STRING=D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/firmware/moteur/boards;D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/firmware/moteur/boards;D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/firmware/moteur/boards;D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/firmware/moteur/boards;D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/firmware/moteur/boards
+PICO_BOARD_HEADER_DIRS:STRING=D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/firmware/moteur/boards;D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/firmware/moteur/boards;D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/firmware/moteur/boards;D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/firmware/moteur/boards;D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/firmware/moteur/boards;D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/firmware/moteur/boards
 
 //Build HTML Doxygen docs
 PICO_BUILD_DOCS:BOOL=OFF

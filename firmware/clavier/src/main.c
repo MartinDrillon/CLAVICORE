@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "pico/stdlib.h"
+#include "pico/time.h"
 
 #include "keycode.h"
 #include "can_link.h"
@@ -11,12 +12,12 @@
 #include "midi.h"
 #include "note_state.h"
 #include "can_protocol.h"
-#include "sysex_uid.h"
 #include "usb_log.h"
 
 typedef struct {
     keycode_state_t keycode;
     note_state_t notes;
+    uint32_t last_note_event_ms;
 } clavier_state_t;
 
 static void handle_matrix_transition(uint8_t position, bool pressed, void *context) {
@@ -37,11 +38,13 @@ static void handle_matrix_transition(uint8_t position, bool pressed, void *conte
                 printf("position %u note resolution failed\n", position);
                 return;
             }
+            state->last_note_event_ms = to_ms_since_boot(get_absolute_time());
             if (!midi_note_on(midi_note, MIDI_NOTE_VELOCITY)) {
                 printf("position %u note %u pressed, USB MIDI unavailable\n",
                        position, midi_note);
             }
         } else if (note_state_release(&state->notes, position, &midi_note)) {
+            state->last_note_event_ms = to_ms_since_boot(get_absolute_time());
             if (!midi_note_off(midi_note)) {
                 printf("position %u note %u released, USB MIDI unavailable\n",
                        position, midi_note);
@@ -73,27 +76,8 @@ static void handle_matrix_transition(uint8_t position, bool pressed, void *conte
            pressed ? "pressed" : "released");
 }
 
-// Transmet à midi le prochain SysEx en file (un seul en vol à la fois).
-static void sysex_pump(void) {
-    can_link_sysex_t sysex;
-
-    while (can_link_peek_sysex(&sysex)) {
-        const midi_result_t result = midi_send_sysex(sysex.data, sysex.len);
-        if (result == MIDI_SYSEX_BUSY) {
-            return;  // on réessaie au tour suivant, le message reste en file
-        }
-        can_link_pop_sysex();  // accepté, ou perdu (USB non monté : compté par midi.c)
-        if (result == MIDI_OK) {
-            return;  // un SysEx est maintenant en cours : les suivants attendent
-        }
-        if (result != MIDI_NOT_MOUNTED) {
-            printf("SysEx rejected by midi (%d)\n", (int)result);
-        }
-    }
-}
-
 int main(void) {
-    clavier_state_t state;
+    clavier_state_t state = {0};
 
     usb_log_init();
     matrix_scan_init();
@@ -103,9 +87,9 @@ int main(void) {
     can_link_init();
 
     while (true) {
-        // Ordre ADR-0003 : CAN, puis émission SysEx, puis midi_task().
+        // CAN et diagnostic texte avant le service USB/MIDI.
+        can_link_set_note_activity(note_state_any_active(&state.notes), state.last_note_event_ms);
         can_link_poll();
-        sysex_pump();
         midi_task();
         usb_log_task();
         matrix_scan_poll(handle_matrix_transition, &state);

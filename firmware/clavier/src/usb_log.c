@@ -12,19 +12,22 @@
 static char ring[LOG_RING_SIZE];
 static uint32_t head;  // prochain octet écrit
 static uint32_t tail;  // prochain octet lu
+static usb_log_stats_t stats;
+
+static void ring_push(char c) {
+    if (head - tail >= LOG_RING_SIZE) {
+        ++tail;
+        ++stats.dropped_bytes;
+    }
+    ring[head++ & LOG_RING_MASK] = c;
+}
 
 static void log_out_chars(const char *buf, int len) {
     for (int i = 0; i < len; ++i) {
         if (buf[i] == '\n') {
-            if (head - tail >= LOG_RING_SIZE) {
-                ++tail;
-            }
-            ring[head++ & LOG_RING_MASK] = '\r';
+            ring_push('\r');
         }
-        if (head - tail >= LOG_RING_SIZE) {
-            ++tail;  // écrase le plus ancien
-        }
-        ring[head++ & LOG_RING_MASK] = buf[i];
+        ring_push(buf[i]);
     }
 }
 
@@ -33,6 +36,9 @@ static stdio_driver_t log_driver = {
 };
 
 void usb_log_init(void) {
+    head = 0u;
+    tail = 0u;
+    stats = (usb_log_stats_t){0};
     stdio_set_driver_enabled(&log_driver, true);
 }
 
@@ -54,4 +60,8 @@ void usb_log_task(void) {
         }
     }
     tud_cdc_write_flush();
+}
+
+usb_log_stats_t usb_log_stats(void) {
+    return stats;
 }

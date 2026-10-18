@@ -34,7 +34,7 @@ add_executable(clavier
     src/matrix_scan.c
     src/midi.c
     src/note_state.c
-    src/sysex_uid.c
+    src/diag_log.c
     src/usb_log.c
     src/usb_descriptors.c
     ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol/can_protocol.c

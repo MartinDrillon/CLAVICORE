@@ -41,6 +41,7 @@ add_executable(moteur
     src/main.c
     src/board_identity.c
     src/can_link.c
+    src/ipropi_selftest.c
     src/pwm_hal.c
     src/solenoid_driver.c
     ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol/can_protocol.c
@@ -79,7 +80,7 @@ endif()
 # Le Moteur n'a JAMAIS le chemin de firmware/clavier/src dans ses includes (invariant 2 :
 # uid_position.h reste côté Clavier). shared/protocol = protocole CAN, source unique.
 target_include_directories(moteur PRIVATE src ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol)
-target_link_libraries(moteur PRIVATE pico_stdlib hardware_gpio hardware_pwm hardware_irq hardware_sync hardware_clocks pico_unique_id can2040)
+target_link_libraries(moteur PRIVATE pico_stdlib hardware_gpio hardware_pwm hardware_irq hardware_sync hardware_clocks hardware_adc pico_unique_id can2040)
 
 pico_enable_stdio_uart(moteur 0)
 pico_add_extra_outputs(moteur)

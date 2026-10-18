@@ -31,6 +31,9 @@ bool note_state_press(note_state_t *state, const keycode_state_t *keycode_state,
                     keycode_alteration_for_note(keycode_state, base_midi_note);
     resolved_note += keycode_transposition_for_position(keycode_state, position);
     *midi_note = clamp_midi_note(resolved_note);
+    if (!state->active[position]) {
+        ++state->active_count;
+    }
     state->midi_note[position] = *midi_note;
     state->active[position] = true;
     return true;
@@ -44,5 +47,12 @@ bool note_state_release(note_state_t *state, uint8_t position, uint8_t *midi_not
 
     *midi_note = state->midi_note[position];
     state->active[position] = false;
+    if (state->active_count > 0u) {
+        --state->active_count;
+    }
     return true;
+}
+
+bool note_state_any_active(const note_state_t *state) {
+    return state != NULL && state->active_count > 0u;
 }

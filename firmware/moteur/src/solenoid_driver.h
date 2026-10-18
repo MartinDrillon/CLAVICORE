@@ -24,6 +24,7 @@ typedef enum {
     SOLENOID_STATE_RELEASE,
     SOLENOID_STATE_DIR_TO_PULL,
     SOLENOID_STATE_REST,
+    SOLENOID_STATE_PROBE,
     SOLENOID_STATE_FAULT,
 } solenoid_state_t;
 
@@ -72,6 +73,10 @@ solenoid_result_t solenoid_driver_note_on(solenoid_driver_t *drv, uint8_t veloci
 
 // Idempotent : sans effet hors PULL/HOLD. Pendant PULL, la fin de PULL est respectée.
 solenoid_result_t solenoid_driver_note_off(solenoid_driver_t *drv, uint32_t now_us);
+
+// Impulsion de test PULL seule, bornée par le driver. Refusée si le canal n'est
+// pas IDLE, si global_sleep n'est pas prêt, ou si un défaut est déjà actif.
+solenoid_result_t solenoid_driver_probe_start(solenoid_driver_t *drv, uint32_t now_us);
 
 // À appeler à chaque tour de boucle principale.
 void solenoid_driver_tick(solenoid_driver_t *drv, uint32_t now_us);

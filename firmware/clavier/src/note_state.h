@@ -10,11 +10,13 @@
 typedef struct {
     bool active[KEYMAP_POSITION_COUNT + 1u];
     uint8_t midi_note[KEYMAP_POSITION_COUNT + 1u];
+    uint8_t active_count;
 } note_state_t;
 
 void note_state_init(note_state_t *state);
 bool note_state_press(note_state_t *state, const keycode_state_t *keycode_state,
                       uint8_t position, uint8_t base_midi_note, uint8_t *midi_note);
 bool note_state_release(note_state_t *state, uint8_t position, uint8_t *midi_note);
+bool note_state_any_active(const note_state_t *state);
 
 #endif

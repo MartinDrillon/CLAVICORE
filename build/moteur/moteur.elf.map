@@ -161,6 +161,11 @@ Discarded input sections
  .bss           0x00000000        0x0 CMakeFiles/moteur.dir/src/can_link.c.obj
  .text.can_link_stats
                 0x00000000       0x30 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .text          0x00000000        0x0 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .data          0x00000000        0x0 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .bss           0x00000000        0x0 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .text.ipropi_selftest_is_running
+                0x00000000       0x10 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
  .text          0x00000000        0x0 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
  .data          0x00000000        0x0 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
  .bss           0x00000000        0x0 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
@@ -182,12 +187,22 @@ Discarded input sections
                 0x00000000        0xc CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
  .text.can_next_request_id
                 0x00000000       0x10 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+ .text.can_selftest_bits_are_valid
+                0x00000000        0xc CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+ .text.can_selftest_status_is_valid
+                0x00000000        0xc CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
  .text.can_encode_uid_request
-                0x00000000       0x24 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+                0x00000000       0x28 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+ .text.can_encode_ipropi_selftest_request
+                0x00000000       0x28 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+ .text.can_decode_ipropi_selftest_trigger
+                0x00000000       0x18 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
  .text.can_decode_announce_uid
                 0x00000000       0x48 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
  .text.can_decode_announce_info
                 0x00000000       0x54 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+ .text.can_decode_announce_status
+                0x00000000       0x48 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
  .text          0x00000000        0x0 CMakeFiles/moteur.dir/src/clock_test.c.obj
  .data          0x00000000        0x0 CMakeFiles/moteur.dir/src/clock_test.c.obj
  .bss           0x00000000        0x0 CMakeFiles/moteur.dir/src/clock_test.c.obj
@@ -261,8 +276,6 @@ Discarded input sections
                 0x00000000       0x40 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
  .text.gpio_debug_pins_init
                 0x00000000       0x68 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
- .text.gpio_set_input_enabled
-                0x00000000       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
  .text.gpio_deinit
                 0x00000000       0x40 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
  .text.gpio_set_function_masked
@@ -1681,6 +1694,9 @@ Discarded input sections
  .debug_frame   0x00000000       0x9c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_thread_local/thread_local.c.obj
  .ARM.attributes
                 0x00000000       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_thread_local/thread_local.c.obj
+ .text          0x00000000        0x0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
+ .data          0x00000000        0x0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
+ .bss           0x00000000        0x0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
  .text          0x00000000        0x0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
  .data          0x00000000        0x0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
  .bss           0x00000000        0x0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
@@ -2672,6 +2688,7 @@ Linker script and memory map
 LOAD CMakeFiles/moteur.dir/src/main.c.obj
 LOAD CMakeFiles/moteur.dir/src/board_identity.c.obj
 LOAD CMakeFiles/moteur.dir/src/can_link.c.obj
+LOAD CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
 LOAD CMakeFiles/moteur.dir/src/pwm_hal.c.obj
 LOAD CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
 LOAD CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
@@ -2735,6 +2752,7 @@ LOAD CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pic
 LOAD CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/cxa_guard.c.obj
 LOAD CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
 LOAD CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_thread_local/thread_local.c.obj
+LOAD CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
 LOAD CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
 LOAD CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_flash/flash.c.obj
 LOAD CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xip_cache/xip_cache.c.obj
@@ -2769,7 +2787,7 @@ END GROUP
 .flash_begin    0x10000000        0x0
                 0x10000000                        __flash_binary_start = .
 
-.text           0x10000000     0x4da0
+.text           0x10000000     0x5698
                 0x10000000                        __logical_binary_start = .
  *(.vectors)
  .vectors       0x10000000      0x124 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
@@ -2858,381 +2876,416 @@ END GROUP
  SORT_BY_NAME(REVERSE(*libgcc.a:cmse_nonsecure_call.o))()
  *(EXCLUDE_FILE(*libm.a: *libgcc.a:) .text*)
  .text.startup.main
-                0x100001e0      0x25c CMakeFiles/moteur.dir/src/main.c.obj
+                0x100001e0      0x32c CMakeFiles/moteur.dir/src/main.c.obj
                 0x100001e0                main
  .text.board_identity_read
-                0x1000043c      0x128 CMakeFiles/moteur.dir/src/board_identity.c.obj
-                0x1000043c                board_identity_read
+                0x1000050c      0x128 CMakeFiles/moteur.dir/src/board_identity.c.obj
+                0x1000050c                board_identity_read
  .text.can_pio_irq_handler
-                0x10000564        0xc CMakeFiles/moteur.dir/src/can_link.c.obj
+                0x10000634        0xc CMakeFiles/moteur.dir/src/can_link.c.obj
  .text.can_rx_cb
-                0x10000570       0x74 CMakeFiles/moteur.dir/src/can_link.c.obj
+                0x10000640       0x74 CMakeFiles/moteur.dir/src/can_link.c.obj
  .text.can_link_init
-                0x100005e4       0xe0 CMakeFiles/moteur.dir/src/can_link.c.obj
-                0x100005e4                can_link_init
+                0x100006b4      0x100 CMakeFiles/moteur.dir/src/can_link.c.obj
+                0x100006b4                can_link_init
  .text.can_link_poll
-                0x100006c4      0x1dc CMakeFiles/moteur.dir/src/can_link.c.obj
-                0x100006c4                can_link_poll
+                0x100007b4      0x2ec CMakeFiles/moteur.dir/src/can_link.c.obj
+                0x100007b4                can_link_poll
+ .text.can_link_send_selftest_trigger
+                0x10000aa0       0x74 CMakeFiles/moteur.dir/src/can_link.c.obj
+                0x10000aa0                can_link_send_selftest_trigger
+ .text.ipropi_selftest_init
+                0x10000b14       0xfc CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+                0x10000b14                ipropi_selftest_init
+ .text.ipropi_selftest_start
+                0x10000c10      0x100 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+                0x10000c10                ipropi_selftest_start
+ .text.ipropi_selftest_tick
+                0x10000d10      0x264 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+                0x10000d10                ipropi_selftest_tick
+ .text.ipropi_selftest_take_result
+                0x10000f74       0x40 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+                0x10000f74                ipropi_selftest_take_result
+ .text.ipropi_selftest_button_update
+                0x10000fb4       0x58 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+                0x10000fb4                ipropi_selftest_button_update
  .text.pwm_hal_init
-                0x100008a0       0xe8 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
-                0x100008a0                pwm_hal_init
+                0x1000100c       0xe8 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+                0x1000100c                pwm_hal_init
  .text.pwm_hal_actual_freq_hz
-                0x10000988       0x18 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
-                0x10000988                pwm_hal_actual_freq_hz
+                0x100010f4       0x18 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+                0x100010f4                pwm_hal_actual_freq_hz
  .text.pwm_hal_set_duty_percent
-                0x100009a0       0x60 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
-                0x100009a0                pwm_hal_set_duty_percent
+                0x1000110c       0x60 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+                0x1000110c                pwm_hal_set_duty_percent
  .text.pwm_hal_enable
-                0x10000a00       0x30 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
-                0x10000a00                pwm_hal_enable
+                0x1000116c       0x30 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+                0x1000116c                pwm_hal_enable
  .text.pwm_hal_disable
-                0x10000a30       0x6c CMakeFiles/moteur.dir/src/pwm_hal.c.obj
-                0x10000a30                pwm_hal_disable
+                0x1000119c       0x6c CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+                0x1000119c                pwm_hal_disable
  .text.pwm_hal_release_hiz
-                0x10000a9c       0x64 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
-                0x10000a9c                pwm_hal_release_hiz
+                0x10001208       0x64 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+                0x10001208                pwm_hal_release_hiz
  .text.solenoid_global_sleep_init
-                0x10000b00       0x1c CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
-                0x10000b00                solenoid_global_sleep_init
+                0x1000126c       0x1c CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x1000126c                solenoid_global_sleep_init
  .text.solenoid_global_wake
-                0x10000b1c       0x18 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
-                0x10000b1c                solenoid_global_wake
+                0x10001288       0x18 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x10001288                solenoid_global_wake
  .text.solenoid_driver_init
-                0x10000b34       0x6c CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
-                0x10000b34                solenoid_driver_init
+                0x100012a0       0x6c CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x100012a0                solenoid_driver_init
  .text.solenoid_driver_note_on
-                0x10000ba0       0x8c CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
-                0x10000ba0                solenoid_driver_note_on
+                0x1000130c       0x8c CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x1000130c                solenoid_driver_note_on
  .text.solenoid_driver_note_off
-                0x10000c2c       0x34 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
-                0x10000c2c                solenoid_driver_note_off
+                0x10001398       0x34 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x10001398                solenoid_driver_note_off
+ .text.solenoid_driver_probe_start
+                0x100013cc       0x94 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x100013cc                solenoid_driver_probe_start
  .text.solenoid_driver_tick
-                0x10000c60      0x16c CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
-                0x10000c60                solenoid_driver_tick
+                0x10001460      0x184 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x10001460                solenoid_driver_tick
  .text.solenoid_driver_reset_fault
-                0x10000dcc       0x7c CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
-                0x10000dcc                solenoid_driver_reset_fault
+                0x100015e4       0x7c CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x100015e4                solenoid_driver_reset_fault
  .text.solenoid_driver_state
-                0x10000e48        0x4 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
-                0x10000e48                solenoid_driver_state
+                0x10001660        0x4 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x10001660                solenoid_driver_state
  .text.solenoid_driver_fault
-                0x10000e4c        0x4 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
-                0x10000e4c                solenoid_driver_fault
+                0x10001664        0x4 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x10001664                solenoid_driver_fault
  .text.solenoid_driver_hold_timed_out
-                0x10000e50        0x8 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
-                0x10000e50                solenoid_driver_hold_timed_out
+                0x10001668        0x8 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x10001668                solenoid_driver_hold_timed_out
  .text.solenoid_state_name
-                0x10000e58       0x18 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
-                0x10000e58                solenoid_state_name
+                0x10001670       0x18 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x10001670                solenoid_state_name
  .text.solenoid_result_name
-                0x10000e70       0x18 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
-                0x10000e70                solenoid_result_name
+                0x10001688       0x18 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x10001688                solenoid_result_name
  .text.can_uid_tag
-                0x10000e88       0x80 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
-                0x10000e88                can_uid_tag
+                0x100016a0       0x80 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+                0x100016a0                can_uid_tag
  .text.can_announce_delay_us
-                0x10000f08       0x10 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
-                0x10000f08                can_announce_delay_us
+                0x10001720       0x10 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+                0x10001720                can_announce_delay_us
  .text.can_decode_uid_request
-                0x10000f18       0x2c CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
-                0x10000f18                can_decode_uid_request
+                0x10001730       0x2c CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+                0x10001730                can_decode_uid_request
+ .text.can_decode_ipropi_selftest_request
+                0x1000175c       0x2c CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+                0x1000175c                can_decode_ipropi_selftest_request
+ .text.can_encode_ipropi_selftest_trigger
+                0x10001788       0x18 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+                0x10001788                can_encode_ipropi_selftest_trigger
  .text.can_encode_announce_uid
-                0x10000f44       0x40 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
-                0x10000f44                can_encode_announce_uid
+                0x100017a0       0x40 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+                0x100017a0                can_encode_announce_uid
  .text.can_encode_announce_info
-                0x10000f84       0x58 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
-                0x10000f84                can_encode_announce_info
+                0x100017e0       0x58 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+                0x100017e0                can_encode_announce_info
+ .text.can_encode_announce_status
+                0x10001838       0x50 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+                0x10001838                can_encode_announce_status
  .text.clock_test_init
-                0x10000fdc       0x34 CMakeFiles/moteur.dir/src/clock_test.c.obj
-                0x10000fdc                clock_test_init
+                0x10001888       0x34 CMakeFiles/moteur.dir/src/clock_test.c.obj
+                0x10001888                clock_test_init
  .text.clock_test_update
-                0x10001010      0x104 CMakeFiles/moteur.dir/src/clock_test.c.obj
-                0x10001010                clock_test_update
+                0x100018bc      0x104 CMakeFiles/moteur.dir/src/clock_test.c.obj
+                0x100018bc                clock_test_update
  .text.gpio_set_function
-                0x10001114       0x3c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x10001114                gpio_set_function
+                0x100019c0       0x3c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x100019c0                gpio_set_function
  .text.gpio_set_pulls
-                0x10001150       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x10001150                gpio_set_pulls
+                0x100019fc       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x100019fc                gpio_set_pulls
  .text.gpio_set_slew_rate
-                0x10001178       0x1c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x10001178                gpio_set_slew_rate
+                0x10001a24       0x1c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x10001a24                gpio_set_slew_rate
  .text.gpio_set_drive_strength
-                0x10001194       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x10001194                gpio_set_drive_strength
+                0x10001a40       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x10001a40                gpio_set_drive_strength
+ .text.gpio_set_input_enabled
+                0x10001a60       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x10001a60                gpio_set_input_enabled
  .text.gpio_init
-                0x100011b4       0x48 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
-                0x100011b4                gpio_init
- .text.panic    0x100011fc       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
-                0x100011fc                panic
+                0x10001a80       0x48 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x10001a80                gpio_init
+ .text.panic    0x10001ac8       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
+                0x10001ac8                panic
  .text.hw_claim_or_assert
-                0x1000122c       0x58 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
-                0x1000122c                hw_claim_or_assert
+                0x10001af8       0x58 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
+                0x10001af8                hw_claim_or_assert
  .text.next_striped_spin_lock_num
-                0x10001284       0x18 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
-                0x10001284                next_striped_spin_lock_num
+                0x10001b50       0x18 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
+                0x10001b50                next_striped_spin_lock_num
  .text.spinlock_set_extexclall
-                0x1000129c       0x10 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+                0x10001b68       0x10 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
  .text.spin_locks_reset
-                0x100012ac       0x18 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
-                0x100012ac                spin_locks_reset
+                0x10001b78       0x18 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+                0x10001b78                spin_locks_reset
  .text.runtime_init_per_core_irq_priorities
-                0x100012c4       0x40 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
-                0x100012c4                runtime_init_per_core_irq_priorities
+                0x10001b90       0x40 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+                0x10001b90                runtime_init_per_core_irq_priorities
  .text.irq_set_enabled
-                0x10001304       0x2c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
-                0x10001304                irq_set_enabled
+                0x10001bd0       0x2c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+                0x10001bd0                irq_set_enabled
  .text.irq_set_exclusive_handler
-                0x10001330       0x5c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
-                0x10001330                irq_set_exclusive_handler
+                0x10001bfc       0x5c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+                0x10001bfc                irq_set_exclusive_handler
  .text.irq_set_priority
-                0x1000138c       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
-                0x1000138c                irq_set_priority
+                0x10001c58       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+                0x10001c58                irq_set_priority
  .text.lock_init
-                0x100013b4        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
-                0x100013b4                lock_init
+                0x10001c80        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
+                0x10001c80                lock_init
  .text.runtime_init_mutex
-                0x100013c0       0x4c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
-                0x100013c0                runtime_init_mutex
+                0x10001c8c       0x4c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
+                0x10001c8c                runtime_init_mutex
  .text.sleep_until_callback
-                0x1000140c        0x8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+                0x10001cd8        0x8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
  .text.alarm_pool_irq_handler
-                0x10001414      0x330 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+                0x10001ce0      0x330 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
  .text.runtime_init_default_alarm_pool
-                0x10001744       0xec CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
-                0x10001744                runtime_init_default_alarm_pool
+                0x10002010       0xec CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+                0x10002010                runtime_init_default_alarm_pool
  .text.alarm_pool_add_alarm_at_force_in_context
-                0x10001830       0xc8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
-                0x10001830                alarm_pool_add_alarm_at_force_in_context
+                0x100020fc       0xc8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+                0x100020fc                alarm_pool_add_alarm_at_force_in_context
  .text.alarm_pool_cancel_alarm
-                0x100018f8       0x80 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
-                0x100018f8                alarm_pool_cancel_alarm
+                0x100021c4       0x80 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+                0x100021c4                alarm_pool_cancel_alarm
  .text.best_effort_wfe_or_timeout
-                0x10001978       0xe8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
-                0x10001978                best_effort_wfe_or_timeout
+                0x10002244       0xe8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+                0x10002244                best_effort_wfe_or_timeout
  .text.timer_hardware_alarm_claim
-                0x10001a60       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
-                0x10001a60                timer_hardware_alarm_claim
+                0x1000232c       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+                0x1000232c                timer_hardware_alarm_claim
  .text.timer_time_us_64
-                0x10001a84       0x10 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
-                0x10001a84                timer_time_us_64
+                0x10002350       0x10 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+                0x10002350                timer_time_us_64
  .text.time_us_64
-                0x10001a94       0x14 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
-                0x10001a94                time_us_64
+                0x10002360       0x14 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+                0x10002360                time_us_64
  .text.clock_configure_undivided
-                0x10001aa8       0xd0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
-                0x10001aa8                clock_configure_undivided
+                0x10002374       0xd0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
+                0x10002374                clock_configure_undivided
  .text.clock_get_hz
-                0x10001b78        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
-                0x10001b78                clock_get_hz
+                0x10002444        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
+                0x10002444                clock_get_hz
  .text.pll_init
-                0x10001b84       0x8c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
-                0x10001b84                pll_init
+                0x10002450       0x8c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
+                0x10002450                pll_init
  .text.tick_start
-                0x10001c10       0x18 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
-                0x10001c10                tick_start
+                0x100024dc       0x18 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
+                0x100024dc                tick_start
  .text.rom_func_lookup
-                0x10001c28       0x18 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
-                0x10001c28                rom_func_lookup
+                0x100024f4       0x18 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
+                0x100024f4                rom_func_lookup
  .text.runtime_init_bootrom_locking_enable
-                0x10001c40       0x14 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
-                0x10001c40                runtime_init_bootrom_locking_enable
+                0x1000250c       0x14 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
+                0x1000250c                runtime_init_bootrom_locking_enable
  .text.runtime_init_boot_locks_reset
-                0x10001c54       0x1c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
-                0x10001c54                runtime_init_boot_locks_reset
+                0x10002520       0x1c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
+                0x10002520                runtime_init_boot_locks_reset
  .text.xosc_init
-                0x10001c70       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
-                0x10001c70                xosc_init
+                0x1000253c       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
+                0x1000253c                xosc_init
  .text.first_per_core_initializer
-                0x10001ca0        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+                0x1000256c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
  .text.hard_assertion_failure
-                0x10001ca4        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
-                0x10001ca4                hard_assertion_failure
+                0x10002570        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+                0x10002570                hard_assertion_failure
  .text.runtime_run_initializers
-                0x10001cb0       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
-                0x10001cb0                runtime_run_initializers
+                0x1000257c       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+                0x1000257c                runtime_run_initializers
  .text.runtime_init_early_resets
-                0x10001cd0       0x34 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10001cd0                runtime_init_early_resets
+                0x1000259c       0x34 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x1000259c                runtime_init_early_resets
  .text.runtime_init_usb_power_down
-                0x10001d04       0x1c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10001d04                runtime_init_usb_power_down
+                0x100025d0       0x1c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x100025d0                runtime_init_usb_power_down
  .text.runtime_init_per_core_enable_coprocessors
-                0x10001d20       0x1c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10001d20                runtime_init_per_core_enable_coprocessors
+                0x100025ec       0x1c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x100025ec                runtime_init_per_core_enable_coprocessors
  .text.runtime_init_post_clock_resets
-                0x10001d3c       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10001d3c                runtime_init_post_clock_resets
+                0x10002608       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x10002608                runtime_init_post_clock_resets
  .text.runtime_init_bootrom_reset
-                0x10001d5c       0x14 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10001d5c                runtime_init_bootrom_reset
+                0x10002628       0x14 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x10002628                runtime_init_bootrom_reset
  .text.runtime_init_per_core_bootrom_reset
-                0x10001d70       0x14 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10001d70                runtime_init_per_core_bootrom_reset
+                0x1000263c       0x14 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x1000263c                runtime_init_per_core_bootrom_reset
  .text.runtime_init_spin_locks_reset
-                0x10001d84        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10001d84                runtime_init_spin_locks_reset
+                0x10002650        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x10002650                runtime_init_spin_locks_reset
  .text.runtime_init_install_ram_vector_table
-                0x10001d88       0x64 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10001d88                runtime_init_install_ram_vector_table
+                0x10002654       0x64 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x10002654                runtime_init_install_ram_vector_table
  .text.runtime_init_clocks
-                0x10001dec       0xdc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
-                0x10001dec                runtime_init_clocks
+                0x100026b8       0xdc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
+                0x100026b8                runtime_init_clocks
  .text.__rp2350_dcp_engaged_state_save_restore
-                0x10001ec8       0x3a CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
- *fill*         0x10001f02        0x2 
+                0x10002794       0x3a CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+ *fill*         0x100027ce        0x2 
  .text.__wrap___aeabi_dadd
-                0x10001f04       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
-                0x10001f0c                __wrap___aeabi_dadd
+                0x100027d0       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x100027d8                __wrap___aeabi_dadd
  .text.__wrap___aeabi_dsub
-                0x10001f2c       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
-                0x10001f34                __wrap___aeabi_dsub
+                0x100027f8       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x10002800                __wrap___aeabi_dsub
  .text.__wrap___aeabi_dmul
-                0x10001f54       0x48 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
-                0x10001f5c                __wrap___aeabi_dmul
+                0x10002820       0x48 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x10002828                __wrap___aeabi_dmul
  .text.__wrap___aeabi_ddiv
-                0x10001f9c       0x9c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
-                0x10001fa4                __wrap___aeabi_ddiv
+                0x10002868       0x9c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x10002870                __wrap___aeabi_ddiv
  .text.__wrap___aeabi_i2d
-                0x10002038       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
-                0x10002040                int2double
-                0x10002040                __wrap___aeabi_i2d
+                0x10002904       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x1000290c                int2double
+                0x1000290c                __wrap___aeabi_i2d
  .text.__wrap___aeabi_ui2d
-                0x1000205c       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
-                0x10002064                uint2double
-                0x10002064                __wrap___aeabi_ui2d
+                0x10002928       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x10002930                uint2double
+                0x10002930                __wrap___aeabi_ui2d
  .text.__wrap___aeabi_d2iz
-                0x10002080       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
-                0x10002088                double2int_z
-                0x10002088                __wrap___aeabi_d2iz
+                0x1000294c       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x10002954                double2int_z
+                0x10002954                __wrap___aeabi_d2iz
  .text.__wrap___aeabi_d2uiz
-                0x100020a4       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
-                0x100020ac                double2uint
-                0x100020ac                __wrap___aeabi_d2uiz
-                0x100020ac                double2uint_z
+                0x10002970       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x10002978                double2uint
+                0x10002978                __wrap___aeabi_d2uiz
+                0x10002978                double2uint_z
  .text.__wrap___aeabi_dcmpun
-                0x100020c8       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
-                0x100020d0                __wrap___aeabi_dcmpun
+                0x10002994       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x1000299c                __wrap___aeabi_dcmpun
  .text.__wrap___aeabi_dcmplt
-                0x100020ec       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
-                0x100020f4                __wrap___aeabi_dcmplt
+                0x100029b8       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x100029c0                __wrap___aeabi_dcmplt
  .text.__wrap___aeabi_dcmple
-                0x10002114       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
-                0x1000211c                __wrap___aeabi_dcmple
+                0x100029e0       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x100029e8                __wrap___aeabi_dcmple
  .text.__wrap___aeabi_dcmpge
-                0x1000213c       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
-                0x10002144                __wrap___aeabi_dcmpge
+                0x10002a08       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x10002a10                __wrap___aeabi_dcmpge
  .text.__wrap___aeabi_dcmpgt
-                0x10002164       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
-                0x1000216c                __wrap___aeabi_dcmpgt
+                0x10002a30       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x10002a38                __wrap___aeabi_dcmpgt
  .text._out_null
-                0x1000218c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x10002a58        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
  .text._out_rev
-                0x10002190       0x9c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x10002a5c       0x9c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
  .text._ntoa_format
-                0x1000222c      0x1d4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x10002af8      0x1d4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
  .text._out_char
-                0x10002400        0x8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x10002ccc        0x8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
  .text._out_fct
-                0x10002408        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
- *fill*         0x10002414        0x4 
- .text._ftoa    0x10002418      0x4bc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
- *fill*         0x100028d4        0x4 
- .text._etoa    0x100028d8      0x574 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x10002cd4        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+ .text._ftoa    0x10002ce0      0x4bc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+ *fill*         0x1000319c        0x4 
+ .text._etoa    0x100031a0      0x574 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
  .text._vsnprintf
-                0x10002e4c      0x9e4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x10003714      0x9e4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
  .text.vfctprintf
-                0x10003830       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
-                0x10003830                vfctprintf
+                0x100040f8       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x100040f8                vfctprintf
  .text.weak_raw_vprintf
-                0x10003858       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
-                0x10003858                weak_raw_vprintf
- .text._exit    0x10003888        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
-                0x10003888                _exit
- .text._fini    0x1000388c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
-                0x1000388c                _fini
- .text.exit     0x10003890        0x8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
-                0x10003890                exit
+                0x10004120       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x10004120                weak_raw_vprintf
+ .text._exit    0x10004150        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+                0x10004150                _exit
+ .text._fini    0x10004154        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+                0x10004154                _fini
+ .text.exit     0x10004158        0x8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+                0x10004158                exit
  .text.runtime_init
-                0x10003898       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
-                0x10003898                runtime_init
+                0x10004160       0x24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+                0x10004160                runtime_init
  .text.stdio_out_chars_no_crlf
-                0x100038bc        0x8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x10004184        0x8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
  .text.stdio_out_chars_crlf
-                0x100038c4       0xb0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x1000418c       0xb0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
  .text.stdio_buffered_printer
-                0x10003974       0x50 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x1000423c       0x50 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
  .text.stdio_put_string
-                0x100039c4       0xec CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
-                0x100039c4                stdio_put_string
+                0x1000428c       0xec CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x1000428c                stdio_put_string
  .text.stdio_init_all
-                0x10003ab0        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
-                0x10003ab0                stdio_init_all
+                0x10004378        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x10004378                stdio_init_all
  .text.__wrap_putchar
-                0x10003ab4       0x84 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
-                0x10003ab4                __wrap_putchar
-                0x10003ab4                stdio_putchar
+                0x1000437c       0x84 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x1000437c                __wrap_putchar
+                0x1000437c                stdio_putchar
  .text.__wrap_puts
-                0x10003b38       0x3c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
-                0x10003b38                stdio_puts
-                0x10003b38                __wrap_puts
+                0x10004400       0x3c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x10004400                stdio_puts
+                0x10004400                __wrap_puts
  .text.__wrap_vprintf
-                0x10003b74       0xc4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
-                0x10003b74                stdio_vprintf
-                0x10003b74                __wrap_vprintf
+                0x1000443c       0xc4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x1000443c                stdio_vprintf
+                0x1000443c                __wrap_vprintf
  .text.__wrap_printf
-                0x10003c38       0x1c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
-                0x10003c38                __wrap_printf
-                0x10003c38                stdio_printf
+                0x10004500       0x1c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x10004500                __wrap_printf
+                0x10004500                stdio_printf
+ .text.adc_init
+                0x1000451c       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
+                0x1000451c                adc_init
  .text.startup._retrieve_unique_id_on_boot
-                0x10003c54       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+                0x1000454c       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
  .text.pico_get_unique_board_id
-                0x10003c84       0x10 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
-                0x10003c84                pico_get_unique_board_id
+                0x1000457c       0x10 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+                0x1000457c                pico_get_unique_board_id
  .text.startup.SystemInit
-                0x10003c94       0x14 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
-                0x10003c94                SystemInit
+                0x1000458c       0x14 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
+                0x1000458c                SystemInit
  .text.pio_sm_setup
-                0x10003ca8      0x1c8 libcan2040.a(can2040.c.obj)
+                0x100045a0      0x1c8 libcan2040.a(can2040.c.obj)
  .text.bs_pushraw
-                0x10003e70       0x68 libcan2040.a(can2040.c.obj)
+                0x10004768       0x68 libcan2040.a(can2040.c.obj)
  .text.report_handle_eof
-                0x10003ed8       0x4c libcan2040.a(can2040.c.obj)
+                0x100047d0       0x4c libcan2040.a(can2040.c.obj)
  .text.bitstuff
-                0x10003f24       0x78 libcan2040.a(can2040.c.obj)
+                0x1000481c       0x78 libcan2040.a(can2040.c.obj)
  .text.data_state_go_discard
-                0x10003f9c       0x58 libcan2040.a(can2040.c.obj)
+                0x10004894       0x58 libcan2040.a(can2040.c.obj)
  .text.data_state_go_crc
-                0x10003ff4       0xc4 libcan2040.a(can2040.c.obj)
+                0x100048ec       0xc4 libcan2040.a(can2040.c.obj)
  .text.data_state_go_data
-                0x100040b8       0x58 libcan2040.a(can2040.c.obj)
+                0x100049b0       0x58 libcan2040.a(can2040.c.obj)
  .text.tx_schedule_transmit
-                0x10004110       0xe8 libcan2040.a(can2040.c.obj)
+                0x10004a08       0xe8 libcan2040.a(can2040.c.obj)
  .text.can2040_pio_irq_handler
-                0x100041f8      0x5ac libcan2040.a(can2040.c.obj)
-                0x100041f8                can2040_pio_irq_handler
- *fill*         0x100047a4        0x4 
+                0x10004af0      0x5ac libcan2040.a(can2040.c.obj)
+                0x10004af0                can2040_pio_irq_handler
+ *fill*         0x1000509c        0x4 
  .text.can2040_transmit
-                0x100047a8      0x2b8 libcan2040.a(can2040.c.obj)
-                0x100047a8                can2040_transmit
+                0x100050a0      0x2b8 libcan2040.a(can2040.c.obj)
+                0x100050a0                can2040_transmit
  .text.can2040_setup
-                0x10004a60       0x3c libcan2040.a(can2040.c.obj)
-                0x10004a60                can2040_setup
+                0x10005358       0x3c libcan2040.a(can2040.c.obj)
+                0x10005358                can2040_setup
  .text.can2040_callback_config
-                0x10004a9c        0x4 libcan2040.a(can2040.c.obj)
-                0x10004a9c                can2040_callback_config
+                0x10005394        0x4 libcan2040.a(can2040.c.obj)
+                0x10005394                can2040_callback_config
  .text.can2040_start
-                0x10004aa0       0xb8 libcan2040.a(can2040.c.obj)
-                0x10004aa0                can2040_start
- .text.memset   0x10004b58       0x9c C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memset.o)
-                0x10004b58                memset
- .text          0x10004bf4       0xec C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memcpy.o)
-                0x10004bf4                memcpy
- .text.strlen   0x10004ce0       0x5c C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-strlen-stub.o)
-                0x10004ce0                strlen
- *fill*         0x10004d3c        0x4 
+                0x10005398       0xb8 libcan2040.a(can2040.c.obj)
+                0x10005398                can2040_start
+ .text.memset   0x10005450       0x9c C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memset.o)
+                0x10005450                memset
+ .text          0x100054ec       0xec C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memcpy.o)
+                0x100054ec                memcpy
+ .text.strlen   0x100055d8       0x5c C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-strlen-stub.o)
+                0x100055d8                strlen
+ *fill*         0x10005634        0x4 
  .text.strlen.__stub
-                0x10004d40       0x18 linker stubs
+                0x10005638       0x18 linker stubs
  *(.fini)
  *crtbegin.o(.ctors)
  *crtbegin?.o(.ctors)
@@ -3244,207 +3297,216 @@ END GROUP
  *(EXCLUDE_FILE(*crtend.o *crtend?.o) .dtors)
  *(SORT_BY_NAME(.dtors.*))
  *(.dtors)
-                0x10004d58                        . = ALIGN (0x4)
+                0x10005650                        . = ALIGN (0x4)
                 [!provide]                        PROVIDE (__bothinit_array_start = .)
-                0x10004d58                        PROVIDE (__preinit_array_start = .)
+                0x10005650                        PROVIDE (__preinit_array_start = .)
  *(SORT_BY_NAME(.preinit_array.*))
  .preinit_array.00050
-                0x10004d58        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10004d58                __pre_init_runtime_init_bootrom_reset
+                0x10005650        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x10005650                __pre_init_runtime_init_bootrom_reset
  .preinit_array.00100
-                0x10004d5c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10004d5c                __pre_init_runtime_init_early_resets
+                0x10005654        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x10005654                __pre_init_runtime_init_early_resets
  .preinit_array.00101
-                0x10004d60        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10004d60                __pre_init_runtime_init_usb_power_down
+                0x10005658        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x10005658                __pre_init_runtime_init_usb_power_down
  .preinit_array.00500
-                0x10004d64        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10004d64                __pre_init_runtime_init_clocks
+                0x1000565c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x1000565c                __pre_init_runtime_init_clocks
  .preinit_array.00600
-                0x10004d68        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10004d68                __pre_init_runtime_init_post_clock_resets
+                0x10005660        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x10005660                __pre_init_runtime_init_post_clock_resets
  .preinit_array.01000
-                0x10004d6c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
-                0x10004d6c                __pre_init_runtime_init_boot_locks_reset
+                0x10005664        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
+                0x10005664                __pre_init_runtime_init_boot_locks_reset
  .preinit_array.01000
-                0x10004d70        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10004d70                __pre_init_runtime_init_spin_locks_reset
+                0x10005668        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x10005668                __pre_init_runtime_init_spin_locks_reset
  .preinit_array.01010
-                0x10004d74        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
-                0x10004d74                __pre_init_runtime_init_bootrom_locking_enable
+                0x1000566c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
+                0x1000566c                __pre_init_runtime_init_bootrom_locking_enable
  .preinit_array.01100
-                0x10004d78        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
-                0x10004d78                __pre_init_runtime_init_mutex
+                0x10005670        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
+                0x10005670                __pre_init_runtime_init_mutex
  .preinit_array.10080
-                0x10004d7c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10004d7c                __pre_init_runtime_init_install_ram_vector_table
+                0x10005674        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x10005674                __pre_init_runtime_init_install_ram_vector_table
  .preinit_array.11000
-                0x10004d80        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
-                0x10004d80                __pre_init_runtime_init_default_alarm_pool
+                0x10005678        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+                0x10005678                __pre_init_runtime_init_default_alarm_pool
  .preinit_array.YYYYY
-                0x10004d84        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
-                0x10004d84                __pre_init_first_per_core_initializer
+                0x1000567c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+                0x1000567c                __pre_init_first_per_core_initializer
  .preinit_array.ZZZZZ.00051
-                0x10004d88        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10004d88                __pre_init_runtime_init_per_core_bootrom_reset
+                0x10005680        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x10005680                __pre_init_runtime_init_per_core_bootrom_reset
  .preinit_array.ZZZZZ.00200
-                0x10004d8c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
-                0x10004d8c                __pre_init_runtime_init_per_core_enable_coprocessors
+                0x10005684        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x10005684                __pre_init_runtime_init_per_core_enable_coprocessors
  .preinit_array.ZZZZZ.01000
-                0x10004d90        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
-                0x10004d90                __pre_init_spinlock_set_extexclall
+                0x10005688        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+                0x10005688                __pre_init_spinlock_set_extexclall
  .preinit_array.ZZZZZ.01200
-                0x10004d94        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
-                0x10004d94                __pre_init_runtime_init_per_core_irq_priorities
+                0x1000568c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+                0x1000568c                __pre_init_runtime_init_per_core_irq_priorities
  *(.preinit_array)
-                0x10004d98                        PROVIDE (__preinit_array_end = .)
-                0x10004d98                        . = ALIGN (0x4)
-                0x10004d98                        PROVIDE (__init_array_start = .)
+                0x10005690                        PROVIDE (__preinit_array_end = .)
+                0x10005690                        . = ALIGN (0x4)
+                0x10005690                        PROVIDE (__init_array_start = .)
  *(SORT_BY_NAME(.init_array.*))
  .init_array.01000
-                0x10004d98        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+                0x10005690        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
  *(.init_array)
- .init_array    0x10004d9c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
-                0x10004da0                        PROVIDE (__init_array_end = .)
+ .init_array    0x10005694        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
+                0x10005698                        PROVIDE (__init_array_end = .)
                 [!provide]                        PROVIDE (__bothinit_array_end = .)
-                0x10004da0                        . = ALIGN (0x4)
+                0x10005698                        . = ALIGN (0x4)
                 [!provide]                        PROVIDE (__fini_array_start = .)
  *(SORT_BY_NAME(.fini_array.*))
  *(.fini_array)
                 [!provide]                        PROVIDE (__fini_array_end = .)
                 [!provide]                        PROVIDE (__dso_handle = 0x0)
  *(.eh_frame*)
-                0x10004da0                        . = ALIGN (0x4)
+                0x10005698                        . = ALIGN (0x4)
 
-.glue_7         0x10004da0        0x0
- .glue_7        0x10004da0        0x0 linker stubs
+.glue_7         0x10005698        0x0
+ .glue_7        0x10005698        0x0 linker stubs
 
-.glue_7t        0x10004da0        0x0
- .glue_7t       0x10004da0        0x0 linker stubs
+.glue_7t        0x10005698        0x0
+ .glue_7t       0x10005698        0x0 linker stubs
 
-.vfp11_veneer   0x10004da0        0x0
- .vfp11_veneer  0x10004da0        0x0 linker stubs
+.vfp11_veneer   0x10005698        0x0
+ .vfp11_veneer  0x10005698        0x0 linker stubs
 
-.v4_bx          0x10004da0        0x0
- .v4_bx         0x10004da0        0x0 linker stubs
+.v4_bx          0x10005698        0x0
+ .v4_bx         0x10005698        0x0 linker stubs
 
-.iplt           0x10004da0        0x0
- .iplt          0x10004da0        0x0 CMakeFiles/moteur.dir/src/main.c.obj
+.iplt           0x10005698        0x0
+ .iplt          0x10005698        0x0 CMakeFiles/moteur.dir/src/main.c.obj
 
-.boot2          0x10004da0        0x0
-                0x10004da0                        __boot2_start__ = .
+.boot2          0x10005698        0x0
+                0x10005698                        __boot2_start__ = .
  *(.boot2)
-                0x10004da0                        __boot2_end__ = .
+                0x10005698                        __boot2_end__ = .
                 0x00000001                        ASSERT (((__boot2_end__ - __boot2_start__) <= 0x100), ERROR: Pico second stage bootloader must be no more than 256 bytes in size)
 
-.rodata         0x10004da0      0x674
+.rodata         0x10005698      0x7d4
  *(EXCLUDE_FILE(*libm.a: *libgcc.a:) .rodata*)
  .rodata.main.str1.4
-                0x10004da0      0x34d CMakeFiles/moteur.dir/src/main.c.obj
-                                0x17d (size before relaxing)
+                0x10005698      0x409 CMakeFiles/moteur.dir/src/main.c.obj
+                                0x231 (size before relaxing)
+ *fill*         0x10005aa1        0x3 
+ .rodata.FAULT_GPIOS
+                0x10005aa4       0x30 CMakeFiles/moteur.dir/src/main.c.obj
+ .rodata.DIR_GPIOS
+                0x10005ad4       0x30 CMakeFiles/moteur.dir/src/main.c.obj
+ .rodata.PWM_GPIOS
+                0x10005b04       0x30 CMakeFiles/moteur.dir/src/main.c.obj
+ .rodata.g_channel_to_mux_input
+                0x10005b34        0xc CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
  .rodata.solenoid_state_name.str1.4
-                0x100050ed        0x2 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x10005b40        0x2 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
  .rodata.str1.4
-                0x100050ed       0x79 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
- *fill*         0x100050ed        0x3 
- .rodata.CSWTCH.33
-                0x100050f0       0x1c CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
- .rodata.CSWTCH.31
-                0x1000510c       0x20 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x10005b40       0x82 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+ .rodata.CSWTCH.36
+                0x10005b40       0x1c CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+ .rodata.CSWTCH.34
+                0x10005b5c       0x24 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
  .rodata.clock_test_update.str1.4
-                0x1000512c       0xbb CMakeFiles/moteur.dir/src/clock_test.c.obj
+                0x10005b80       0xbb CMakeFiles/moteur.dir/src/clock_test.c.obj
  .rodata.panic.str1.4
-                0x1000512c       0x11 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
+                0x10005b80       0x11 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
  .rodata.timer_hardware_alarm_claim.str1.4
-                0x1000512c       0x22 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+                0x10005b80       0x22 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
  .rodata.hard_assertion_failure.str1.4
-                0x1000512c        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+                0x10005b80        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
  .rodata.str1.4
-                0x1000512c       0x44 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005b80       0x44 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata.__bi_84
-                0x1000512c        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005b80        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata.__bi_78
-                0x10005138        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005b8c        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata.__bi_54
-                0x10005144        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005b98        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata.__bi_48
-                0x10005150        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005ba4        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata.__bi_42
-                0x1000515c        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005bb0        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata.__bi_34
-                0x10005168        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005bbc        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata.__bi_26
-                0x10005174        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005bc8        0xc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .rodata._ftoa.str1.4
-                0x10005180       0x15 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x10005bd4       0x15 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+ *fill*         0x10005bd4        0x4 
  .rodata.pow10.0
-                0x10005180       0x50 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x10005bd8       0x50 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
  .rodata.crlf_str.0
-                0x100051d0        0x2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
- *fill*         0x100051d2        0x2 
+                0x10005c28        0x2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+ *fill*         0x10005c2a        0x2 
  .rodata.crc_table
-                0x100051d4      0x200 libcan2040.a(can2040.c.obj)
+                0x10005c2c      0x200 libcan2040.a(can2040.c.obj)
  .rodata.can2040_program_instructions
-                0x100053d4       0x40 libcan2040.a(can2040.c.obj)
+                0x10005e2c       0x40 libcan2040.a(can2040.c.obj)
  *(.srodata*)
-                0x10005414                        . = ALIGN (0x4)
+                0x10005e6c                        . = ALIGN (0x4)
  *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.flashdata*)))
-                0x10005414                        . = ALIGN (0x4)
+                0x10005e6c                        . = ALIGN (0x4)
 
 .ARM.extab
  *(.ARM.extab* .gnu.linkonce.armextab.*)
-                0x10005414                        __exidx_start = .
+                0x10005e6c                        __exidx_start = .
 
-.ARM.exidx      0x10005414        0x8
+.ARM.exidx      0x10005e6c        0x8
  *(.ARM.exidx* .gnu.linkonce.armexidx.*)
- .ARM.exidx     0x10005414        0x8 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memcpy.o)
+ .ARM.exidx     0x10005e6c        0x8 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memcpy.o)
  .ARM.exidx.text.__udivmoddi4
-                0x1000541c        0x0 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libgcc.a(_udivmoddi4.o)
+                0x10005e74        0x0 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libgcc.a(_udivmoddi4.o)
                                   0x8 (size before relaxing)
-                0x1000541c                        __exidx_end = .
-                0x1000541c                        . = ALIGN (0x4)
-                0x1000541c                        __binary_info_start = .
+                0x10005e74                        __exidx_end = .
+                0x10005e74                        . = ALIGN (0x4)
+                0x10005e74                        __binary_info_start = .
 
-.binary_info    0x1000541c       0x1c
+.binary_info    0x10005e74       0x1c
  *(.binary_info.keep.*)
  .binary_info.keep.__bi_ptr84
-                0x1000541c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005e74        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .binary_info.keep.__bi_ptr78
-                0x10005420        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005e78        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .binary_info.keep.__bi_ptr54
-                0x10005424        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005e7c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .binary_info.keep.__bi_ptr48
-                0x10005428        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005e80        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .binary_info.keep.__bi_ptr42
-                0x1000542c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005e84        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .binary_info.keep.__bi_ptr34
-                0x10005430        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005e88        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .binary_info.keep.__bi_ptr26
-                0x10005434        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x10005e8c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  *(.binary_info.*)
-                0x10005438                        __binary_info_end = .
-                0x10005438                        . = ALIGN (0x4)
+                0x10005e90                        __binary_info_end = .
+                0x10005e90                        . = ALIGN (0x4)
 
-.psram_load     0x11000000        0x0 load address 0x10005438
+.psram_load     0x11000000        0x0 load address 0x10005e90
                 0x11000000                        __psram_start__ = .
                 0x11000000                        __psram_load_start__ = .
  *(SORT_BY_NAME(.psram_initialised.*))
                 0x11000000                        . = ALIGN (0x4)
                 0x11000000                        __psram_load_end__ = .
-                0x10005438                        __psram_load_source__ = LOADADDR (.psram_load)
+                0x10005e90                        __psram_load_source__ = LOADADDR (.psram_load)
 
-.psram_noload   0x11000000        0x0 load address 0x10005438
+.psram_noload   0x11000000        0x0 load address 0x10005e90
  *(SORT_BY_NAME(.psram_uninitialised.*))
                 0x11000000                        . = ALIGN (0x4)
                 0x11000000                        __psram_end__ = .
 
-.xip_ram        0x13ffc000        0x0 load address 0x10005438
+.xip_ram        0x13ffc000        0x0 load address 0x10005e90
                 0x13ffc000                        __xip_ram_start__ = .
                 0x13ffc000                        . = ALIGN (0x4)
  *(.xip_ram*)
                 0x13ffc000                        . = ALIGN (0x4)
                 0x13ffc000                        __xip_ram_end__ = .
-                0x10005438                        __xip_ram_source__ = LOADADDR (.xip_ram)
+                0x10005e90                        __xip_ram_source__ = LOADADDR (.xip_ram)
 
 .ram_vector_table
                 0x20000000      0x110
@@ -3458,7 +3520,7 @@ END GROUP
                 0x20000110                        . = ALIGN (0x4)
  *(.uninitialized_data*)
 
-.data           0x20000110      0x4f4 load address 0x10005438
+.data           0x20000110      0x4f4 load address 0x10005e90
                 0x20000110                        __data_start__ = .
  *(vtable)
  *(.time_critical*)
@@ -3508,18 +3570,18 @@ END GROUP
  *(.jcr)
                 0x20000604                        . = ALIGN (0x4)
 
-.igot.plt       0x20000604        0x0 load address 0x1000592c
+.igot.plt       0x20000604        0x0 load address 0x10006384
  .igot.plt      0x20000604        0x0 CMakeFiles/moteur.dir/src/main.c.obj
 
-.tdata          0x20000604        0x0 load address 0x1000592c
+.tdata          0x20000604        0x0 load address 0x10006384
                 0x20000604                        . = ALIGN (0x4)
  *(.tdata .tdata.* .gnu.linkonce.td.*)
                 0x20000604                        __tdata_end = .
                 0x20000604                        PROVIDE (__data_end__ = .)
-                0x10005438                        __etext = LOADADDR (.data)
+                0x10005e90                        __etext = LOADADDR (.data)
                 0x20000604                        . = ALIGN (0x4)
 
-.tbss           0x20000604        0x0 load address 0x1000592c
+.tbss           0x20000604        0x0 load address 0x10006384
                 0x20000604                        __bss_start__ = .
                 0x20000604                        __tls_base = .
  *(.tbss .tbss.* .gnu.linkonce.tb.*)
@@ -3527,10 +3589,10 @@ END GROUP
                 0x20000604                        . = ALIGN (0x4)
                 0x20000604                        __tls_end = .
 
-.tbss_space     0x20000604        0x0 load address 0x1000592c
+.tbss_space     0x20000604        0x0 load address 0x10006384
                 0x20000604                        . = (__bss_start__ + SIZEOF (.tbss))
 
-.bss            0x20000608      0x4c0 load address 0x1000592c
+.bss            0x20000608      0x4ec load address 0x10006384
                 0x20000608                        . = ALIGN (0x4)
                 0x20000608                        __tbss_end = .
  *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.bss*)))
@@ -3542,53 +3604,80 @@ END GROUP
  .bss._sw_spin_locks
                 0x2000078c       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
                 0x2000078c                _sw_spin_locks
+ .bss.announce_due_us
+                0x200007ac        0x4 CMakeFiles/moteur.dir/src/can_link.c.obj
  .bss.board_uid
-                0x200007ac        0x8 CMakeFiles/moteur.dir/src/can_link.c.obj
- .bss.cbus      0x200007b4      0x118 CMakeFiles/moteur.dir/src/can_link.c.obj
- .bss.claimed   0x200008cc        0x2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
- *fill*         0x200008ce        0x2 
+                0x200007b0        0x8 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .bss.cbus      0x200007b8      0x118 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .bss.claimed   0x200008d0        0x2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+ *fill*         0x200008d2        0x2 
  .bss.configured_freq
-                0x200008d0       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
- .bss.drivers   0x200008f8        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
- .bss.filter    0x200008fc        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x200008d4       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
+ .bss.drivers   0x200008fc        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+ .bss.filter    0x20000900        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+ .bss.g_button_since_us
+                0x20000904        0x4 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .bss.g_drivers
+                0x20000908        0x4 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
  .bss.g_press_start_us
-                0x20000900        0x4 CMakeFiles/moteur.dir/src/clock_test.c.obj
- .bss.g_pwm     0x20000904       0x10 CMakeFiles/moteur.dir/src/clock_test.c.obj
+                0x2000090c        0x4 CMakeFiles/moteur.dir/src/clock_test.c.obj
+ .bss.g_pwm     0x20000910       0x10 CMakeFiles/moteur.dir/src/clock_test.c.obj
+ .bss.g_result  0x20000920        0x8 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .bss.g_state_since_us
+                0x20000928        0x4 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
  .bss.g_wake_deadline_us
-                0x20000914        0x4 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x2000092c        0x4 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
  .bss.isr_rx_overrun
-                0x20000918        0x4 CMakeFiles/moteur.dir/src/can_link.c.obj
+                0x20000930        0x4 CMakeFiles/moteur.dir/src/can_link.c.obj
  .bss.lazy_vsnprintf
-                0x2000091c        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
- .bss.pools     0x20000920       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
- .bss.reply_due_us
-                0x20000940        0x4 CMakeFiles/moteur.dir/src/can_link.c.obj
+                0x20000934        0x4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+ .bss.pools     0x20000938       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
  .bss.retrieved_id
-                0x20000944        0x8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
- .bss.rx_head   0x2000094c        0x4 CMakeFiles/moteur.dir/src/can_link.c.obj
- .bss.rx_ring   0x20000950      0x140 CMakeFiles/moteur.dir/src/can_link.c.obj
- .bss.rx_tail   0x20000a90        0x4 CMakeFiles/moteur.dir/src/can_link.c.obj
- .bss.stats     0x20000a94       0x28 CMakeFiles/moteur.dir/src/can_link.c.obj
+                0x20000958        0x8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+ .bss.rx_head   0x20000960        0x4 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .bss.rx_ring   0x20000964      0x140 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .bss.rx_tail   0x20000aa4        0x4 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .bss.selftest_result
+                0x20000aa8        0xa CMakeFiles/moteur.dir/src/can_link.c.obj
+ *fill*         0x20000ab2        0x2 
+ .bss.stats     0x20000ab4       0x2c CMakeFiles/moteur.dir/src/can_link.c.obj
  .bss.board_tag
-                0x20000abc        0x2 CMakeFiles/moteur.dir/src/can_link.c.obj
+                0x20000ae0        0x2 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .bss.g_uid_tag
+                0x20000ae2        0x2 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .bss.announce_kind
+                0x20000ae4        0x1 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .bss.announce_pending
+                0x20000ae5        0x1 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .bss.g_button_consumed
+                0x20000ae6        0x1 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .bss.g_button_prev_pressed
+                0x20000ae7        0x1 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .bss.g_channel
+                0x20000ae8        0x1 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .bss.g_driver_count
+                0x20000ae9        0x1 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
  .bss.g_press_consumed
-                0x20000abe        0x1 CMakeFiles/moteur.dir/src/clock_test.c.obj
+                0x20000aea        0x1 CMakeFiles/moteur.dir/src/clock_test.c.obj
  .bss.g_prev_pressed
-                0x20000abf        0x1 CMakeFiles/moteur.dir/src/clock_test.c.obj
- .bss.g_state   0x20000ac0        0x1 CMakeFiles/moteur.dir/src/clock_test.c.obj
+                0x20000aeb        0x1 CMakeFiles/moteur.dir/src/clock_test.c.obj
+ .bss.g_result_ready
+                0x20000aec        0x1 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .bss.g_sample_taken
+                0x20000aed        0x1 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .bss.g_state   0x20000aee        0x1 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .bss.g_state   0x20000aef        0x1 CMakeFiles/moteur.dir/src/clock_test.c.obj
  .bss.lock_internal_notify_count
-                0x20000ac1        0x1 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
-                0x20000ac1                lock_internal_notify_count
- .bss.reply_pending
-                0x20000ac2        0x1 CMakeFiles/moteur.dir/src/can_link.c.obj
- .bss.reply_to  0x20000ac3        0x1 CMakeFiles/moteur.dir/src/can_link.c.obj
- .bss.started   0x20000ac4        0x1 CMakeFiles/moteur.dir/src/can_link.c.obj
+                0x20000af0        0x1 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
+                0x20000af0                lock_internal_notify_count
+ .bss.reply_to  0x20000af1        0x1 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .bss.started   0x20000af2        0x1 CMakeFiles/moteur.dir/src/can_link.c.obj
  *(COMMON)
                 [!provide]                        PROVIDE (__global_pointer$ = (. + 0x800))
  *(.sbss*)
-                0x20000ac8                        . = ALIGN (0x4)
- *fill*         0x20000ac5        0x3 
-                0x20000ac8                        __bss_end__ = .
+                0x20000af4                        . = ALIGN (0x4)
+ *fill*         0x20000af3        0x1 
+                0x20000af4                        __bss_end__ = .
                 [!provide]                        PROVIDE (__tls_start = SIZEOF (.tdata)?ADDR (.tdata):ADDR (.tbss))
                 [!provide]                        PROVIDE (__tls_size = (__tls_end - __tls_start))
                 [!provide]                        PROVIDE (__tls_align = MAX (ALIGNOF (.tdata), ALIGNOF (.tbss)))
@@ -3609,53 +3698,53 @@ END GROUP
                 0x00000000                        __tls_size_align = DEFINED (__tls_size_align)?__tls_size_align:ALIGN (__tls_size, __tls_align)
                 0x00000008                        __arm32_tls_tcb_offset = DEFINED (__arm32_tls_tcb_offset)?__arm32_tls_tcb_offset:MAX (0x8, __tls_align)
                 0x00000000                        __tdata_size = DEFINED (__tdata_size)?__tdata_size:SIZEOF (.tdata)
-                0x1000592c                        __tdata_source = DEFINED (__tdata_source)?__tdata_source:LOADADDR (.tdata)
+                0x10006384                        __tdata_source = DEFINED (__tdata_source)?__tdata_source:LOADADDR (.tdata)
                 0x00000000                        __tbss_size = DEFINED (__tbss_size)?__tbss_size:SIZEOF (.tbss)
                 0x00000000                        __tbss_offset = DEFINED (__tbss_offset)?__tbss_offset:(ADDR (.tbss) - __tls_start)
                 0x00000001                        __tlsX_align = DEFINED (__tlsX_align)?__tlsX_align:(SIZEOF (.tlsX_not_needed_marker) > 0x0)?0x4:__tls_align
                 0x00000000                        __tlsX_size_align = DEFINED (__tlsX_size_align)?__tlsX_size_align:(SIZEOF (.tlsX_not_needed_marker) > 0x0)?0x0:__tls_size_align
 
-.tls0           0x20000ac8        0x0 load address 0x1000592c
-                0x20000ac8                        . = ALIGN (__tlsX_align)
+.tls0           0x20000af4        0x0 load address 0x10006384
+                0x20000af4                        . = ALIGN (__tlsX_align)
                 [!provide]                        PROVIDE (__tls0_base = .)
-                0x20000ac8                        . = (. + __tlsX_size_align)
+                0x20000af4                        . = (. + __tlsX_size_align)
 
-.tls1           0x20000ac8        0x0 load address 0x1000592c
-                0x20000ac8                        . = ALIGN (__tlsX_align)
+.tls1           0x20000af4        0x0 load address 0x10006384
+                0x20000af4                        . = ALIGN (__tlsX_align)
                 [!provide]                        PROVIDE (__tls1_base = .)
-                0x20000ac8                        . = (. + __tlsX_size_align)
+                0x20000af4                        . = (. + __tlsX_size_align)
 
 .persistent_data
-                0x20000ac8        0x0 load address 0x1000592c
-                0x20000ac8                        __persistent_data_start__ = .
+                0x20000af4        0x0 load address 0x10006384
+                0x20000af4                        __persistent_data_start__ = .
  *(.persistent_data*)
-                0x20000ac8                        . = ALIGN (0x4)
+                0x20000af4                        . = ALIGN (0x4)
                 [!provide]                        PROVIDE (__persistent_data_end__ = .)
 
 .dummy_pre_heap
-                0x20000ac8        0x0 load address 0x1000592c
-                0x20000ac8                        . = .
+                0x20000af4        0x0 load address 0x10006384
+                0x20000af4                        . = .
 
-.heap           0x20000ac8      0x800
-                0x20000ac8                        __end__ = .
-                0x20000ac8                        end = __end__
+.heap           0x20000af4      0x800
+                0x20000af4                        __end__ = .
+                0x20000af4                        end = __end__
  *(.heap*)
- .heap          0x20000ac8      0x800 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
+ .heap          0x20000af4      0x800 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
                 0x20080000                        __HeapLimit = DEFINED (HEAP_LIMIT)?HEAP_LIMIT:(ORIGIN (RAM) + LENGTH (RAM))
 
-.scratch_x      0x20080000        0x0 load address 0x1000592c
+.scratch_x      0x20080000        0x0 load address 0x10006384
                 0x20080000                        __scratch_x_start__ = .
  *(.scratch_x.*)
                 0x20080000                        . = ALIGN (0x4)
                 0x20080000                        __scratch_x_end__ = .
-                0x1000592c                        __scratch_x_source__ = LOADADDR (.scratch_x)
+                0x10006384                        __scratch_x_source__ = LOADADDR (.scratch_x)
 
-.scratch_y      0x20081000        0x0 load address 0x1000592c
+.scratch_y      0x20081000        0x0 load address 0x10006384
                 0x20081000                        __scratch_y_start__ = .
  *(.scratch_y.*)
                 0x20081000                        . = ALIGN (0x4)
                 0x20081000                        __scratch_y_end__ = .
-                0x1000592c                        __scratch_y_source__ = LOADADDR (.scratch_y)
+                0x10006384                        __scratch_y_source__ = LOADADDR (.scratch_y)
 
 .stack1_dummy
  *(.stack1*)
@@ -3664,11 +3753,11 @@ END GROUP
  *(.stack*)
  .stack         0x20081000      0x800 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
 
-.flash_end      0x1000592c       0x14
+.flash_end      0x10006384       0x14
  *(.embedded_end_block*)
  .embedded_end_block
-                0x1000592c       0x14 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
-                0x10005940                        PROVIDE (__flash_binary_end = .)
+                0x10006384       0x14 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
+                0x10006398                        PROVIDE (__flash_binary_end = .)
                 0x20080000                        __StackLimit = (ORIGIN (RAM) + LENGTH (RAM))
                 0x20081000                        __StackOneTop = (ORIGIN (SCRATCH_X) + LENGTH (SCRATCH_X))
                 0x20082000                        __StackTop = (ORIGIN (SCRATCH_Y) + LENGTH (SCRATCH_Y))
@@ -3688,379 +3777,400 @@ END GROUP
 OUTPUT(moteur.elf elf32-littlearm)
 LOAD linker stubs
 
-.rel.dyn        0x10005940        0x0
- .rel.iplt      0x10005940        0x0 CMakeFiles/moteur.dir/src/main.c.obj
+.rel.dyn        0x10006398        0x0
+ .rel.iplt      0x10006398        0x0 CMakeFiles/moteur.dir/src/main.c.obj
 
-.debug_info     0x00000000    0x28160
- .debug_info    0x00000000     0x1257 CMakeFiles/moteur.dir/src/main.c.obj
- .debug_info    0x00001257      0x197 CMakeFiles/moteur.dir/src/board_identity.c.obj
- .debug_info    0x000013ee     0x109b CMakeFiles/moteur.dir/src/can_link.c.obj
- .debug_info    0x00002489     0x103a CMakeFiles/moteur.dir/src/pwm_hal.c.obj
- .debug_info    0x000034c3     0x19b9 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
- .debug_info    0x00004e7c      0x640 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
- .debug_info    0x000054bc      0x827 CMakeFiles/moteur.dir/src/clock_test.c.obj
- .debug_info    0x00005ce3     0x270e CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
- .debug_info    0x000083f1      0x1be CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
- .debug_info    0x000085af      0xb76 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
- .debug_info    0x00009125      0x46c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
- .debug_info    0x00009591     0x137c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
- .debug_info    0x0000a90d     0x2736 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
- .debug_info    0x0000d043      0x2f2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
- .debug_info    0x0000d335     0x20f1 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
- .debug_info    0x0000f426     0x517d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
- .debug_info    0x000145a3     0x30c7 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
- .debug_info    0x0001766a     0x2e30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
- .debug_info    0x0001a49a      0x513 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
- .debug_info    0x0001a9ad      0x26c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
- .debug_info    0x0001ac19     0x10ab CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
- .debug_info    0x0001bcc4      0x1c4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
- .debug_info    0x0001be88      0x316 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
- .debug_info    0x0001c19e      0x1b1 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
- .debug_info    0x0001c34f      0x21a CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
- .debug_info    0x0001c569     0x1b64 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
- .debug_info    0x0001e0cd      0x7c7 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
- .debug_info    0x0001e894       0x23 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
- .debug_info    0x0001e8b7      0x2ac CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
- .debug_info    0x0001eb63     0x22ff CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
- .debug_info    0x00020e62       0x23 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
- .debug_info    0x00020e85      0xc37 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
- .debug_info    0x00021abc     0x1c2d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_info    0x000236e9      0x2b7 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
- .debug_info    0x000239a0      0x313 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
- .debug_info    0x00023cb3     0x44ad libcan2040.a(can2040.c.obj)
+.debug_info     0x00000000    0x2b75e
+ .debug_info    0x00000000     0x1847 CMakeFiles/moteur.dir/src/main.c.obj
+ .debug_info    0x00001847      0x197 CMakeFiles/moteur.dir/src/board_identity.c.obj
+ .debug_info    0x000019de     0x1875 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .debug_info    0x00003253     0x1b03 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .debug_info    0x00004d56     0x103a CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+ .debug_info    0x00005d90     0x1c94 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+ .debug_info    0x00007a24      0xc86 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+ .debug_info    0x000086aa      0x827 CMakeFiles/moteur.dir/src/clock_test.c.obj
+ .debug_info    0x00008ed1     0x270e CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+ .debug_info    0x0000b5df      0x1be CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
+ .debug_info    0x0000b79d      0xb76 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
+ .debug_info    0x0000c313      0x46c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
+ .debug_info    0x0000c77f     0x137c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+ .debug_info    0x0000dafb     0x2736 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+ .debug_info    0x00010231      0x2f2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
+ .debug_info    0x00010523     0x20f1 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
+ .debug_info    0x00012614     0x517d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+ .debug_info    0x00017791     0x30c7 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+ .debug_info    0x0001a858     0x2e30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
+ .debug_info    0x0001d688      0x513 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
+ .debug_info    0x0001db9b      0x26c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
+ .debug_info    0x0001de07     0x10ab CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
+ .debug_info    0x0001eeb2      0x1c4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
+ .debug_info    0x0001f076      0x316 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
+ .debug_info    0x0001f38c      0x1b1 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
+ .debug_info    0x0001f53d      0x21a CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+ .debug_info    0x0001f757     0x1b64 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+ .debug_info    0x000212bb      0x7c7 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
+ .debug_info    0x00021a82       0x23 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+ .debug_info    0x00021aa5      0x2ac CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+ .debug_info    0x00021d51     0x22ff CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+ .debug_info    0x00024050       0x23 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
+ .debug_info    0x00024073      0xc37 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+ .debug_info    0x00024caa     0x1c2d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+ .debug_info    0x000268d7      0x410 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
+ .debug_info    0x00026ce7      0x2b7 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+ .debug_info    0x00026f9e      0x313 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
+ .debug_info    0x000272b1     0x44ad libcan2040.a(can2040.c.obj)
 
-.debug_abbrev   0x00000000     0x69e2
- .debug_abbrev  0x00000000      0x340 CMakeFiles/moteur.dir/src/main.c.obj
- .debug_abbrev  0x00000340      0x136 CMakeFiles/moteur.dir/src/board_identity.c.obj
- .debug_abbrev  0x00000476      0x3cc CMakeFiles/moteur.dir/src/can_link.c.obj
- .debug_abbrev  0x00000842      0x368 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
- .debug_abbrev  0x00000baa      0x3b0 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
- .debug_abbrev  0x00000f5a      0x21a CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
- .debug_abbrev  0x00001174      0x293 CMakeFiles/moteur.dir/src/clock_test.c.obj
- .debug_abbrev  0x00001407      0x518 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
- .debug_abbrev  0x0000191f      0x12b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
- .debug_abbrev  0x00001a4a      0x360 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
- .debug_abbrev  0x00001daa      0x232 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
- .debug_abbrev  0x00001fdc      0x274 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
- .debug_abbrev  0x00002250      0x61a CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
- .debug_abbrev  0x0000286a      0x158 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
- .debug_abbrev  0x000029c2      0x4d2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
- .debug_abbrev  0x00002e94      0x651 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
- .debug_abbrev  0x000034e5      0x4fa CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
- .debug_abbrev  0x000039df      0x58a CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
- .debug_abbrev  0x00003f69      0x1a8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
- .debug_abbrev  0x00004111      0x146 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
- .debug_abbrev  0x00004257      0x458 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
- .debug_abbrev  0x000046af       0xfb CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
- .debug_abbrev  0x000047aa      0x1de CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
- .debug_abbrev  0x00004988      0x109 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
- .debug_abbrev  0x00004a91      0x185 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
- .debug_abbrev  0x00004c16      0x312 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
- .debug_abbrev  0x00004f28      0x2b9 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
- .debug_abbrev  0x000051e1       0x12 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
- .debug_abbrev  0x000051f3       0xb8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
- .debug_abbrev  0x000052ab      0x505 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
- .debug_abbrev  0x000057b0       0x12 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
- .debug_abbrev  0x000057c2      0x38e CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
- .debug_abbrev  0x00005b50      0x5fd CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_abbrev  0x0000614d      0x1b2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
- .debug_abbrev  0x000062ff      0x107 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
- .debug_abbrev  0x00006406      0x5dc libcan2040.a(can2040.c.obj)
+.debug_abbrev   0x00000000     0x705d
+ .debug_abbrev  0x00000000      0x397 CMakeFiles/moteur.dir/src/main.c.obj
+ .debug_abbrev  0x00000397      0x136 CMakeFiles/moteur.dir/src/board_identity.c.obj
+ .debug_abbrev  0x000004cd      0x440 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .debug_abbrev  0x0000090d      0x3cc CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .debug_abbrev  0x00000cd9      0x368 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+ .debug_abbrev  0x00001041      0x409 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+ .debug_abbrev  0x0000144a      0x264 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+ .debug_abbrev  0x000016ae      0x293 CMakeFiles/moteur.dir/src/clock_test.c.obj
+ .debug_abbrev  0x00001941      0x518 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+ .debug_abbrev  0x00001e59      0x12b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
+ .debug_abbrev  0x00001f84      0x360 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
+ .debug_abbrev  0x000022e4      0x232 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
+ .debug_abbrev  0x00002516      0x274 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+ .debug_abbrev  0x0000278a      0x61a CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+ .debug_abbrev  0x00002da4      0x158 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
+ .debug_abbrev  0x00002efc      0x4d2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
+ .debug_abbrev  0x000033ce      0x651 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+ .debug_abbrev  0x00003a1f      0x4fa CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+ .debug_abbrev  0x00003f19      0x58a CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
+ .debug_abbrev  0x000044a3      0x1a8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
+ .debug_abbrev  0x0000464b      0x146 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
+ .debug_abbrev  0x00004791      0x458 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
+ .debug_abbrev  0x00004be9       0xfb CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
+ .debug_abbrev  0x00004ce4      0x1de CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
+ .debug_abbrev  0x00004ec2      0x109 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
+ .debug_abbrev  0x00004fcb      0x185 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+ .debug_abbrev  0x00005150      0x312 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+ .debug_abbrev  0x00005462      0x2b9 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
+ .debug_abbrev  0x0000571b       0x12 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+ .debug_abbrev  0x0000572d       0xb8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+ .debug_abbrev  0x000057e5      0x505 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+ .debug_abbrev  0x00005cea       0x12 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
+ .debug_abbrev  0x00005cfc      0x38e CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+ .debug_abbrev  0x0000608a      0x5fd CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+ .debug_abbrev  0x00006687      0x141 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
+ .debug_abbrev  0x000067c8      0x1b2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+ .debug_abbrev  0x0000697a      0x107 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
+ .debug_abbrev  0x00006a81      0x5dc libcan2040.a(can2040.c.obj)
 
 .debug_loclists
-                0x00000000    0x14164
+                0x00000000    0x156b8
  .debug_loclists
-                0x00000000      0x41f CMakeFiles/moteur.dir/src/main.c.obj
+                0x00000000      0x68c CMakeFiles/moteur.dir/src/main.c.obj
  .debug_loclists
-                0x0000041f      0x23c CMakeFiles/moteur.dir/src/board_identity.c.obj
+                0x0000068c      0x23c CMakeFiles/moteur.dir/src/board_identity.c.obj
  .debug_loclists
-                0x0000065b      0x35e CMakeFiles/moteur.dir/src/can_link.c.obj
+                0x000008c8      0x63f CMakeFiles/moteur.dir/src/can_link.c.obj
  .debug_loclists
-                0x000009b9      0x7af CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+                0x00000f07      0x94b CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
  .debug_loclists
-                0x00001168      0xa89 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x00001852      0x7af CMakeFiles/moteur.dir/src/pwm_hal.c.obj
  .debug_loclists
-                0x00001bf1      0x5f5 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+                0x00002001      0xc55 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
  .debug_loclists
-                0x000021e6      0x137 CMakeFiles/moteur.dir/src/clock_test.c.obj
+                0x00002c56      0xa4c CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
  .debug_loclists
-                0x0000231d     0x1bc6 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x000036a2      0x137 CMakeFiles/moteur.dir/src/clock_test.c.obj
  .debug_loclists
-                0x00003ee3      0x42d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
+                0x000037d9     0x1bc6 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
  .debug_loclists
-                0x00004310      0x132 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
+                0x0000539f      0x42d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
  .debug_loclists
-                0x00004442       0xa2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+                0x000057cc      0x132 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
  .debug_loclists
-                0x000044e4     0x10d4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+                0x000058fe       0xa2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
  .debug_loclists
-                0x000055b8       0x17 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
+                0x000059a0     0x10d4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
  .debug_loclists
-                0x000055cf      0xacf CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
+                0x00006a74       0x17 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
  .debug_loclists
-                0x0000609e     0x2c6d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+                0x00006a8b      0xacf CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
  .debug_loclists
-                0x00008d0b     0x1a3f CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+                0x0000755a     0x2c6d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
  .debug_loclists
-                0x0000a74a     0x217d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
+                0x0000a1c7     0x1a3f CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
  .debug_loclists
-                0x0000c8c7      0x1b7 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
+                0x0000bc06     0x217d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
  .debug_loclists
-                0x0000ca7e       0x8b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
+                0x0000dd83      0x1b7 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
  .debug_loclists
-                0x0000cb09      0x812 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
+                0x0000df3a       0x8b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
  .debug_loclists
-                0x0000d31b       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
+                0x0000dfc5      0x812 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
  .debug_loclists
-                0x0000d343       0x78 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
+                0x0000e7d7       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
  .debug_loclists
-                0x0000d3bb       0x48 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
+                0x0000e7ff       0x78 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
  .debug_loclists
-                0x0000d403       0x7e CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+                0x0000e877       0x48 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
  .debug_loclists
-                0x0000d481      0x147 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x0000e8bf       0x7e CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
  .debug_loclists
-                0x0000d5c8       0x74 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
+                0x0000e93d      0x147 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
  .debug_loclists
-                0x0000d63c     0x2e21 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x0000ea84       0x74 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
  .debug_loclists
-                0x0001045d      0x425 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+                0x0000eaf8     0x2e21 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
  .debug_loclists
-                0x00010882      0xb1f CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x00011919      0x425 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
  .debug_loclists
-                0x000113a1      0x38d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+                0x00011d3e      0xb1f CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
  .debug_loclists
-                0x0001172e     0x2a36 libcan2040.a(can2040.c.obj)
+                0x0001285d       0x98 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
+ .debug_loclists
+                0x000128f5      0x38d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+ .debug_loclists
+                0x00012c82     0x2a36 libcan2040.a(can2040.c.obj)
 
-.debug_aranges  0x00000000      0xe20
+.debug_aranges  0x00000000      0xed8
  .debug_aranges
                 0x00000000       0x20 CMakeFiles/moteur.dir/src/main.c.obj
  .debug_aranges
                 0x00000020       0x20 CMakeFiles/moteur.dir/src/board_identity.c.obj
  .debug_aranges
-                0x00000040       0x40 CMakeFiles/moteur.dir/src/can_link.c.obj
+                0x00000040       0x48 CMakeFiles/moteur.dir/src/can_link.c.obj
  .debug_aranges
-                0x00000080       0x48 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+                0x00000088       0x48 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
  .debug_aranges
-                0x000000c8       0x80 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x000000d0       0x48 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
  .debug_aranges
-                0x00000148       0x80 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+                0x00000118       0x88 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
  .debug_aranges
-                0x000001c8       0x30 CMakeFiles/moteur.dir/src/clock_test.c.obj
+                0x000001a0       0xc0 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
  .debug_aranges
-                0x000001f8      0x120 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x00000260       0x30 CMakeFiles/moteur.dir/src/clock_test.c.obj
  .debug_aranges
-                0x00000318       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
+                0x00000290      0x120 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
  .debug_aranges
-                0x00000340       0x48 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
+                0x000003b0       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
  .debug_aranges
-                0x00000388       0x48 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
+                0x000003d8       0x48 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
  .debug_aranges
-                0x000003d0       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+                0x00000420       0x48 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
  .debug_aranges
-                0x00000400       0xd0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+                0x00000468       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
  .debug_aranges
-                0x000004d0       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
+                0x00000498       0xd0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
  .debug_aranges
-                0x000004f0       0x98 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
+                0x00000568       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
  .debug_aranges
-                0x00000588       0xe0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+                0x00000588       0x98 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
  .debug_aranges
-                0x00000668       0xf0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+                0x00000620       0xe0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
  .debug_aranges
-                0x00000758       0xb0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
+                0x00000700       0xf0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
  .debug_aranges
-                0x00000808       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
+                0x000007f0       0xb0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
  .debug_aranges
-                0x00000830       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
+                0x000008a0       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
  .debug_aranges
-                0x00000860       0x60 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
+                0x000008c8       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
  .debug_aranges
-                0x000008c0       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
+                0x000008f8       0x60 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
  .debug_aranges
-                0x000008e0       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
+                0x00000958       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
  .debug_aranges
-                0x00000910       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
+                0x00000978       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
  .debug_aranges
-                0x00000940       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+                0x000009a8       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
  .debug_aranges
-                0x00000978       0x58 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x000009d8       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
  .debug_aranges
-                0x000009d0       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
+                0x00000a10       0x58 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
  .debug_aranges
-                0x000009f0       0xf8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x00000a68       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
  .debug_aranges
-                0x00000ae8       0x18 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x00000a88       0xf8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
  .debug_aranges
-                0x00000b00       0x90 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x00000b80       0x18 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .debug_aranges
-                0x00000b90       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
+                0x00000b98       0x90 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
  .debug_aranges
-                0x00000bb8       0xb0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+                0x00000c28       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
  .debug_aranges
-                0x00000c68       0xc8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x00000c50       0xb0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
  .debug_aranges
-                0x00000d30       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+                0x00000d00       0xc8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
  .debug_aranges
-                0x00000d60       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
+                0x00000dc8       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
  .debug_aranges
-                0x00000d88       0x98 libcan2040.a(can2040.c.obj)
+                0x00000de8       0x30 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+ .debug_aranges
+                0x00000e18       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
+ .debug_aranges
+                0x00000e40       0x98 libcan2040.a(can2040.c.obj)
 
 .debug_rnglists
-                0x00000000     0x3b41
+                0x00000000     0x3dfd
  .debug_rnglists
-                0x00000000       0x71 CMakeFiles/moteur.dir/src/main.c.obj
+                0x00000000       0x88 CMakeFiles/moteur.dir/src/main.c.obj
  .debug_rnglists
-                0x00000071       0x2b CMakeFiles/moteur.dir/src/board_identity.c.obj
+                0x00000088       0x2b CMakeFiles/moteur.dir/src/board_identity.c.obj
  .debug_rnglists
-                0x0000009c       0xa4 CMakeFiles/moteur.dir/src/can_link.c.obj
+                0x000000b3      0x11a CMakeFiles/moteur.dir/src/can_link.c.obj
  .debug_rnglists
-                0x00000140      0x194 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+                0x000001cd      0x149 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
  .debug_rnglists
-                0x000002d4      0x150 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x00000316      0x194 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
  .debug_rnglists
-                0x00000424       0xc4 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+                0x000004aa      0x193 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
  .debug_rnglists
-                0x000004e8       0x3d CMakeFiles/moteur.dir/src/clock_test.c.obj
+                0x0000063d      0x130 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
  .debug_rnglists
-                0x00000525      0x6fb CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x0000076d       0x3d CMakeFiles/moteur.dir/src/clock_test.c.obj
  .debug_rnglists
-                0x00000c20       0x19 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
+                0x000007aa      0x6fb CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
  .debug_rnglists
-                0x00000c39       0xf2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
+                0x00000ea5       0x19 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
  .debug_rnglists
-                0x00000d2b       0x5b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
+                0x00000ebe       0xf2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
  .debug_rnglists
-                0x00000d86       0x43 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+                0x00000fb0       0x5b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
  .debug_rnglists
-                0x00000dc9      0x3ab CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+                0x0000100b       0x43 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
  .debug_rnglists
-                0x00001174       0x13 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
+                0x0000104e      0x3ab CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
  .debug_rnglists
-                0x00001187      0x29f CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
+                0x000013f9       0x13 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
  .debug_rnglists
-                0x00001426      0x819 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+                0x0000140c      0x29f CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
  .debug_rnglists
-                0x00001c3f      0x481 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+                0x000016ab      0x819 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
  .debug_rnglists
-                0x000020c0      0x64e CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
+                0x00001ec4      0x481 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
  .debug_rnglists
-                0x0000270e       0x59 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
+                0x00002345      0x64e CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
  .debug_rnglists
-                0x00002767       0x2b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
+                0x00002993       0x59 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
  .debug_rnglists
-                0x00002792      0x131 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
+                0x000029ec       0x2b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
  .debug_rnglists
-                0x000028c3       0x13 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
+                0x00002a17      0x131 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
  .debug_rnglists
-                0x000028d6       0x4f CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
+                0x00002b48       0x13 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
  .debug_rnglists
-                0x00002925       0x2b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
+                0x00002b5b       0x4f CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
  .debug_rnglists
-                0x00002950       0x3d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+                0x00002baa       0x2b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
  .debug_rnglists
-                0x0000298d       0x70 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x00002bd5       0x3d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
  .debug_rnglists
-                0x000029fd       0x2c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
+                0x00002c12       0x70 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
  .debug_rnglists
-                0x00002a29       0xb7 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x00002c82       0x2c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
  .debug_rnglists
-                0x00002ae0      0x2fd CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x00002cae       0xb7 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
  .debug_rnglists
-                0x00002ddd       0x1b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
+                0x00002d65      0x2fd CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
  .debug_rnglists
-                0x00002df8       0xbb CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+                0x00003062       0x1b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
  .debug_rnglists
-                0x00002eb3      0x2f6 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x0000307d       0xbb CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
  .debug_rnglists
-                0x000031a9       0xb1 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+                0x00003138      0x2f6 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
  .debug_rnglists
-                0x0000325a       0x25 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
+                0x0000342e       0x37 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
  .debug_rnglists
-                0x0000327f      0x8c2 libcan2040.a(can2040.c.obj)
+                0x00003465       0xb1 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+ .debug_rnglists
+                0x00003516       0x25 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
+ .debug_rnglists
+                0x0000353b      0x8c2 libcan2040.a(can2040.c.obj)
 
-.debug_line     0x00000000    0x1aa61
- .debug_line    0x00000000      0x7fa CMakeFiles/moteur.dir/src/main.c.obj
- .debug_line    0x000007fa      0x4ee CMakeFiles/moteur.dir/src/board_identity.c.obj
- .debug_line    0x00000ce8      0x8ed CMakeFiles/moteur.dir/src/can_link.c.obj
- .debug_line    0x000015d5      0x98e CMakeFiles/moteur.dir/src/pwm_hal.c.obj
- .debug_line    0x00001f63      0xcc8 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
- .debug_line    0x00002c2b      0x9ab CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
- .debug_line    0x000035d6      0x505 CMakeFiles/moteur.dir/src/clock_test.c.obj
- .debug_line    0x00003adb     0x1fd1 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
- .debug_line    0x00005aac      0x2a0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
- .debug_line    0x00005d4c      0x82b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
- .debug_line    0x00006577      0x436 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
- .debug_line    0x000069ad      0x3b6 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
- .debug_line    0x00006d63     0x1769 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
- .debug_line    0x000084cc      0x2e3 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
- .debug_line    0x000087af     0x14bb CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
- .debug_line    0x00009c6a     0x31f2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
- .debug_line    0x0000ce5c     0x1e11 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
- .debug_line    0x0000ec6d     0x2170 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
- .debug_line    0x00010ddd      0x4fd CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
- .debug_line    0x000112da      0x34c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
- .debug_line    0x00011626      0xb43 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
- .debug_line    0x00012169      0x3d1 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
- .debug_line    0x0001253a      0x43a CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
- .debug_line    0x00012974      0x387 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
- .debug_line    0x00012cfb      0x32b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
- .debug_line    0x00013026      0x702 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
- .debug_line    0x00013728      0x5a4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
- .debug_line    0x00013ccc      0x293 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
- .debug_line    0x00013f5f      0x1af CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
- .debug_line    0x0001410e     0x1bda CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
- .debug_line    0x00015ce8       0xa0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
- .debug_line    0x00015d88      0x8e0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
- .debug_line    0x00016668     0x14d3 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_line    0x00017b3b      0x759 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
- .debug_line    0x00018294      0x2d6 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
- .debug_line    0x0001856a     0x24f7 libcan2040.a(can2040.c.obj)
+.debug_line     0x00000000    0x1c58e
+ .debug_line    0x00000000      0x996 CMakeFiles/moteur.dir/src/main.c.obj
+ .debug_line    0x00000996      0x4ee CMakeFiles/moteur.dir/src/board_identity.c.obj
+ .debug_line    0x00000e84      0xaf1 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .debug_line    0x00001975      0xec9 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .debug_line    0x0000283e      0x98e CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+ .debug_line    0x000031cc      0xea4 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+ .debug_line    0x00004070      0xcda CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+ .debug_line    0x00004d4a      0x505 CMakeFiles/moteur.dir/src/clock_test.c.obj
+ .debug_line    0x0000524f     0x1fd1 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+ .debug_line    0x00007220      0x2a0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
+ .debug_line    0x000074c0      0x82b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
+ .debug_line    0x00007ceb      0x436 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
+ .debug_line    0x00008121      0x3b6 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+ .debug_line    0x000084d7     0x1769 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+ .debug_line    0x00009c40      0x2e3 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
+ .debug_line    0x00009f23     0x14bb CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
+ .debug_line    0x0000b3de     0x31f2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+ .debug_line    0x0000e5d0     0x1e11 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+ .debug_line    0x000103e1     0x2170 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
+ .debug_line    0x00012551      0x4fd CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
+ .debug_line    0x00012a4e      0x34c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
+ .debug_line    0x00012d9a      0xb43 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
+ .debug_line    0x000138dd      0x3d1 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
+ .debug_line    0x00013cae      0x43a CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
+ .debug_line    0x000140e8      0x387 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
+ .debug_line    0x0001446f      0x32b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+ .debug_line    0x0001479a      0x702 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+ .debug_line    0x00014e9c      0x5a4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
+ .debug_line    0x00015440      0x293 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+ .debug_line    0x000156d3      0x1af CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+ .debug_line    0x00015882     0x1bda CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+ .debug_line    0x0001745c       0xa0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
+ .debug_line    0x000174fc      0x8e0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+ .debug_line    0x00017ddc     0x14d3 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+ .debug_line    0x000192af      0x3b9 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
+ .debug_line    0x00019668      0x759 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+ .debug_line    0x00019dc1      0x2d6 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
+ .debug_line    0x0001a097     0x24f7 libcan2040.a(can2040.c.obj)
 
-.debug_str      0x00000000     0x7025
- .debug_str     0x00000000     0x7025 CMakeFiles/moteur.dir/src/main.c.obj
-                                0xaba (size before relaxing)
- .debug_str     0x00007025      0x252 CMakeFiles/moteur.dir/src/board_identity.c.obj
- .debug_str     0x00007025      0xfad CMakeFiles/moteur.dir/src/can_link.c.obj
- .debug_str     0x00007025      0x7c6 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
- .debug_str     0x00007025      0x9ec CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
- .debug_str     0x00007025      0x40e CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
- .debug_str     0x00007025      0xa8b CMakeFiles/moteur.dir/src/clock_test.c.obj
- .debug_str     0x00007025      0xe24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
- .debug_str     0x00007025      0x23d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
- .debug_str     0x00007025      0x3af CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
- .debug_str     0x00007025      0x35a CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
- .debug_str     0x00007025      0xb77 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
- .debug_str     0x00007025      0xcd2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
- .debug_str     0x00007025      0x4fc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
- .debug_str     0x00007025      0xa31 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
- .debug_str     0x00007025     0x1343 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
- .debug_str     0x00007025      0xbda CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
- .debug_str     0x00007025     0x11ac CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
- .debug_str     0x00007025      0x4df CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
- .debug_str     0x00007025      0x300 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
- .debug_str     0x00007025      0x99c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
- .debug_str     0x00007025      0x2e8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
- .debug_str     0x00007025      0x2c6 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
- .debug_str     0x00007025      0x279 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
- .debug_str     0x00007025      0x2cf CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
- .debug_str     0x00007025     0x11cc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
- .debug_str     0x00007025      0x51b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
- .debug_str     0x00007025       0x9c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
- .debug_str     0x00007025      0x439 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
- .debug_str     0x00007025      0x4e5 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
- .debug_str     0x00007025       0x8e CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
- .debug_str     0x00007025      0x8d4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
- .debug_str     0x00007025      0xc63 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_str     0x00007025      0x2cb CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
- .debug_str     0x00007025      0x7a6 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
- .debug_str     0x00007025      0xfcb libcan2040.a(can2040.c.obj)
+.debug_str      0x00000000     0x7a39
+ .debug_str     0x00000000     0x7a39 CMakeFiles/moteur.dir/src/main.c.obj
+                               0x12e8 (size before relaxing)
+ .debug_str     0x00007a39      0x252 CMakeFiles/moteur.dir/src/board_identity.c.obj
+ .debug_str     0x00007a39     0x1440 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .debug_str     0x00007a39      0xd59 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .debug_str     0x00007a39      0x7c6 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+ .debug_str     0x00007a39      0xa49 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+ .debug_str     0x00007a39      0x668 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+ .debug_str     0x00007a39      0xa8b CMakeFiles/moteur.dir/src/clock_test.c.obj
+ .debug_str     0x00007a39      0xe24 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+ .debug_str     0x00007a39      0x23d CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
+ .debug_str     0x00007a39      0x3af CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
+ .debug_str     0x00007a39      0x35a CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
+ .debug_str     0x00007a39      0xb77 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+ .debug_str     0x00007a39      0xcd2 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+ .debug_str     0x00007a39      0x4fc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
+ .debug_str     0x00007a39      0xa31 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
+ .debug_str     0x00007a39     0x1343 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+ .debug_str     0x00007a39      0xbda CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+ .debug_str     0x00007a39     0x11ac CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
+ .debug_str     0x00007a39      0x4df CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
+ .debug_str     0x00007a39      0x300 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
+ .debug_str     0x00007a39      0x99c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
+ .debug_str     0x00007a39      0x2e8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
+ .debug_str     0x00007a39      0x2c6 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
+ .debug_str     0x00007a39      0x279 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
+ .debug_str     0x00007a39      0x2cf CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+ .debug_str     0x00007a39     0x11cc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+ .debug_str     0x00007a39      0x51b CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
+ .debug_str     0x00007a39       0x9c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+ .debug_str     0x00007a39      0x439 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+ .debug_str     0x00007a39      0x4e5 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+ .debug_str     0x00007a39       0x8e CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
+ .debug_str     0x00007a39      0x8d4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+ .debug_str     0x00007a39      0xc63 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+ .debug_str     0x00007a39      0x48e CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
+ .debug_str     0x00007a39      0x2cb CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+ .debug_str     0x00007a39      0x7a6 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
+ .debug_str     0x00007a39      0xfcb libcan2040.a(can2040.c.obj)
 
 .comment        0x00000000       0x45
  .comment       0x00000000       0x45 CMakeFiles/moteur.dir/src/main.c.obj
                                  0x46 (size before relaxing)
  .comment       0x00000045       0x46 CMakeFiles/moteur.dir/src/board_identity.c.obj
  .comment       0x00000045       0x46 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .comment       0x00000045       0x46 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
  .comment       0x00000045       0x46 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
  .comment       0x00000045       0x46 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
  .comment       0x00000045       0x46 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
@@ -4089,6 +4199,7 @@ LOAD linker stubs
  .comment       0x00000045       0x46 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
  .comment       0x00000045       0x46 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
  .comment       0x00000045       0x46 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+ .comment       0x00000045       0x46 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
  .comment       0x00000045       0x46 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
  .comment       0x00000045       0x46 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
  .comment       0x00000045       0x46 libcan2040.a(can2040.c.obj)
@@ -4102,123 +4213,129 @@ LOAD linker stubs
  .ARM.attributes
                 0x00000070       0x38 CMakeFiles/moteur.dir/src/can_link.c.obj
  .ARM.attributes
-                0x000000a8       0x38 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+                0x000000a8       0x38 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
  .ARM.attributes
-                0x000000e0       0x38 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+                0x000000e0       0x38 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
  .ARM.attributes
-                0x00000118       0x38 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+                0x00000118       0x38 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
  .ARM.attributes
-                0x00000150       0x38 CMakeFiles/moteur.dir/src/clock_test.c.obj
+                0x00000150       0x38 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
  .ARM.attributes
-                0x00000188       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+                0x00000188       0x38 CMakeFiles/moteur.dir/src/clock_test.c.obj
  .ARM.attributes
-                0x000001c0       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
+                0x000001c0       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
  .ARM.attributes
-                0x000001f8       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
+                0x000001f8       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
  .ARM.attributes
-                0x00000230       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
+                0x00000230       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
  .ARM.attributes
-                0x00000268       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+                0x00000268       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
  .ARM.attributes
-                0x000002a0       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+                0x000002a0       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
  .ARM.attributes
-                0x000002d8       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
+                0x000002d8       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
  .ARM.attributes
-                0x00000310       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
+                0x00000310       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
  .ARM.attributes
-                0x00000348       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+                0x00000348       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
  .ARM.attributes
-                0x00000380       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+                0x00000380       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
  .ARM.attributes
-                0x000003b8       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
+                0x000003b8       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
  .ARM.attributes
-                0x000003f0       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
+                0x000003f0       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
  .ARM.attributes
-                0x00000428       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
+                0x00000428       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
  .ARM.attributes
-                0x00000460       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
+                0x00000460       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
  .ARM.attributes
-                0x00000498       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
+                0x00000498       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
  .ARM.attributes
-                0x000004d0       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
+                0x000004d0       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
  .ARM.attributes
-                0x00000508       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
+                0x00000508       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
  .ARM.attributes
-                0x00000540       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+                0x00000540       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
  .ARM.attributes
-                0x00000578       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+                0x00000578       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
  .ARM.attributes
-                0x000005b0       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
+                0x000005b0       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
  .ARM.attributes
-                0x000005e8       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
+                0x000005e8       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
  .ARM.attributes
-                0x00000610       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
+                0x00000620       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_aeabi_dcp.S.obj
  .ARM.attributes
-                0x00000648       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+                0x00000648       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj
  .ARM.attributes
-                0x00000680       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
+                0x00000680       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
  .ARM.attributes
-                0x000006a8       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+                0x000006b8       0x28 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj
  .ARM.attributes
-                0x000006e0       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+                0x000006e0       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
  .ARM.attributes
-                0x00000718       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+                0x00000718       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
  .ARM.attributes
-                0x00000750       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
+                0x00000750       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
  .ARM.attributes
-                0x00000788       0x38 libcan2040.a(can2040.c.obj)
+                0x00000788       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
  .ARM.attributes
-                0x000007c0       0x26 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libgcc.a(_aeabi_uldivmod.o)
+                0x000007c0       0x38 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
  .ARM.attributes
-                0x000007e6       0x36 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libgcc.a(_udivmoddi4.o)
+                0x000007f8       0x38 libcan2040.a(can2040.c.obj)
  .ARM.attributes
-                0x0000081c       0x26 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libgcc.a(_dvmd_tls.o)
+                0x00000830       0x26 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libgcc.a(_aeabi_uldivmod.o)
  .ARM.attributes
-                0x00000842       0x36 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memset.o)
+                0x00000856       0x36 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libgcc.a(_udivmoddi4.o)
  .ARM.attributes
-                0x00000878       0x24 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memcpy.o)
+                0x0000088c       0x26 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libgcc.a(_dvmd_tls.o)
  .ARM.attributes
-                0x0000089c       0x36 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-strlen-stub.o)
+                0x000008b2       0x36 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memset.o)
+ .ARM.attributes
+                0x000008e8       0x24 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memcpy.o)
+ .ARM.attributes
+                0x0000090c       0x36 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-strlen-stub.o)
 
-.debug_frame    0x00000000     0x2574
- .debug_frame   0x00000000       0x38 CMakeFiles/moteur.dir/src/main.c.obj
- .debug_frame   0x00000038       0x3c CMakeFiles/moteur.dir/src/board_identity.c.obj
- .debug_frame   0x00000074       0xe4 CMakeFiles/moteur.dir/src/can_link.c.obj
- .debug_frame   0x00000158       0xd8 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
- .debug_frame   0x00000230      0x16c CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
- .debug_frame   0x0000039c       0xf8 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
- .debug_frame   0x00000494       0x84 CMakeFiles/moteur.dir/src/clock_test.c.obj
- .debug_frame   0x00000518      0x3bc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
- .debug_frame   0x000008d4       0x4c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
- .debug_frame   0x00000920       0x94 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
- .debug_frame   0x000009b4       0x94 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
- .debug_frame   0x00000a48       0x40 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
- .debug_frame   0x00000a88      0x1ec CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
- .debug_frame   0x00000c74       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
- .debug_frame   0x00000c94      0x1f4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
- .debug_frame   0x00000e88      0x34c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
- .debug_frame   0x000011d4      0x2d8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
- .debug_frame   0x000014ac      0x260 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
- .debug_frame   0x0000170c       0x44 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
- .debug_frame   0x00001750       0x40 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
- .debug_frame   0x00001790      0x12c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
- .debug_frame   0x000018bc       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
- .debug_frame   0x000018dc       0x40 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
- .debug_frame   0x0000191c       0x4c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
- .debug_frame   0x00001968       0x70 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
- .debug_frame   0x000019d8       0xc0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
- .debug_frame   0x00001a98       0x34 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
- .debug_frame   0x00001acc      0x2a4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
- .debug_frame   0x00001d70      0x1a0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
- .debug_frame   0x00001f10      0x2d8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_frame   0x000021e8       0x4c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
- .debug_frame   0x00002234       0x40 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
- .debug_frame   0x00002274      0x228 libcan2040.a(can2040.c.obj)
- .debug_frame   0x0000249c       0x2c C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libgcc.a(_aeabi_uldivmod.o)
- .debug_frame   0x000024c8       0x38 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libgcc.a(_udivmoddi4.o)
- .debug_frame   0x00002500       0x2c C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memset.o)
- .debug_frame   0x0000252c       0x28 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memcpy.o)
- .debug_frame   0x00002554       0x20 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-strlen-stub.o)
+.debug_frame    0x00000000     0x2728
+ .debug_frame   0x00000000       0x3c CMakeFiles/moteur.dir/src/main.c.obj
+ .debug_frame   0x0000003c       0x3c CMakeFiles/moteur.dir/src/board_identity.c.obj
+ .debug_frame   0x00000078      0x104 CMakeFiles/moteur.dir/src/can_link.c.obj
+ .debug_frame   0x0000017c       0xd4 CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj
+ .debug_frame   0x00000250       0xd8 CMakeFiles/moteur.dir/src/pwm_hal.c.obj
+ .debug_frame   0x00000328      0x188 CMakeFiles/moteur.dir/src/solenoid_driver.c.obj
+ .debug_frame   0x000004b0      0x178 CMakeFiles/moteur.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj
+ .debug_frame   0x00000628       0x84 CMakeFiles/moteur.dir/src/clock_test.c.obj
+ .debug_frame   0x000006ac      0x3bc CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj
+ .debug_frame   0x00000a68       0x4c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj
+ .debug_frame   0x00000ab4       0x94 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj
+ .debug_frame   0x00000b48       0x94 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj
+ .debug_frame   0x00000bdc       0x40 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj
+ .debug_frame   0x00000c1c      0x1ec CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj
+ .debug_frame   0x00000e08       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj
+ .debug_frame   0x00000e28      0x1f4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj
+ .debug_frame   0x0000101c      0x34c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/time.c.obj
+ .debug_frame   0x00001368      0x2d8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj
+ .debug_frame   0x00001640      0x260 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj
+ .debug_frame   0x000018a0       0x44 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj
+ .debug_frame   0x000018e4       0x40 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj
+ .debug_frame   0x00001924      0x12c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom.c.obj
+ .debug_frame   0x00001a50       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj
+ .debug_frame   0x00001a70       0x40 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj
+ .debug_frame   0x00001ab0       0x4c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj
+ .debug_frame   0x00001afc       0x70 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime/runtime.c.obj
+ .debug_frame   0x00001b6c       0xc0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj
+ .debug_frame   0x00001c2c       0x34 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj
+ .debug_frame   0x00001c60      0x2a4 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj
+ .debug_frame   0x00001f04      0x1a0 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/newlib_interface.c.obj
+ .debug_frame   0x000020a4      0x2d8 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio/stdio.c.obj
+ .debug_frame   0x0000237c       0x20 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_adc/adc.c.obj
+ .debug_frame   0x0000239c       0x4c CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj
+ .debug_frame   0x000023e8       0x40 CMakeFiles/moteur.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj
+ .debug_frame   0x00002428      0x228 libcan2040.a(can2040.c.obj)
+ .debug_frame   0x00002650       0x2c C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libgcc.a(_aeabi_uldivmod.o)
+ .debug_frame   0x0000267c       0x38 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libgcc.a(_udivmoddi4.o)
+ .debug_frame   0x000026b4       0x2c C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memset.o)
+ .debug_frame   0x000026e0       0x28 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-memcpy.o)
+ .debug_frame   0x00002708       0x20 C:/PROGRA~2/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v8-m.main+fp/softfp\libg.a(libc_a-strlen-stub.o)
 
 .debug_line_str
                 0x00000000      0x295

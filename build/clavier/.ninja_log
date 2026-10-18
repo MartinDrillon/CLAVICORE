@@ -1,55 +1,55 @@
 # ninja log v5
+699	995	8121372774859509	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-download	c6004d9370225560
 9333	13138	8139648400455258	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj	1ebf778e208f41df
 379	8982	8139648354309840	CMakeFiles/clavier.dir/src/matrix_scan.c.obj	1cd80e136e07c530
 74	126	0	pico-sdk/src/rp2350/boot_stage2/CMakeFiles/picotoolForceReconfigure	16ec2755dedc1fb2
-699	995	8121372774859509	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-download	c6004d9370225560
-26598	36415	8139648633586148	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.dis	733f934dfc0163d7
-743	5632	8139648324556446	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_common/common.c.obj	6d4512a89a5578e9
-670	8866	8139648357972012	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj	68332561113f89a1
+85158	86699	0	pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-install	b62dabbe42e998ba
 22531	26597	8139648535714207	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/common/tusb_fifo.c.obj	b1d234875d8ac4cc
 74	126	0	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/picotoolForceReconfigure	16ec2755dedc1fb2
-85158	86699	0	pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-install	b62dabbe42e998ba
-514	1201	8139565523393762	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/bs2_default.dis	7c8dbf3f8c3a3638
+743	5632	8139648324556446	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_common/common.c.obj	6d4512a89a5578e9
+2077	3263	8140259441680795	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.dis	733f934dfc0163d7
+670	8866	8139648357972012	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj	68332561113f89a1
 445	699	8121372772578829	pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-mkdir	1396b82b2b5cdf76
-12799	16120	8139648429280745	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_divider/divider.c.obj	58ebd8dafd95cc67
+514	1201	8139565523393762	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/bs2_default.dis	7c8dbf3f8c3a3638
 15914	17419	8139648442585620	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_float/float_common_m33.S.obj	867a11f870596adb
 445	699	8121372772578829	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-mkdir	1396b82b2b5cdf76
+12799	16120	8139648429280745	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_divider/divider.c.obj	58ebd8dafd95cc67
+87239	87581	8121377309125543	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/picotoolBuild-complete	2d926dcf6f935f8
+5187	6939	8139648336521540	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq_handler_chain.S.obj	3ba8a948cbdb29ab
 699	995	8121372774859509	pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-download	c6004d9370225560
 1246	1391	8139565525027659	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/bs2_default_padded.S	b1fc7346063f521c
 5064	8585	8139648352506236	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj	95ed54ddf2f99f4f
-5187	6939	8139648336521540	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq_handler_chain.S.obj	3ba8a948cbdb29ab
-87239	87581	8121377309125543	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/CMakeFiles/picotoolBuild-complete	2d926dcf6f935f8
-998	1174	8121372777502978	pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-update	e0b9c9237488f557
-5103	9020	8139648352813851	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj	1f43bffb76b2f39
 244	1291	8139608214263386	CMakeFiles/clavier.dir/src/sysex_diag.c.obj	b3d323d367a2a9cf
 87239	87581	8121377309125543	pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-done	2d926dcf6f935f8
+998	1174	8121372777502978	pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-update	e0b9c9237488f557
+5103	9020	8139648352813851	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.obj	1f43bffb76b2f39
 998	1174	8121372777502978	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-update	e0b9c9237488f557
-1174	1251	8121372778259682	pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-patch	7b9a5ba079318623
-8647	13311	8139648400812663	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_util/fixed_bitset.c.obj	e0f96a025e07a338
 9441	12630	8139565822490159	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj	4e3525d90b7942ac
 1201	1246	8139565523888930	pico-sdk/src/rp2350/boot_stage2/bs2_default.bin	60c9bf7911f68289
+1174	1251	8121372778259682	pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-patch	7b9a5ba079318623
+8647	13311	8139648400812663	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_util/fixed_bitset.c.obj	e0f96a025e07a338
 8980	12789	8139565825442801	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj	20946fe658d5913b
 20093	24923	8139648517333760	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/cdc/cdc_device.c.obj	d5087e5ee2825388
 1174	1251	8121372778259682	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-patch	7b9a5ba079318623
-244	21011	8139650237460491	build.ninja	e5e18e9516914638
+244	21011	8140266796014283	build.ninja	e5e18e9516914638
 126	16545	8121376598658811	pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-configure	eec276994e0e7d9
 13159	15875	8139565857066095	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_malloc/malloc.c.obj	96b475d7763560d5
 126	16545	8121376598658811	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-configure	eec276994e0e7d9
-10276	14884	8139648416777410	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj	2bfddd109924e869
 10516	12292	8139565820575651	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj	36cb6292479d5f9
 16546	85158	0	pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-build	defa07c975c1ce2b
+10276	14884	8139648416777410	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_bootrom/bootrom_lock.c.obj	2bfddd109924e869
 16546	85158	0	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-build	defa07c975c1ce2b
-312	5792	8139648326992935	CMakeFiles/clavier.dir/src/keycode.c.obj	5acab66df5d7b059
 10982	13354	8139565830991997	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_flash/flash.c.obj	558113a974dcd082
 85158	86699	0	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-install	b62dabbe42e998ba
+312	5792	8139648326992935	CMakeFiles/clavier.dir/src/keycode.c.obj	5acab66df5d7b059
 86699	87238	8121377305252495	pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-test	d2419598a9786432
-6939	12798	8139648397274678	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/timeout_helper.c.obj	5eaf28d9ff40ad1b
 86699	87238	8121377305252495	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-test	d2419598a9786432
-8982	14567	8139648411876040	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_uart/uart.c.obj	9cd0628537297ecd
-345	5144	8139648319358657	CMakeFiles/clavier.dir/src/keymap.c.obj	206b39eb22e0a2c7
+6939	12798	8139648397274678	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/timeout_helper.c.obj	5eaf28d9ff40ad1b
 87239	87581	8121377309125543	pico-sdk/src/rp2350/boot_stage2/CMakeFiles/picotoolBuild-complete	2d926dcf6f935f8
-149	513	8139565515845535	pico-sdk/src/rp2350/boot_stage2/CMakeFiles/bs2_default.dir/compile_time_choice.S.obj	955650b3926941cb
+345	5144	8139648319358657	CMakeFiles/clavier.dir/src/keymap.c.obj	206b39eb22e0a2c7
+8982	14567	8139648411876040	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_uart/uart.c.obj	9cd0628537297ecd
 87239	87581	8121377309125543	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/picotool/src/picotoolBuild-stamp/picotoolBuild-done	2d926dcf6f935f8
+149	513	8139565515845535	pico-sdk/src/rp2350/boot_stage2/CMakeFiles/bs2_default.dir/compile_time_choice.S.obj	955650b3926941cb
 514	1201	8139565523393762	pico-sdk/src/rp2350/boot_stage2/bs2_default.elf	7c8dbf3f8c3a3638
 514	1201	8139565523393762	pico-sdk/src/rp2350/boot_stage2/bs2_default.dis	7c8dbf3f8c3a3638
 414	9172	8139648357257684	CMakeFiles/clavier.dir/src/midi.c.obj	f90a46b98fc5501c
@@ -57,34 +57,34 @@
 1201	1246	8139565523888930	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/pico-sdk/src/rp2350/boot_stage2/bs2_default.bin	60c9bf7911f68289
 15279	17366	8139648440792950	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_float/float_conv32_vfp.S.obj	898bd4eb5367fe33
 1246	1391	8139565525027659	pico-sdk/src/rp2350/boot_stage2/bs2_default_padded.S	b1fc7346063f521c
+75	663	8140258569743687	CMakeFiles/clavier.dir/src/note_state.c.obj	4bffb1df62128784
 5144	10240	8139648369357027	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj	d303ff20b610e3ea
-449	5061	8139648319646788	CMakeFiles/clavier.dir/src/note_state.c.obj	4bffb1df62128784
 813	5186	8139648318630611	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/custom_panic_function.S.obj	cc2b95c73c8bcc49
+706	5573	8139648324566375	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2350/pico_platform/platform.c.obj	4965ad12489991ac
 8625	11082	8139565809468865	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_time/timeout_helper.c.obj	580dcf35e9b73759
 850	5907	8139648326734828	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj	19bee4cf94e9f9d
-706	5573	8139648324566375	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2350/pico_platform/platform.c.obj	4965ad12489991ac
-250	8826	8139648354919684	CMakeFiles/clavier.dir/src/main.c.obj	76f012bb831dc1ed
+54	1117	8140258574133131	CMakeFiles/clavier.dir/src/main.c.obj	76f012bb831dc1ed
 633	9284	8139648360743555	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdlib/stdlib.c.obj	7cfcf24a36a29bdd
-18917	25585	8139648524728377	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/device/usbd.c.obj	45dab386a5247bb6
 558	9132	8139648354204350	CMakeFiles/clavier.dir/src/usb_descriptors.c.obj	502818ec4cc79c5a
+18917	25585	8139648524728377	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/device/usbd.c.obj	45dab386a5247bb6
 5574	9332	8139648359936088	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/lock_core.c.obj	242cc3b8dd2198ad
+2077	3263	8140259441680795	clavier.elf	733f934dfc0163d7
 777	8646	8139648352288550	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj	b7e3a2b104cd573e
-26598	36415	8139648633586148	clavier.elf	733f934dfc0163d7
-9281	12080	8139565819033133	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_uart/uart.c.obj	50bf22c5f5cd12a7
 9133	14378	8139648410677317	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj	c5936958b9365e13
+9281	12080	8139565819033133	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_uart/uart.c.obj	50bf22c5f5cd12a7
 8867	14605	8139648413306625	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_util/queue.c.obj	3cd0db756d2136c2
-23645	25588	8139648524794038	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xip_cache/xip_cache.c.obj	6c3bb1cd708700cc
 10640	14673	8139648413789723	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj	794a52de44001c16
+23645	25588	8139648524794038	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xip_cache/xip_cache.c.obj	6c3bb1cd708700cc
 5320	8498	8139648353641261	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/sem.c.obj	fb7c549014a9504
 5792	10640	8139648364342609	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/critical_section.c.obj	37920bb50a53e476
 5632	10276	8139648368258970	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj	c929d80c509922c0
-14924	17297	8139648440288290	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_conv_m33.S.obj	9c76c798dacf8c91
 9173	14487	8139648411263447	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_vreg/vreg.c.obj	3cd20689fc36da8e
+14924	17297	8139648440288290	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_conv_m33.S.obj	9c76c798dacf8c91
 8585	14526	8139648414417906	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_util/datetime.c.obj	17aa29f5f9a2bc4d
 9285	16278	8139648428794927	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_watchdog/watchdog.c.obj	486a1a761e5d13d4
 11890	15279	8139648416894493	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_xosc/xosc.c.obj	25697fc5d28e8bfd
-14279	16806	8139565865430533	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_thread_local/thread_local.c.obj	151c105c88548cb8
 11036	14259	8139648410029741	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_flash/flash.c.obj	f9904a7df38f9d5
+14279	16806	8139565865430533	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_thread_local/thread_local.c.obj	151c105c88548cb8
 8826	15239	8139648419163589	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_util/pheap.c.obj	45365ec90f1286ee
 8499	14923	8139648416156549	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_timer/timer.c.obj	3d0e4690e00852bd
 9020	15969	8139648426867686	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_clocks/clocks.c.obj	c83dee4b5ccd3556
@@ -97,16 +97,16 @@
 14379	17257	8139648440232496	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.obj	babc9b09575b0ee3
 15970	17459	8139648443207550	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_float/float_sci_m33_vfp.S.obj	32ae361d2d89cd9e
 14259	18917	8139648454464537	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.obj	2574fee8db348640
-16120	20491	8139648473355626	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_atomic/atomic.c.obj	f2a3abf96d0f58d2
 13311	19426	8139648463524090	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj	e3c8dec9b3150ec1
+16120	20491	8139648473355626	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_atomic/atomic.c.obj	f2a3abf96d0f58d2
 14527	18240	8139648449197787	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_divider/divider_compiler.c.obj	ccbea82d038225f8
 16046	20165	8139648470009211	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_malloc/malloc.c.obj	d82acb38fa776a92
 17011	20092	8139648468489083	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_crt0/crt0.S.obj	691137b227981c62
 17172	20373	8139648471047672	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_clib_interface/cxa_guard.c.obj	4ac98be1d88e5b73
 16911	20055	8139648469043492	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.obj	fbc38ecc61185226
 16278	24353	8139648512894347	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_cxx_options/new_delete.cpp.obj	64803d499c6421e8
-594	5320	8139648322783140	CMakeFiles/clavier.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj	e98c3236022abb85
 95379	97828	8121377407234045	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdio_usb/stdio_usb.c.obj	646c57407c135ed9
+107	1131	8140258574852647	CMakeFiles/clavier.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/shared/protocol/can_protocol.c.obj	e98c3236022abb85
 23322	25847	8139648527489092	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_unique_id/unique_id.c.obj	b39ebd54fa33b24b
 20055	22044	8139648486821047	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/audio/audio_device.c.obj	647a2a1252205ad6
 15239	21659	8139648483109252	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_float/float_math.c.obj	2b0eb4cac869f276
@@ -122,40 +122,40 @@
 21883	23812	8139648506537161	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/msc/msc_device.c.obj	7097f62ad80f5e6d
 21966	23808	8139648506484995	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/net/ncm_device.c.obj	7a9bc162ed2c275
 18241	23321	8139648501784355	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj	c652d49d787d31c4
-14995	15876	8139565857076203	pico-sdk/src/rp2350/boot_stage2/CMakeFiles/bs2_default_library.dir/bs2_default_padded.S.obj	b182538134dc5e71
 21924	23809	8139648505374225	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/net/ecm_rndis_device.c.obj	9cd02c17fc989ec4
+14995	15876	8139565857076203	pico-sdk/src/rp2350/boot_stage2/CMakeFiles/bs2_default_library.dir/bs2_default_padded.S.obj	b182538134dc5e71
 19427	24156	8139648510468146	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/device/usbd_control.c.obj	e61387d84f4bb06c
 22044	24157	8139648510263579	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.obj	5dfe9f56b70d8070
 22135	23645	8139648504635071	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/vendor/vendor_device.c.obj	eef5ccc584a0859f
 17459	23358	8139648501479324	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj	573d73bfd8d10a1d
 22174	23811	8139648505636754	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/video/video_device.c.obj	fb6f447d373ec305
 22674	24908	8139648518015626	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.obj	cac76171bd3a1e78
-5869	10856	8139565805963758	CMakeFiles/can2040.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/firmware/common/can2040/src/can2040.c.obj	42c635f56891cf74
 16974	24144	8139648508973765	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj	65fc32af7839c84b
-11040	13025	8139565826589798	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_divider/divider.c.obj	ccbe49e1310d922e
+5869	10856	8139565805963758	CMakeFiles/can2040.dir/D_/Documents/MUSIQUE/EPINETTE/Kit_Heugel_Bedard/firmware/common/can2040/src/can2040.c.obj	42c635f56891cf74
 17298	21883	8139648485077284	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_thread_local/thread_local.c.obj	ed33f32a4d1da884
+11040	13025	8139565826589798	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_divider/divider.c.obj	ccbe49e1310d922e
 21660	26136	8139648530978620	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/midi/midi_device.c.obj	8b7cd64d5b882403
 22876	26348	8139648532528952	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/hw/bsp/rp2040/family.c.obj	12e9237c8d24585c
 22214	26350	8139648532918626	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/tusb.c.obj	b28a444f4cea9129
-26598	36415	8139648633586148	clavier.dis	733f934dfc0163d7
+2077	3263	8140259441680795	clavier.dis	733f934dfc0163d7
+2077	3263	8140259441680795	clavier.hex	733f934dfc0163d7
 12751	14167	8139565839906537	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_sci_m33.S.obj	9f7bdb96a600cea2
-26598	36415	8139648633586148	clavier.hex	733f934dfc0163d7
-26598	36415	8139648633586148	clavier.bin	733f934dfc0163d7
+2077	3263	8140259441680795	clavier.bin	733f934dfc0163d7
+2077	3263	8140259441680795	clavier.uf2	733f934dfc0163d7
 17366	22674	8139648495523278	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pio/pio.c.obj	4b41793230a62add
-26598	36415	8139648633586148	clavier.uf2	733f934dfc0163d7
-26598	36415	8139648633586148	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.hex	733f934dfc0163d7
-26598	36415	8139648633586148	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.bin	733f934dfc0163d7
-26598	36415	8139648633586148	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.uf2	733f934dfc0163d7
-483	5102	8139648319363832	CMakeFiles/clavier.dir/src/sysex_uid.c.obj	9304439e4f9c7f44
-283	11890	8139648387937156	CMakeFiles/clavier.dir/src/can_link.c.obj	b90f2fb5a17af4b4
+2077	3263	8140259441680795	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.hex	733f934dfc0163d7
+2077	3263	8140259441680795	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.bin	733f934dfc0163d7
+2077	3263	8140259441680795	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.uf2	733f934dfc0163d7
+88	882	8140258572021404	CMakeFiles/clavier.dir/src/sysex_uid.c.obj	9304439e4f9c7f44
+180	2076	8140259429761786	CMakeFiles/clavier.dir/src/can_link.c.obj	b90f2fb5a17af4b4
 17419	21923	8139648485924028	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj	5918d238afd0b05a
 6174	6956	8139565768030639	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/custom_panic_function.S.obj	b17cc6d6282b233a
 5996	7823	8139565776282474	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2350/pico_platform/platform.c.obj	71c536d3160c968e
 6093	7881	8139565776152185	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_common/common.c.obj	41d7de6fce5e5b7a
 7649	9113	8139565788359159	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq_handler_chain.S.obj	3cb849761e6f7607
 6211	8180	8139565778845792	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/hardware_claim/claim.c.obj	6ed2ac51470b2e21
-12292	16982	8139565868813820	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_math.c.obj	db8896c704ecf8e4
 6119	9280	8139565791309265	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_platform_panic/panic.c.obj	883c13b7322e381
+12292	16982	8139565868813820	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_double/double_math.c.obj	db8896c704ecf8e4
 5897	8979	8139565785154162	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_stdlib/stdlib.c.obj	ddfadb26b57ce160
 6672	8625	8139565783314291	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_sync/sync.c.obj	d88574211d0b33d0
 5967	9440	8139565791919099	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_gpio/gpio.c.obj	caa7e6ce1e13a283
@@ -165,11 +165,11 @@
 7786	10516	8139565803105797	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/sem.c.obj	90cdf0a2cc442c73
 6999	10477	8139565801446294	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_irq/irq.c.obj	9046e353e5afc7e
 7882	11014	8139565807819448	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_sync/mutex.c.obj	652486dda9a20e17
-14337	16275	8139565861567996	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj	46ff442b5dc769f8
 9076	10982	8139565807974792	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_util/fixed_bitset.c.obj	2d8ec70977f5cbb5
+14337	16275	8139565861567996	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/cmsis/stub/CMSIS/Device/RP2350/Source/system_RP2350.c.obj	46ff442b5dc769f8
 9015	12176	8139565819824839	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_util/datetime.c.obj	413a4df4bcad1b03
-9183	12751	8139565823632105	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_util/queue.c.obj	78a3ea7ec291a682
 9914	11562	8139565812791781	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_vreg/vreg.c.obj	8d7106a1dff2e4f5
+9183	12751	8139565823632105	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_util/queue.c.obj	78a3ea7ec291a682
 9712	12249	8139565820099992	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_pll/pll.c.obj	ea726aa4eec85101
 10050	12025	8139565817941003	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/hardware_ticks/ticks.c.obj	720be47274817f6b
 9113	12460	8139565822230131	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/common/pico_util/pheap.c.obj	d51a1ca3331d882f
@@ -203,48 +203,39 @@
 13686	17501	8139565874103530	CMakeFiles/can2040.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/src/rp2_common/pico_printf/printf.c.obj	ee078c2856cc092e
 17501	17975	8139565878443453	libcan2040.a	ae442e5e4278b8a5
 23	250	0	clean	e8e407a994324ac6
-520	11035	8139648368107796	CMakeFiles/clavier.dir/src/usb_log.c.obj	fd72e51767213607
-147	8051	8139654071795895	CMakeFiles/clavier.dir/src/can_link.c.obj	b90f2fb5a17af4b4
-8052	16510	8139654156094292	clavier.elf	733f934dfc0163d7
-8052	16510	8139654156094292	clavier.dis	733f934dfc0163d7
-8052	16510	8139654156094292	clavier.hex	733f934dfc0163d7
-8052	16510	8139654156094292	clavier.bin	733f934dfc0163d7
-8052	16510	8139654156094292	clavier.uf2	733f934dfc0163d7
-8052	16510	8139654156094292	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.dis	733f934dfc0163d7
-8052	16510	8139654156094292	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.hex	733f934dfc0163d7
-8052	16510	8139654156094292	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.bin	733f934dfc0163d7
-8052	16510	8139654156094292	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.uf2	733f934dfc0163d7
-137	1639	8139656387046003	CMakeFiles/clavier.dir/src/can_link.c.obj	b90f2fb5a17af4b4
-1640	3519	8139656406346115	clavier.elf	733f934dfc0163d7
-1640	3519	8139656406346115	clavier.dis	733f934dfc0163d7
-1640	3519	8139656406346115	clavier.hex	733f934dfc0163d7
-1640	3519	8139656406346115	clavier.bin	733f934dfc0163d7
-1640	3519	8139656406346115	clavier.uf2	733f934dfc0163d7
-1640	3519	8139656406346115	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.dis	733f934dfc0163d7
-1640	3519	8139656406346115	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.hex	733f934dfc0163d7
-1640	3519	8139656406346115	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.bin	733f934dfc0163d7
-1640	3519	8139656406346115	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.uf2	733f934dfc0163d7
-185	1725	8139658738672798	CMakeFiles/clavier.dir/src/main.c.obj	76f012bb831dc1ed
-214	2762	8139658748498459	CMakeFiles/clavier.dir/src/usb_log.c.obj	fd72e51767213607
-196	3014	8139658751321665	CMakeFiles/clavier.dir/src/can_link.c.obj	b90f2fb5a17af4b4
-3015	4591	8139658767683870	clavier.elf	733f934dfc0163d7
-3015	4591	8139658767683870	clavier.dis	733f934dfc0163d7
-3015	4591	8139658767683870	clavier.hex	733f934dfc0163d7
-3015	4591	8139658767683870	clavier.bin	733f934dfc0163d7
-3015	4591	8139658767683870	clavier.uf2	733f934dfc0163d7
-3015	4591	8139658767683870	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.dis	733f934dfc0163d7
-3015	4591	8139658767683870	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.hex	733f934dfc0163d7
-3015	4591	8139658767683870	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.bin	733f934dfc0163d7
-3015	4591	8139658767683870	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.uf2	733f934dfc0163d7
-133	3434	8140162767775601	CMakeFiles/clavier.dir/src/main.c.obj	76f012bb831dc1ed
 408	4193	8140162775130450	CMakeFiles/clavier.dir/src/usb_log.c.obj	fd72e51767213607
-169	893	8140162958844502	CMakeFiles/clavier.dir/src/can_link.c.obj	b90f2fb5a17af4b4
-894	5749	8140163007179283	clavier.elf	733f934dfc0163d7
-894	5749	8140163007179283	clavier.dis	733f934dfc0163d7
-894	5749	8140163007179283	clavier.hex	733f934dfc0163d7
-894	5749	8140163007179283	clavier.bin	733f934dfc0163d7
-894	5749	8140163007179283	clavier.uf2	733f934dfc0163d7
-894	5749	8140163007179283	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.dis	733f934dfc0163d7
-894	5749	8140163007179283	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.hex	733f934dfc0163d7
-894	5749	8140163007179283	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.bin	733f934dfc0163d7
-894	5749	8140163007179283	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.uf2	733f934dfc0163d7
+25	6617	8140266796014283	build.ninja	e5e18e9516914638
+589	1564	8140266813846782	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/dfu/dfu_device.c.obj	5c7b78c3003a5f88
+651	1676	8140266813806343	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/hid/hid_device.c.obj	4889d97a49b9986d
+516	1720	8140266813108989	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/audio/audio_device.c.obj	647a2a1252205ad6
+620	1773	8140266814446271	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/dfu/dfu_rt_device.c.obj	f163a52d07c5fcd7
+754	1872	8140266816294126	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/net/ecm_rndis_device.c.obj	9cd02c17fc989ec4
+721	1907	8140266816288974	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/msc/msc_device.c.obj	7097f62ad80f5e6d
+1677	3157	8140266829736471	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.obj	5dfe9f56b70d8070
+1774	3198	8140266830062471	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/video/video_device.c.obj	fb6f447d373ec305
+276	3200	8140266829654510	CMakeFiles/clavier.dir/src/diag_log.c.obj	ed0adc10c2753c02
+214	3417	8140266831465397	CMakeFiles/clavier.dir/src/main.c.obj	76f012bb831dc1ed
+1566	3420	8140266831256980	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/net/ncm_device.c.obj	7a9bc162ed2c275
+1721	3428	8140266831429711	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/vendor/vendor_device.c.obj	eef5ccc584a0859f
+246	3430	8140266831490606	CMakeFiles/clavier.dir/src/midi.c.obj	f90a46b98fc5501c
+339	3667	8140266834859417	CMakeFiles/clavier.dir/src/usb_descriptors.c.obj	502818ec4cc79c5a
+308	4109	8140266838977382	CMakeFiles/clavier.dir/src/usb_log.c.obj	fd72e51767213607
+482	4297	8140266840154147	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/device/usbd_control.c.obj	e61387d84f4bb06c
+412	4534	8140266842561881	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj	c652d49d787d31c4
+550	4574	8140266843832252	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/cdc/cdc_device.c.obj	d5087e5ee2825388
+684	4847	8140266846063265	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/class/midi/midi_device.c.obj	8b7cd64d5b882403
+376	5222	8140266848218647	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj	573d73bfd8d10a1d
+1872	5252	8140266850992272	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/tusb.c.obj	b28a444f4cea9129
+3158	5310	8140266851831221	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/hw/bsp/rp2040/family.c.obj	12e9237c8d24585c
+228	5514	8140266853425820	CMakeFiles/clavier.dir/src/can_link.c.obj	b90f2fb5a17af4b4
+1907	5516	8140266852961114	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/common/tusb_fifo.c.obj	b1d234875d8ac4cc
+447	5648	8140266855088214	CMakeFiles/clavier.dir/C_/Users/marti/.pico-sdk/sdk/2.3.1/lib/tinyusb/src/device/usbd.c.obj	45dab386a5247bb6
+5648	6919	8140266867802692	clavier.elf	a97f31db429692e8
+5648	6919	8140266867802692	clavier.dis	a97f31db429692e8
+5648	6919	8140266867802692	clavier.hex	a97f31db429692e8
+5648	6919	8140266867802692	clavier.bin	a97f31db429692e8
+5648	6919	8140266867802692	clavier.uf2	a97f31db429692e8
+5648	6919	8140266867802692	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.dis	a97f31db429692e8
+5648	6919	8140266867802692	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.hex	a97f31db429692e8
+5648	6919	8140266867802692	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.bin	a97f31db429692e8
+5648	6919	8140266867802692	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/clavier/clavier.uf2	a97f31db429692e8

@@ -27,6 +27,10 @@
 #define SOLENOID_RELEASE_DURATION_MS 5u    // à ajuster empiriquement sur prototype
 #define SOLENOID_RELEASE_DUTY_PERCENT 50u  // à ajuster empiriquement sur prototype
 
+// --- Phase PROBE (auto-test IPROPI) -----------------------------------------
+#define SOLENOID_PROBE_DURATION_MS 3u
+#define SOLENOID_PROBE_DUTY_PERCENT 20u
+
 // --- Polarité de DIR_CHANNEL (PH/IN2) ----------------------------------------
 // Niveau logique 0/1 de dir_channel pour chaque phase (à confirmer au banc).
 #define SOLENOID_DIR_LEVEL_PULL 0
@@ -40,6 +44,8 @@
 // Plafonds absolus appliqués par le driver quel que soit le profil ci-dessus.
 #define SOLENOID_DUTY_MAX_PERCENT 100u
 #define SOLENOID_PULL_MAX_MS 50u
+#define SOLENOID_PROBE_MAX_MS 10u
+#define SOLENOID_PROBE_DUTY_MAX_PERCENT 20u
 
 // Délai après réveil de global_sleep (nSLEEP) avant d'accepter une activation
 // (tWAKE du DRV8874, ~1 ms typique ; marge prise).

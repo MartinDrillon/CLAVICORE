@@ -16,6 +16,6 @@
 #define CFG_TUD_CDC_EP_BUFSIZE 64
 #define CFG_TUD_MIDI 1
 #define CFG_TUD_MIDI_RX_BUFSIZE 64
-#define CFG_TUD_MIDI_TX_BUFSIZE 128  // ADR-0003 : un SysEx de 29 octets (40 o en paquets USB) tient largement
+#define CFG_TUD_MIDI_TX_BUFSIZE 64
 
 #endif

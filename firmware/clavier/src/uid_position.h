@@ -11,7 +11,7 @@
 // vers le grave ; la position 4 (nœud 6) porte les notes les plus graves.
 // UID relevés avec tests/can_phase3_uid.md (ordre id[0]..id[7]). Entrée vide :
 // {{{0}}, UID_POSITION_EMPTY}. Le rattachement UID -> position se vérifie avec le
-// SysEx UID_REPORT (champ position) : 0x7F = UID absent de la table.
+// Ligne [UID] (champ pos) : 0x7F = UID absent de la table.
 
 #include "uid_position_format.h"
 
