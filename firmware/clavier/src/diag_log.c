@@ -317,12 +317,13 @@ bool diag_format_note_name_fr(char *out, size_t capacity, uint8_t midi_note) {
     const uint8_t octave = (uint8_t)(midi_note / 12u);
     int written;
 
+    // Notation scientifique (C4 = MIDI 60, ADR-0008) : DO2 = MIDI 36, DO6 = MIDI 84.
     if (out == NULL || capacity == 0u || midi_note < COMMISSIONING_MIDI_NOTE_MIN ||
-        midi_note > COMMISSIONING_MIDI_NOTE_MAX || octave < 2u) {
+        midi_note > COMMISSIONING_MIDI_NOTE_MAX || octave < 1u) {
         return false;
     }
 
-    written = snprintf(out, capacity, "%s%u(%u)", note_names[semitone], (unsigned)(octave - 2u),
+    written = snprintf(out, capacity, "%s%u(%u)", note_names[semitone], (unsigned)(octave - 1u),
                        (unsigned)midi_note);
     if (written < 0 || (size_t)written >= capacity) {
         out[0] = '\0';

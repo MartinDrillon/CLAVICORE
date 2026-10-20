@@ -28,6 +28,7 @@ ADR, triées par numéro.
 | [0005](./adr-0005-affichage-diagnostic-serie-cdc-remplace-sysex.md) | Affichage diagnostic sur journal série CDC, en remplacement du SysEx | Accepted | architecture, firmware, usb, diagnostic | Remplace partiellement 0003 (§6) et 0004 (addendum SysEx) | Diagnostic sur port série CDC (PuTTY) remplaçant tout SysEx de diagnostic ; trames CAN inchangées. |
 | [0006](./adr-0006-mode-maintenance-push-only.md) | Mode maintenance push-only pour assemblage des solénoïdes | Accepted | architecture, firmware, protocol, maintenance | Amendée partiellement par 0007 (§4) | Mode MAINTENANCE push-only pour assemblage des solénoïdes, coupure à 10 s dans la couche pilote. Dérogation : invariant 4. |
 | [0007](./adr-0007-hold-limite-20s.md) | Relèvement de la limite de durée de la phase HOLD à 20 s (jeu normal) | Accepted | architecture, firmware, hardware | Amende partiellement 0006 (§4) | Phase HOLD du jeu normal : coupure autonome relevée de 2 s à 20 s, duty HOLD plafonné à 25 %. Dérogation : invariant 4 (durée). |
+| [0008](./adr-0008-convention-nommage-octaves-notation-scientifique.md) | Convention de nommage des octaves — notation scientifique (MIDI 36 = DO2, 84 = DO6) | Accepted | architecture, firmware, protocol, diagnostic | Amende partiellement 0004 (§6), 0005 (nommage) | Notation scientifique C4=60 : MIDI 36 = DO2, 84 = DO6 ; corrige docs et journal CDC, sans changer trames ni table. |
 <!-- Exemple de ligne :
 | [0000](./adr-0000-exemple.md) | Titre de la décision | Accepted | firmware | — | Résumé en une ligne. |
 -->

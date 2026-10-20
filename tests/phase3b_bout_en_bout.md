@@ -108,7 +108,7 @@ Les exemples ci-dessous **s'ajoutent** aux lignes existantes `[STATUS]`,
 [SELFTEST] req=42 pos=4 status=OK bitmap=0x00B faults=0x000 tag=29B1
 [STATUS] code=TABLE_PARTIAL
 [STATUS] code=TABLE_WRITTEN
-[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#4(82),SI4(83),DO5(84)
+[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#5(82),SI5(83),DO6(84)
 [SUMMARY] cards_ok=1/1 channels=3 keys=3/49 missing_keys=1-46 table=WRITTEN
 ```
 
@@ -119,7 +119,7 @@ Exemple : la nouvelle carte arrive en position 3 avec canaux `0,1`.
 ```text
 [BOOT] table=loaded cards=1
 [HELP] bouton Moteur 3 s = auto-test ; table rechargee depuis la flash
-[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#4(82),SI4(83),DO5(84)
+[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#5(82),SI5(83),DO6(84)
 [TRIGGER] bouton Moteur recu -> auto-test lance (req=43)
 [STATUS] code=SELFTEST_STARTED
 [SELFTEST] req=43 pos=4 status=OK bitmap=0x00B faults=0x000 tag=29B1
@@ -128,8 +128,8 @@ Exemple : la nouvelle carte arrive en position 3 avec canaux `0,1`.
 [STATUS] code=TABLE_DIFFERS
 [DIFF] pos=3 ancien=0x000 nouveau=0x003
 [STATUS] code=TABLE_WRITTEN
-[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#4(82),SI4(83),DO5(84)
-[CARD] pos=3 node=5 uid=AA10203040506070 state=OK bitmap=0x003 channels=0,1 keys=45,46 notes=SOL#4(80),LA4(81)
+[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#5(82),SI5(83),DO6(84)
+[CARD] pos=3 node=5 uid=AA10203040506070 state=OK bitmap=0x003 channels=0,1 keys=45,46 notes=SOL#5(80),LA5(81)
 [SUMMARY] cards_ok=2/2 channels=5 keys=5/49 missing_keys=1-44 table=DIFFERS_WRITTEN
 ```
 
@@ -148,8 +148,8 @@ Exemple : la carte de position 4 passe de `0,1,3` à `0,1,2,3`.
 [STATUS] code=TABLE_DIFFERS
 [DIFF] pos=4 ancien=0x00B nouveau=0x00F
 [STATUS] code=TABLE_WRITTEN
-[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00F channels=0,1,2,3 keys=46,47,48,49 notes=LA4(81),LA#4(82),SI4(83),DO5(84)
-[CARD] pos=3 node=5 uid=AA10203040506070 state=OK bitmap=0x003 channels=0,1 keys=44,45 notes=SOL4(79),SOL#4(80)
+[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00F channels=0,1,2,3 keys=46,47,48,49 notes=LA5(81),LA#5(82),SI5(83),DO6(84)
+[CARD] pos=3 node=5 uid=AA10203040506070 state=OK bitmap=0x003 channels=0,1 keys=44,45 notes=SOL5(79),SOL#5(80)
 [SUMMARY] cards_ok=2/2 channels=6 keys=6/49 missing_keys=1-43 table=DIFFERS_WRITTEN
 ```
 

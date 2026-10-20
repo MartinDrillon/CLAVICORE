@@ -236,7 +236,7 @@ static void test_diag_lines(void) {
     diag_selftest_report_t report = {42u, 4u, CAN_SELFTEST_STATUS_OK, 0x0A5u, 0x003u, 0xF29Bu};
     diag_selftest_raw_report_t raw = {42u, 4u, 3u, 12u, 345u};
     diag_card_report_t card = {4u, 6u, {0}, DIAG_CARD_STATE_OK, 0x00Bu,
-                               "0,1,3", "47,48,49", "LA#4(82),SI4(83),DO5(84)"};
+                               "0,1,3", "47,48,49", "LA#5(82),SI5(83),DO6(84)"};
     diag_summary_report_t summary = {1u, 1u, 3u, 3u, "1-46", "WRITTEN"};
 
     memcpy(uid.uid, UID_A, 8u);
@@ -265,10 +265,18 @@ static void test_diag_lines(void) {
           strlen("[DIFF] pos=4 ancien=0x003 nouveau=0x00B"));
     CHECK(strcmp(out, "[DIFF] pos=4 ancien=0x003 nouveau=0x00B") == 0);
     CHECK(diag_format_note_name_fr(out, sizeof(out), 82u));
-    CHECK(strcmp(out, "LA#4(82)") == 0);
+    CHECK(strcmp(out, "LA#5(82)") == 0);
+    // Bornes de la plage routable 36..84 et convention d'octave (ADR-0008).
+    CHECK(diag_format_note_name_fr(out, sizeof(out), 36u));
+    CHECK(strcmp(out, "DO2(36)") == 0);
+    CHECK(diag_format_note_name_fr(out, sizeof(out), 60u));
+    CHECK(strcmp(out, "DO4(60)") == 0);
+    CHECK(diag_format_note_name_fr(out, sizeof(out), 84u));
+    CHECK(strcmp(out, "DO6(84)") == 0);
+    CHECK(!diag_format_note_name_fr(out, sizeof(out), 35u));
     CHECK(diag_format_card_line(out, sizeof(out), &card) ==
-          strlen("[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#4(82),SI4(83),DO5(84)"));
-    CHECK(strcmp(out, "[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#4(82),SI4(83),DO5(84)") == 0);
+          strlen("[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#5(82),SI5(83),DO6(84)"));
+    CHECK(strcmp(out, "[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#5(82),SI5(83),DO6(84)") == 0);
     CHECK(diag_format_card_unknown_line(out, sizeof(out), UID_B) ==
           strlen("[CARD_UNKNOWN] uid=AA10203040506070"));
     CHECK(strcmp(out, "[CARD_UNKNOWN] uid=AA10203040506070") == 0);
@@ -300,7 +308,7 @@ static void test_diag_lines(void) {
 static void print_example_case_a(void) {
     char line[DIAG_LOG_LINE_MAX];
     diag_card_report_t card = {4u, 6u, {0}, DIAG_CARD_STATE_OK, 0x00Bu,
-                               "0,1,3", "47,48,49", "LA#4(82),SI4(83),DO5(84)"};
+                               "0,1,3", "47,48,49", "LA#5(82),SI5(83),DO6(84)"};
     diag_summary_report_t summary = {1u, 1u, 3u, 3u, "1-46", "WRITTEN"};
 
     memcpy(card.uid, UID_A, 8u);

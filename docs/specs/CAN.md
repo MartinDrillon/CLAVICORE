@@ -292,8 +292,10 @@ Règles :
 
 ### Convention musicale figée
 
-- **touche 1 = DO1 = MIDI 36**
-- **touche 49 = DO5 = MIDI 84**
+Notation scientifique, C4 = MIDI 60 (ADR-0008, amende ADR-0004 §6).
+
+- **touche 1 = DO2 = MIDI 36**
+- **touche 49 = DO6 = MIDI 84**
 - formule : `touche = note_midi - 35`
 - hors plage MIDI `36..84` : note ignorée
 
@@ -313,9 +315,9 @@ Carte unique en position 4, avec canaux `0`, `1` et `2` occupés :
 
 | Canal | Touche | Note MIDI | Note |
 |---|---|---|---|
-| 0 | 47 | 82 | LA#4 / SIb4 |
-| 1 | 48 | 83 | SI4 |
-| 2 | 49 | 84 | DO5 |
+| 0 | 47 | 82 | LA#5 / SIb5 |
+| 1 | 48 | 83 | SI5 |
+| 2 | 49 | 84 | DO6 |
 
 Une carte placée en position 3 recevrait le bloc immédiatement plus grave, se
 terminant à la touche 46.

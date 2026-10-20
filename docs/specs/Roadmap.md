@@ -111,11 +111,6 @@ IDLE --(note on)--> PULL (duty haut, très court)
 IDLE <--(fin timer)-- RELEASE (polarité inversée, duty moyen, court) <--(note off)-- HOLD
 ```
 
-#### b. Moteur : bring-up PWM/DRV8874 isolé - test de toutes les channels - pas de CAN
-
-- [ ] Extension aux 12 cannaux, déclenchement de test via bouton, cycle d’un canal au suivant à chaque pression pour vérifier les 12 canaux tour à tour (optionel)
-
-
 ### Phase 3a : Bring-up CAN > Voir [CAN.md](CAN.md) et ADR-0005
 Premier test de communication entre la carte clavier et une unique carte moteur
  Décisions de bring-up et d'affichage diagnostic : ADR-0005
@@ -129,8 +124,8 @@ Premier test de communication entre la carte clavier et une unique carte moteur
 ### Phase 3b — Auto-test IPROPI, table flash et commande solénoïde
 
 Décisions figées par [ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assignation-solenoide-command.md) :
-- **sens musical définitif** : touche 1 = **DO1** = MIDI 36 ; touche 49 =
-  **DO5** = MIDI 84 ;
+- **sens musical définitif** (notation scientifique, [ADR-0008](../adr/adr-0008-convention-nommage-octaves-notation-scientifique.md)) : touche 1 = **DO2** = MIDI 36 ; touche 49 =
+  **DO6** = MIDI 84 ;
 - **règle d'assignation descendante** : l'ancrage se fait sur la touche 49 ;
 - **exemple de carte unique** : 3 canaux occupés sur une seule carte donnent
   les touches **47, 48, 49** donc MIDI **82, 83, 84** ;

@@ -25,7 +25,9 @@
 
 !firmware/**
 
-!build/**
+# Les artefacts de build sont locaux et non reutilisables (chemins absolus
+# dans les caches CMake, cf. AGENTS.md) : jamais versionnes.
+/build/
 
 !Solenoid_simulation/V3/**
 Solenoid_simulation/V3/README.md
