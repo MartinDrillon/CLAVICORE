@@ -1,0 +1,153 @@
+# GÉNÉRÉ AUTOMATIQUEMENT depuis Clavier_drive_1.xml — NE PAS ÉDITER À LA MAIN.
+# Régénérer via tools/kicad/netlist_to_pinmap.py après toute modification du schéma.
+# Généré le 2026-09-26T11:29:03+00:00
+board: clavier
+mcu_ref: A1
+pins:
+  "1":
+    function: GPIO0_1
+    net: /RXD CAN
+  "10":
+    function: GPIO7_10
+    net: /L2
+  "11":
+    function: GPIO8_11
+    net: /L3
+  "12":
+    function: GPIO9_12
+    net: /L4
+  "13":
+    function: GND_13
+    net: GND
+  "14":
+    function: GPIO10_14
+    net: unconnected-(A1-GPIO10-Pad14)
+  "15":
+    function: GPIO11_15
+    net: /LED_DATA
+  "16":
+    function: GPIO12_16
+    net: /C4
+  "17":
+    function: GPIO13_17
+    net: /C3
+  "18":
+    function: GND_18
+    net: GND
+  "19":
+    function: GPIO14_19
+    net: /C2
+  "2":
+    function: GPIO1_2
+    net: /TXD CAN
+  "20":
+    function: GPIO15_20
+    net: /C1
+  "21":
+    function: GPIO16_21
+    net: /C12
+  "22":
+    function: GPIO17_22
+    net: /C11
+  "23":
+    function: GND_23
+    net: GND
+  "24":
+    function: GPIO18_24
+    net: /C10
+  "25":
+    function: GPIO19_25
+    net: /C9
+  "26":
+    function: GPIO20_26
+    net: /L7
+  "27":
+    function: GPIO21_27
+    net: /L6
+  "28":
+    function: GND_28
+    net: GND
+  "29":
+    function: GPIO22_29
+    net: /L5
+  "3":
+    function: GND_3
+    net: GND
+  "30":
+    function: RUN_30
+    net: Net-(A1-RUN)
+  "31":
+    function: GPIO26_ADC0_31
+    net: unconnected-(A1-GPIO26_ADC0-Pad31)
+  "32":
+    function: GPIO27_ADC1_32
+    net: /C8
+  "33":
+    function: AGND_33
+    net: unconnected-(A1-AGND-Pad33)
+  "34":
+    function: GPIO28_ADC2_34
+    net: /C7
+  "35":
+    function: ADC_VREF_35
+    net: unconnected-(A1-ADC_VREF-Pad35)
+  "36":
+    function: 3V3_36
+    net: /3.3V RP
+  "37":
+    function: 3V3_EN_37
+    net: unconnected-(A1-3V3_EN-Pad37)
+  "38":
+    function: GND_38
+    net: GND
+  "39":
+    function: VSYS_39
+    net: Net-(A1-VSYS)
+  "4":
+    function: GPIO2_4
+    net: /C6
+  "40":
+    function: VBUS_40
+    net: Net-(A1-VBUS)
+  "5":
+    function: GPIO3_5
+    net: /C5
+  "6":
+    function: GPIO4_6
+    net: /TX PICO MIDI
+  "7":
+    function: GPIO5_7
+    net: / RX PICO MIDI
+  "8":
+    function: GND_8
+    net: GND
+  "9":
+    function: GPIO6_9
+    net: /L1
+  "D1":
+    function: SWCLK_D1
+    net: unconnected-(A1-SWCLK-PadD1)
+  "D2":
+    function: GND_D2
+    net: GND
+  "D3":
+    function: SWDIO_D3
+    net: unconnected-(A1-SWDIO-PadD3)
+  "TP1":
+    function: USB_GND_TP1
+    net: unconnected-(A1-USB_GND-PadTP1)
+  "TP2":
+    function: USB_DM_TP2
+    net: unconnected-(A1-USB_DM-PadTP2)
+  "TP3":
+    function: USB_DP_TP3
+    net: unconnected-(A1-USB_DP-PadTP3)
+  "TP4":
+    function: ~{SMPS_PS}_TP4
+    net: unconnected-(A1-~{SMPS_PS}-PadTP4)
+  "TP5":
+    function: LED_OUT_TP5
+    net: unconnected-(A1-LED_OUT-PadTP5)
+  "TP6":
+    function: ~{BOOTSEL}_TP6
+    net: unconnected-(A1-~{BOOTSEL}-PadTP6)

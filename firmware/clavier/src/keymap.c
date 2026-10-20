@@ -25,7 +25,7 @@ static const uint16_t base_layer[KEYMAP_POSITION_COUNT + 1u] = {
     // Control keys, ordered by canonical position.
     // Exemple (NON assigné : le choix de la position physique revient à l'utilisateur) :
     //   [XX] = KEYCODE_STORAGE_GET_UID,   // XX = position libre de la matrice (ADR-0003)
-    [73] = KEYCODE_STORAGE_BEHAVIOR(KEYCODE_GET_UID),
+    [73] = KEYCODE_STORAGE_BEHAVIOR(KEYCODE_UNTRANSPOSE),
     [74] = KEYCODE_STORAGE_ALTERATION(KEYCODE_ALTERATION_RE),
     [75] = KEYCODE_STORAGE_ALTERATION(KEYCODE_ALTERATION_MI),
     [76] = KEYCODE_STORAGE_BEHAVIOR(KEYCODE_TRANSPOSE_GLOBAL_UP),

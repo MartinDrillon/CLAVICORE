@@ -17,6 +17,8 @@ typedef enum {
     // ADR-0003 : ajouté EN FIN pour ne pas décaler les valeurs empaquetées existantes.
     KEYCODE_GET_UID,
     KEYCODE_MAINTENANCE_TOGGLE,
+    // Annule transpositions et altérations : retour au keymap d'origine.
+    KEYCODE_UNTRANSPOSE,
 } keycode_kind_t;
 
 typedef enum {

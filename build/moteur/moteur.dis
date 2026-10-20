@@ -49,27 +49,27 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC, READONLY
  22 .flash_end    00000014  10006a3c  10006a3c  00008a3c  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
- 23 .debug_info   0002ce72  00000000  00000000  00008a50  2**0
+ 23 .debug_info   0002ce9d  00000000  00000000  00008a50  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 24 .debug_abbrev 000071d8  00000000  00000000  000358c2  2**0
+ 24 .debug_abbrev 000071f3  00000000  00000000  000358ed  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 25 .debug_loclists 00016201  00000000  00000000  0003ca9a  2**0
+ 25 .debug_loclists 00016201  00000000  00000000  0003cae0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 26 .debug_aranges 00000f10  00000000  00000000  00052ca0  2**3
+ 26 .debug_aranges 00000f10  00000000  00000000  00052ce8  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 27 .debug_rnglists 0000403d  00000000  00000000  00053bb0  2**0
+ 27 .debug_rnglists 0000403d  00000000  00000000  00053bf8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 28 .debug_line   0001d530  00000000  00000000  00057bed  2**0
+ 28 .debug_line   0001d532  00000000  00000000  00057c35  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 29 .debug_str    00007e2b  00000000  00000000  0007511d  2**0
+ 29 .debug_str    00007e3b  00000000  00000000  00075167  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 30 .comment      00000045  00000000  00000000  0007cf48  2**0
+ 30 .comment      00000045  00000000  00000000  0007cfa2  2**0
                   CONTENTS, READONLY
- 31 .ARM.attributes 00000036  00000000  00000000  0007cf8d  2**0
+ 31 .ARM.attributes 00000036  00000000  00000000  0007cfe7  2**0
                   CONTENTS, READONLY
- 32 .debug_frame  000027f0  00000000  00000000  0007cfc4  2**2
+ 32 .debug_frame  000027f0  00000000  00000000  0007d020  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 33 .debug_line_str 00000295  00000000  00000000  0007f7b4  2**0
+ 33 .debug_line_str 00000295  00000000  00000000  0007f810  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/moteur.elf:     file format elf32-littlearm
@@ -2847,7 +2847,7 @@ Disassembly of section .text:
 10001be4:	bd70      	pop	{r4, r5, r6, pc}
 10001be6:	bf00      	nop
 10001be8:	20000990 	.word	0x20000990
-10001bec:	001e847f 	.word	0x001e847f
+10001bec:	01312cff 	.word	0x01312cff
 10001bf0:	00989680 	.word	0x00989680
 10001bf4:	001e8480 	.word	0x001e8480
 

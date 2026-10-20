@@ -17,6 +17,9 @@ _Static_assert(SOLENOID_PULL_DUTY_PERCENT <= 100u && SOLENOID_HOLD_DUTY_PERCENT 
 _Static_assert(SOLENOID_HOLD_MAX_MS > 0u && SOLENOID_PULL_DURATION_MS > 0u &&
                    SOLENOID_PROBE_DURATION_MS > 0u && SOLENOID_MAINT_MAX_MS > 0u,
                "durées nulles");
+// ADR-0007 : HOLD borné à 20 s et au duty validé thermiquement ; `* US_PER_MS` tient en uint32_t.
+_Static_assert(SOLENOID_HOLD_DUTY_PERCENT <= SOLENOID_HOLD_DUTY_MAX_PERCENT, "duty HOLD > plafond ADR-0007");
+_Static_assert(SOLENOID_HOLD_MAX_MS <= 4000000u, "SOLENOID_HOLD_MAX_MS deborde en us sur 32 bits");
 _Static_assert(SOLENOID_DIR_LEVEL_PULL != SOLENOID_DIR_LEVEL_RELEASE, "polarités PULL/RELEASE identiques");
 
 static uint32_t clamp_duty(uint32_t percent) {
@@ -27,6 +30,11 @@ static uint32_t pull_duration_us(void) {
     const uint32_t ms = SOLENOID_PULL_DURATION_MS > SOLENOID_PULL_MAX_MS ? SOLENOID_PULL_MAX_MS
                                                                           : SOLENOID_PULL_DURATION_MS;
     return ms * US_PER_MS;
+}
+
+static uint32_t clamp_hold_duty(uint32_t percent) {
+    const uint32_t duty = clamp_duty(percent);
+    return duty > SOLENOID_HOLD_DUTY_MAX_PERCENT ? SOLENOID_HOLD_DUTY_MAX_PERCENT : duty;
 }
 
 static uint32_t probe_duration_us(void) {
@@ -278,7 +286,7 @@ void solenoid_driver_tick(solenoid_driver_t *drv, uint32_t now_us) {
             if (drv->note_off_pending) {
                 begin_release(drv, now_us);
             } else {
-                pwm_hal_set_duty_percent(&drv->pwm_channel, clamp_duty(SOLENOID_HOLD_DUTY_PERCENT));
+                pwm_hal_set_duty_percent(&drv->pwm_channel, clamp_hold_duty(SOLENOID_HOLD_DUTY_PERCENT));
                 set_state(drv, SOLENOID_STATE_HOLD, now_us);
             }
         }

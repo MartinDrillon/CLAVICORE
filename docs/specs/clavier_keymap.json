@@ -1,0 +1,1023 @@
+{
+  "meta": {
+    "description": "Layout matrice, keymap et comportements pour clavecin automatique MIDI (inspiration QMK/ZMK).",
+    "source_file": "LAYOUT_DE_LA_MATRICE.txt",
+    "position_id": "Identifiant canonique 1-84 utilisé partout (electrical_matrix, physical_layout, keymap). C'est la clé de jonction entre le scan matriciel et le keymap.",
+    "unused_positions": [
+      61,
+      72
+    ],
+    "corrections_appliquees_a_la_generation": [
+      "T_OctupD / T_OctdownD : la position 72 (listée dans le .txt source comme affectée) a été retirée de leur scope, car le tableau POSITION PHYSIQUE mis à jour la marque XX (inutilisée). A corriger également dans le .txt source pour rester cohérent."
+    ],
+    "decisions_validees": [
+      "Les bornes MIDI [0,127] sont appliquées par clamp après les altérations (A_) et les transpositions (T_).",
+      "Ordre de résolution de la note finale : altération (A_) appliquée d'abord, puis décalage cumulatif de transposition (T_).",
+      "En cas de conflit entre A_ actifs, la dernière altération modifiée l'emporte pour la note revendiquée.",
+      "Une note déjà active n'est pas modifiée rétroactivement par un changement d'état T_/A_ ; seules les prochaines pressions utilisent le nouvel état.",
+      "T_GlobUp et T_GlobDown existent comme comportements mais ne sont pas assignés dans le keymap actuel."
+    ]
+  },
+  "gpio": {
+    "note": "A completer : broches du Pico pour le scan matriciel (non fournies pour le moment).",
+    "row_pins": {
+      "L1": null,
+      "L2": null,
+      "L3": null,
+      "L4": null,
+      "L5": null,
+      "L6": null,
+      "L7": null
+    },
+    "col_pins": {
+      "C1": null,
+      "C2": null,
+      "C3": null,
+      "C4": null,
+      "C5": null,
+      "C6": null,
+      "C7": null,
+      "C8": null,
+      "C9": null,
+      "C10": null,
+      "C11": null,
+      "C12": null
+    }
+  },
+  "electrical_matrix": {
+    "1": {
+      "row": 1,
+      "col": 1
+    },
+    "2": {
+      "row": 1,
+      "col": 2
+    },
+    "3": {
+      "row": 1,
+      "col": 3
+    },
+    "4": {
+      "row": 1,
+      "col": 4
+    },
+    "5": {
+      "row": 1,
+      "col": 5
+    },
+    "6": {
+      "row": 1,
+      "col": 6
+    },
+    "7": {
+      "row": 1,
+      "col": 7
+    },
+    "8": {
+      "row": 1,
+      "col": 8
+    },
+    "9": {
+      "row": 1,
+      "col": 9
+    },
+    "10": {
+      "row": 1,
+      "col": 10
+    },
+    "11": {
+      "row": 1,
+      "col": 11
+    },
+    "12": {
+      "row": 1,
+      "col": 12
+    },
+    "13": {
+      "row": 2,
+      "col": 1
+    },
+    "14": {
+      "row": 2,
+      "col": 2
+    },
+    "15": {
+      "row": 2,
+      "col": 3
+    },
+    "16": {
+      "row": 2,
+      "col": 4
+    },
+    "17": {
+      "row": 2,
+      "col": 5
+    },
+    "18": {
+      "row": 2,
+      "col": 6
+    },
+    "19": {
+      "row": 2,
+      "col": 7
+    },
+    "20": {
+      "row": 2,
+      "col": 8
+    },
+    "21": {
+      "row": 2,
+      "col": 9
+    },
+    "22": {
+      "row": 2,
+      "col": 10
+    },
+    "23": {
+      "row": 2,
+      "col": 11
+    },
+    "24": {
+      "row": 2,
+      "col": 12
+    },
+    "25": {
+      "row": 3,
+      "col": 1
+    },
+    "26": {
+      "row": 3,
+      "col": 2
+    },
+    "27": {
+      "row": 3,
+      "col": 3
+    },
+    "28": {
+      "row": 3,
+      "col": 4
+    },
+    "29": {
+      "row": 3,
+      "col": 5
+    },
+    "30": {
+      "row": 3,
+      "col": 6
+    },
+    "31": {
+      "row": 3,
+      "col": 7
+    },
+    "32": {
+      "row": 3,
+      "col": 8
+    },
+    "33": {
+      "row": 3,
+      "col": 9
+    },
+    "34": {
+      "row": 3,
+      "col": 10
+    },
+    "35": {
+      "row": 3,
+      "col": 11
+    },
+    "36": {
+      "row": 3,
+      "col": 12
+    },
+    "37": {
+      "row": 4,
+      "col": 1
+    },
+    "38": {
+      "row": 4,
+      "col": 2
+    },
+    "39": {
+      "row": 4,
+      "col": 3
+    },
+    "40": {
+      "row": 4,
+      "col": 4
+    },
+    "41": {
+      "row": 4,
+      "col": 5
+    },
+    "42": {
+      "row": 4,
+      "col": 6
+    },
+    "43": {
+      "row": 4,
+      "col": 7
+    },
+    "44": {
+      "row": 4,
+      "col": 8
+    },
+    "45": {
+      "row": 4,
+      "col": 9
+    },
+    "46": {
+      "row": 4,
+      "col": 10
+    },
+    "47": {
+      "row": 4,
+      "col": 11
+    },
+    "48": {
+      "row": 4,
+      "col": 12
+    },
+    "49": {
+      "row": 5,
+      "col": 1
+    },
+    "50": {
+      "row": 5,
+      "col": 2
+    },
+    "51": {
+      "row": 5,
+      "col": 3
+    },
+    "52": {
+      "row": 5,
+      "col": 4
+    },
+    "53": {
+      "row": 5,
+      "col": 5
+    },
+    "54": {
+      "row": 5,
+      "col": 6
+    },
+    "55": {
+      "row": 5,
+      "col": 7
+    },
+    "56": {
+      "row": 5,
+      "col": 8
+    },
+    "57": {
+      "row": 5,
+      "col": 9
+    },
+    "58": {
+      "row": 5,
+      "col": 10
+    },
+    "59": {
+      "row": 5,
+      "col": 11
+    },
+    "60": {
+      "row": 5,
+      "col": 12
+    },
+    "61": {
+      "row": 6,
+      "col": 1
+    },
+    "62": {
+      "row": 6,
+      "col": 2
+    },
+    "63": {
+      "row": 6,
+      "col": 3
+    },
+    "64": {
+      "row": 6,
+      "col": 4
+    },
+    "65": {
+      "row": 6,
+      "col": 5
+    },
+    "66": {
+      "row": 6,
+      "col": 6
+    },
+    "67": {
+      "row": 6,
+      "col": 7
+    },
+    "68": {
+      "row": 6,
+      "col": 8
+    },
+    "69": {
+      "row": 6,
+      "col": 9
+    },
+    "70": {
+      "row": 6,
+      "col": 10
+    },
+    "71": {
+      "row": 6,
+      "col": 11
+    },
+    "72": {
+      "row": 6,
+      "col": 12
+    },
+    "73": {
+      "row": 7,
+      "col": 1
+    },
+    "74": {
+      "row": 7,
+      "col": 2
+    },
+    "75": {
+      "row": 7,
+      "col": 3
+    },
+    "76": {
+      "row": 7,
+      "col": 4
+    },
+    "77": {
+      "row": 7,
+      "col": 5
+    },
+    "78": {
+      "row": 7,
+      "col": 6
+    },
+    "79": {
+      "row": 7,
+      "col": 7
+    },
+    "80": {
+      "row": 7,
+      "col": 8
+    },
+    "81": {
+      "row": 7,
+      "col": 9
+    },
+    "82": {
+      "row": 7,
+      "col": 10
+    },
+    "83": {
+      "row": 7,
+      "col": 11
+    },
+    "84": {
+      "row": 7,
+      "col": 12
+    }
+  },
+  "physical_layout": {
+    "unused_positions": [
+      61,
+      72
+    ],
+    "rows": [
+      {
+        "phys_row": 1,
+        "left_block": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "left_thumb": [],
+        "center_thumb": [],
+        "right_thumb": [],
+        "right_block": [
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ]
+      },
+      {
+        "phys_row": 2,
+        "left_block": [
+          13,
+          14,
+          15,
+          16,
+          17,
+          18
+        ],
+        "left_thumb": [
+          78
+        ],
+        "center_thumb": [],
+        "right_thumb": [
+          79
+        ],
+        "right_block": [
+          19,
+          20,
+          21,
+          22,
+          23,
+          24
+        ]
+      },
+      {
+        "phys_row": 3,
+        "left_block": [
+          25,
+          26,
+          27,
+          28,
+          29,
+          30
+        ],
+        "left_thumb": [],
+        "center_thumb": [
+          76,
+          81
+        ],
+        "right_thumb": [],
+        "right_block": [
+          31,
+          32,
+          33,
+          34,
+          35,
+          36
+        ]
+      },
+      {
+        "phys_row": 4,
+        "left_block": [
+          37,
+          38,
+          39,
+          40,
+          41,
+          42
+        ],
+        "left_thumb": [
+          77
+        ],
+        "center_thumb": [
+          75,
+          82
+        ],
+        "right_thumb": [
+          80
+        ],
+        "right_block": [
+          43,
+          44,
+          45,
+          46,
+          47,
+          48
+        ]
+      },
+      {
+        "phys_row": 5,
+        "left_block": [
+          49,
+          50,
+          51,
+          52,
+          53,
+          54
+        ],
+        "left_thumb": [],
+        "center_thumb": [
+          74,
+          83
+        ],
+        "right_thumb": [],
+        "right_block": [
+          55,
+          56,
+          57,
+          58,
+          59,
+          60
+        ]
+      },
+      {
+        "phys_row": 6,
+        "left_block": [
+          null,
+          62,
+          63,
+          64,
+          65,
+          66
+        ],
+        "left_thumb": [],
+        "center_thumb": [
+          73,
+          84
+        ],
+        "right_thumb": [],
+        "right_block": [
+          67,
+          68,
+          69,
+          70,
+          71,
+          null
+        ]
+      }
+    ]
+  },
+  "midi_keycodes": {
+    "0": "N_do1m",
+    "1": "N_dod1m",
+    "2": "N_re1m",
+    "3": "N_red1m",
+    "4": "N_mi1m",
+    "5": "N_fa1m",
+    "6": "N_fad1m",
+    "7": "N_sol1m",
+    "8": "N_sold1m",
+    "9": "N_la1m",
+    "10": "N_lad1m",
+    "11": "N_si1m",
+    "12": "N_do0",
+    "13": "N_dod0",
+    "14": "N_re0",
+    "15": "N_red0",
+    "16": "N_mi0",
+    "17": "N_fa0",
+    "18": "N_fad0",
+    "19": "N_sol0",
+    "20": "N_sold0",
+    "21": "N_la0",
+    "22": "N_lad0",
+    "23": "N_si0",
+    "24": "N_do1",
+    "25": "N_dod1",
+    "26": "N_re1",
+    "27": "N_red1",
+    "28": "N_mi1",
+    "29": "N_fa1",
+    "30": "N_fad1",
+    "31": "N_sol1",
+    "32": "N_sold1",
+    "33": "N_la1",
+    "34": "N_lad1",
+    "35": "N_si1",
+    "36": "N_do2",
+    "37": "N_dod2",
+    "38": "N_re2",
+    "39": "N_red2",
+    "40": "N_mi2",
+    "41": "N_fa2",
+    "42": "N_fad2",
+    "43": "N_sol2",
+    "44": "N_sold2",
+    "45": "N_la2",
+    "46": "N_lad2",
+    "47": "N_si2",
+    "48": "N_do3",
+    "49": "N_dod3",
+    "50": "N_re3",
+    "51": "N_red3",
+    "52": "N_mi3",
+    "53": "N_fa3",
+    "54": "N_fad3",
+    "55": "N_sol3",
+    "56": "N_sold3",
+    "57": "N_la3",
+    "58": "N_lad3",
+    "59": "N_si3",
+    "60": "N_do4",
+    "61": "N_dod4",
+    "62": "N_re4",
+    "63": "N_red4",
+    "64": "N_mi4",
+    "65": "N_fa4",
+    "66": "N_fad4",
+    "67": "N_sol4",
+    "68": "N_sold4",
+    "69": "N_la4",
+    "70": "N_lad4",
+    "71": "N_si4",
+    "72": "N_do5",
+    "73": "N_dod5",
+    "74": "N_re5",
+    "75": "N_red5",
+    "76": "N_mi5",
+    "77": "N_fa5",
+    "78": "N_fad5",
+    "79": "N_sol5",
+    "80": "N_sold5",
+    "81": "N_la5",
+    "82": "N_lad5",
+    "83": "N_si5",
+    "84": "N_do6",
+    "85": "N_dod6",
+    "86": "N_re6",
+    "87": "N_red6",
+    "88": "N_mi6",
+    "89": "N_fa6",
+    "90": "N_fad6",
+    "91": "N_sol6",
+    "92": "N_sold6",
+    "93": "N_la6",
+    "94": "N_lad6",
+    "95": "N_si6",
+    "96": "N_do7",
+    "97": "N_dod7",
+    "98": "N_re7",
+    "99": "N_red7",
+    "100": "N_mi7",
+    "101": "N_fa7",
+    "102": "N_fad7",
+    "103": "N_sol7",
+    "104": "N_sold7",
+    "105": "N_la7",
+    "106": "N_lad7",
+    "107": "N_si7",
+    "108": "N_do8",
+    "109": "N_dod8",
+    "110": "N_re8",
+    "111": "N_red8",
+    "112": "N_mi8",
+    "113": "N_fa8",
+    "114": "N_fad8",
+    "115": "N_sol8",
+    "116": "N_sold8",
+    "117": "N_la8",
+    "118": "N_lad8",
+    "119": "N_si8",
+    "120": "N_do9",
+    "121": "N_dod9",
+    "122": "N_re9",
+    "123": "N_red9",
+    "124": "N_mi9",
+    "125": "N_fa9",
+    "126": "N_fad9",
+    "127": "N_sol9"
+  },
+  "keymap": {
+    "base_layer": {
+      "1": "N_sold4",
+      "2": "N_fad4",
+      "3": "N_mi4",
+      "4": "N_re4",
+      "5": "N_do4",
+      "6": "N_lad3",
+      "7": "N_lad5",
+      "8": "N_do6",
+      "9": "N_re6",
+      "10": "N_mi6",
+      "11": "N_fad6",
+      "12": "N_sold6",
+      "13": "N_dod3",
+      "14": "N_si3",
+      "15": "N_la3",
+      "16": "N_sol3",
+      "17": "N_fa3",
+      "18": "N_red3",
+      "19": "N_red5",
+      "20": "N_fa5",
+      "21": "N_sol5",
+      "22": "N_la5",
+      "23": "N_si5",
+      "24": "N_dod5",
+      "25": "N_sold3",
+      "26": "N_fad3",
+      "27": "N_mi3",
+      "28": "N_re3",
+      "29": "N_do3",
+      "30": "N_lad2",
+      "31": "N_lad4",
+      "32": "N_do5",
+      "33": "N_re5",
+      "34": "N_mi5",
+      "35": "N_fad5",
+      "36": "N_sold5",
+      "37": "N_dod2",
+      "38": "N_si2",
+      "39": "N_la2",
+      "40": "N_sol2",
+      "41": "N_fa2",
+      "42": "N_red2",
+      "43": "N_red4",
+      "44": "N_fa4",
+      "45": "N_sol4",
+      "46": "N_la4",
+      "47": "N_si4",
+      "48": "N_dod4",
+      "49": "N_sold2",
+      "50": "N_fad2",
+      "51": "N_mi2",
+      "52": "N_re2",
+      "53": "N_do2",
+      "54": "N_lad1",
+      "55": "N_lad3",
+      "56": "N_do4",
+      "57": "N_re4",
+      "58": "N_mi4",
+      "59": "N_fad4",
+      "60": "N_sold4",
+      "62": "N_dod1",
+      "63": "N_si1",
+      "64": "N_la1",
+      "65": "N_sol1",
+      "66": "N_fa1",
+      "67": "N_fa3",
+      "68": "N_sol3",
+      "69": "N_la3",
+      "70": "N_si3",
+      "71": "N_dod3",
+      "73": "A_do",
+      "74": "A_re",
+      "75": "A_mi",
+      "76": "T_GlobUp",
+      "77": "T_OctdownG",
+      "78": "T_OctupG",
+      "79": "T_OctupD",
+      "80": "T_OctdownD",
+      "81": "A_si",
+      "82": "A_la",
+      "83": "A_sol",
+      "84": "A_fa"
+    }
+  },
+  "behaviors": {
+    "transpose": {
+      "description": "Codes T_. Cumulatif tant que pressé à nouveau ; borné à [0,127] MIDI (N_do1m .. N_sol9), clampé (pas de wrap).",
+      "bounds_midi": [
+        0,
+        127
+      ],
+      "codes": {
+        "T_OctupG": {
+          "kind": "octave",
+          "direction": "up",
+          "semitones": 12,
+          "cumulative": true,
+          "scope_positions": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            62,
+            63,
+            64,
+            65,
+            66
+          ],
+          "keymap_position": 78
+        },
+        "T_OctupD": {
+          "kind": "octave",
+          "direction": "up",
+          "semitones": 12,
+          "cumulative": true,
+          "scope_positions": [
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            67,
+            68,
+            69,
+            70,
+            71
+          ],
+          "keymap_position": 79
+        },
+        "T_OctdownG": {
+          "kind": "octave",
+          "direction": "down",
+          "semitones": 12,
+          "cumulative": true,
+          "scope_positions": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            62,
+            63,
+            64,
+            65,
+            66
+          ],
+          "keymap_position": 77
+        },
+        "T_OctdownD": {
+          "kind": "octave",
+          "direction": "down",
+          "semitones": 12,
+          "cumulative": true,
+          "scope_positions": [
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            67,
+            68,
+            69,
+            70,
+            71
+          ],
+          "keymap_position": 80
+        },
+        "T_GlobUp": {
+          "kind": "global_semitone",
+          "direction": "up",
+          "semitones": 1,
+          "cumulative": true,
+          "scope": "all",
+          "keymap_position": 76
+        },
+        "T_GlobDown": {
+          "kind": "global_semitone",
+          "direction": "down",
+          "semitones": 1,
+          "cumulative": true,
+          "scope": "all",
+          "keymap_position": null
+        }
+      }
+    },
+    "alteration": {
+      "description": "Codes A_. Cycle a 3 etats par code (0=base,1,2,retour a 0). L'etat 2 se calcule TOUJOURS depuis l'etat de base (pas depuis l'etat 1). Conflit entre codes actifs sur une meme note : dernier changement d'etat prime.",
+      "pitch_classes": {
+        "do": 0,
+        "dod": 1,
+        "re": 2,
+        "red": 3,
+        "mi": 4,
+        "fa": 5,
+        "fad": 6,
+        "sol": 7,
+        "sold": 8,
+        "la": 9,
+        "lad": 10,
+        "si": 11
+      },
+      "cycle_length": 3,
+      "bounds_midi": [
+        0,
+        127
+      ],
+      "rule_by_state": {
+        "0": "Keymap de base, aucune modification.",
+        "1": "becarre(root) -> +1 demi-ton (devient diese) ; diese(root+1) -> -1 demi-ton (devient becarre) ; bemol(root-1) -> inchange.",
+        "2": "Calcule depuis l'etat de base : becarre(root) -> -1 demi-ton (devient bemol) ; bemol(root-1) -> +1 demi-ton (devient becarre) ; diese(root+1) -> inchange.",
+        "3": "= etat 0 (le cycle boucle)."
+      },
+      "conflict_resolution": "last_state_change_wins",
+      "codes": {
+        "A_do": {
+          "root_pitch_class": "do",
+          "keymap_position": 73
+        },
+        "A_re": {
+          "root_pitch_class": "re",
+          "keymap_position": 74
+        },
+        "A_mi": {
+          "root_pitch_class": "mi",
+          "keymap_position": 75
+        },
+        "A_fa": {
+          "root_pitch_class": "fa",
+          "keymap_position": 84
+        },
+        "A_sol": {
+          "root_pitch_class": "sol",
+          "keymap_position": 83
+        },
+        "A_la": {
+          "root_pitch_class": "la",
+          "keymap_position": 82
+        },
+        "A_si": {
+          "root_pitch_class": "si",
+          "keymap_position": 81
+        }
+      }
+    }
+  }
+}

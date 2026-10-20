@@ -1,0 +1,249 @@
+# GÉNÉRÉ AUTOMATIQUEMENT depuis Solenoide_drive.xml — NE PAS ÉDITER À LA MAIN.
+# Régénérer via tools/kicad/netlist_to_pinmap.py après toute modification du schéma.
+# Généré le 2026-09-27T15:22:57+00:00
+board: clavier
+mcu_ref: IC1
+pins:
+  "1":
+    function: GPIO4_1
+    net: /FAULT2
+  "10":
+    function: DVDD_1_10
+    net: +1V1
+  "11":
+    function: GPIO12_11
+    net: /FAULT4
+  "12":
+    function: GPIO13_12
+    net: /SENS4
+  "13":
+    function: GPIO14_13
+    net: /PWM5
+  "14":
+    function: GPIO15_14
+    net: /nSLEEP
+  "15":
+    function: IOVDD_2_15
+    net: 3.3VIN
+  "16":
+    function: GPIO16_16
+    net: /FAULT7
+  "17":
+    function: GPIO17_17
+    net: /FAULT6
+  "18":
+    function: GPIO18_18
+    net: /PWM7
+  "19":
+    function: GPIO19_19
+    net: /SENS7
+  "2":
+    function: GPIO5_2
+    net: /PWM2
+  "20":
+    function: GPIO20_20
+    net: /PWM6
+  "21":
+    function: GPIO21_21
+    net: /SENS6
+  "22":
+    function: GPIO22_22
+    net: /FAULT9
+  "23":
+    function: GPIO23_23
+    net: /PWM9
+  "24":
+    function: IOVDD_3_24
+    net: 3.3VIN
+  "25":
+    function: GPIO24_25
+    net: /SENS9
+  "26":
+    function: GPIO25_26
+    net: /FAULT8
+  "27":
+    function: GPIO26_27
+    net: /PWM8
+  "28":
+    function: GPIO27_28
+    net: /SENS8
+  "29":
+    function: IOVDD_4_29
+    net: 3.3VIN
+  "3":
+    function: GPIO6_3
+    net: /SENS2
+  "30":
+    function: XIN_30
+    net: /XIN
+  "31":
+    function: XOUT_31
+    net: /XOUT
+  "32":
+    function: DVDD_2_32
+    net: +1V1
+  "33":
+    function: SWCLK_33
+    net: /SDCLK
+  "34":
+    function: SWDIO_34
+    net: /SWDIO
+  "35":
+    function: RUN_35
+    net: /RUN
+  "36":
+    function: GPIO28_36
+    net: /FAULT11
+  "37":
+    function: GPIO29_37
+    net: /PWM11
+  "38":
+    function: GPIO30_38
+    net: /SENS11
+  "39":
+    function: GPIO31_39
+    net: /FAULT10
+  "4":
+    function: GPIO7_4
+    net: /PWM3
+  "40":
+    function: GPIO32_40
+    net: /PWM10
+  "41":
+    function: IOVDD_5_41
+    net: 3.3VIN
+  "42":
+    function: GPIO33_42
+    net: /SENS10
+  "43":
+    function: GPIO34_43
+    net: /Bouton test
+  "44":
+    function: GPIO35_44
+    net: /PWM0
+  "45":
+    function: GPIO36_45
+    net: /S3
+  "46":
+    function: GPIO37_46
+    net: /FAULT1
+  "47":
+    function: GPIO38_47
+    net: /S2
+  "48":
+    function: GPIO39_48
+    net: /FAULT0
+  "49":
+    function: GPIO40_ADC0_49
+    net: unconnected-(IC1-GPIO40_ADC0-Pad49)
+  "5":
+    function: IOVDD_1_5
+    net: 3.3VIN
+  "50":
+    function: IOVDD_6_50
+    net: 3.3VIN
+  "51":
+    function: DVDD_3_51
+    net: +1V1
+  "52":
+    function: GPIO41_ADC1_52
+    net: /FREQ OSC
+  "53":
+    function: GPIO42_ADC2_53
+    net: /MUX_EN
+  "54":
+    function: GPIO43_ADC3_54
+    net: /S1
+  "55":
+    function: GPIO44_ADC4_55
+    net: /S0
+  "56":
+    function: GPIO45_ADC5_56
+    net: /MUX OUT
+  "57":
+    function: GPIO46_ADC6_57
+    net: /RXD
+  "58":
+    function: GPIO47_ADC7_58
+    net: /TXD
+  "59":
+    function: ADC_AVDD_59
+    net: 3.3VIN
+  "6":
+    function: GPIO8_6
+    net: /SENS3
+  "60":
+    function: IOVDD_7_60
+    net: 3.3VIN
+  "61":
+    function: VREG_AVDD_61
+    net: /VREG AVDD
+  "62":
+    function: VREG_PGND_62
+    net: GND
+  "63":
+    function: VREG_LX_63
+    net: /VREG LX
+  "64":
+    function: VREG_VIN_64
+    net: 3.3VIN
+  "65":
+    function: VREG_FB_65
+    net: +1V1
+  "66":
+    function: USB_DM_66
+    net: unconnected-(IC1-USB_DM-Pad66)
+  "67":
+    function: USB_DP_67
+    net: unconnected-(IC1-USB_DP-Pad67)
+  "68":
+    function: USB_OTP_VDD_68
+    net: 3.3VIN
+  "69":
+    function: QSPI_IOVDD_69
+    net: 3.3VIN
+  "7":
+    function: GPIO9_7
+    net: /SENS5
+  "70":
+    function: QSPI_SD3_70
+    net: unconnected-(IC1-QSPI_SD3-Pad70)
+  "71":
+    function: QSPI_SCLK_71
+    net: unconnected-(IC1-QSPI_SCLK-Pad71)
+  "72":
+    function: QSPI_SD0_72
+    net: unconnected-(IC1-QSPI_SD0-Pad72)
+  "73":
+    function: QSPI_SD2_73
+    net: unconnected-(IC1-QSPI_SD2-Pad73)
+  "74":
+    function: QSPI_SD1_74
+    net: unconnected-(IC1-QSPI_SD1-Pad74)
+  "75":
+    function: QSPI_SS_75
+    net: unconnected-(IC1-QSPI_SS-Pad75)
+  "76":
+    function: IOVDD_8_76
+    net: 3.3VIN
+  "77":
+    function: GPIO0_77
+    net: /SENS0
+  "78":
+    function: GPIO1_78
+    net: /PWM1
+  "79":
+    function: GPIO2_79
+    net: /SENS1
+  "8":
+    function: GPIO10_8
+    net: /FAULT5
+  "80":
+    function: GPIO3_80
+    net: /FAULT3
+  "81":
+    function: GND_81
+    net: GND
+  "9":
+    function: GPIO11_9
+    net: /PWM4

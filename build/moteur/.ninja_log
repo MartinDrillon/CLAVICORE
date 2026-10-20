@@ -364,3 +364,14 @@
 2718	4872	8140407456556872	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/moteur.hex	cda15d88d93938e2
 2718	4872	8140407456556872	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/moteur.bin	cda15d88d93938e2
 2718	4872	8140407456556872	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/moteur.uf2	cda15d88d93938e2
+789	6990	8141478243212598	CMakeFiles/moteur.dir/src/solenoid_driver.c.obj	d8ec7c142d105adb
+207	6993	8141478243222922	CMakeFiles/moteur.dir/src/ipropi_selftest.c.obj	8ad8d1261cd0f129
+6993	12785	8141478301131282	moteur.elf	cda15d88d93938e2
+6993	12785	8141478301131282	moteur.dis	cda15d88d93938e2
+6993	12785	8141478301131282	moteur.hex	cda15d88d93938e2
+6993	12785	8141478301131282	moteur.bin	cda15d88d93938e2
+6993	12785	8141478301131282	moteur.uf2	cda15d88d93938e2
+6993	12785	8141478301131282	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/moteur.dis	cda15d88d93938e2
+6993	12785	8141478301131282	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/moteur.hex	cda15d88d93938e2
+6993	12785	8141478301131282	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/moteur.bin	cda15d88d93938e2
+6993	12785	8141478301131282	D:/Documents/MUSIQUE/EPINETTE/Kit Heugel_Bedard/build/moteur/moteur.uf2	cda15d88d93938e2

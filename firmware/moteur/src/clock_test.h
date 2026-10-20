@@ -1,4 +1,4 @@
-// Feature « clock-test-mode1 » (Docs/specs/feature/clock-test-module.md).
+// Feature « clock-test-mode1 » (docs/specs/feature/clock-test-module.md).
 // Diagnostic uniquement : sortie carrée 1 MHz (clk_sys / 150 si clk_sys = 150 MHz)
 // sur GPIO41 pour mesurer la fréquence réelle de clk_sys. Désactivable :
 // cmake -DMOTEUR_ENABLE_CLOCK_TEST=OFF (aucun code compilé, stubs ci-dessous).

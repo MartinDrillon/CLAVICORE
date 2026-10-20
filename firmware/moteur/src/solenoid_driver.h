@@ -1,5 +1,5 @@
 // Machine à états non bloquante d'un solénoïde (un canal = une instance).
-// Contrat HAL : Docs/adr/adr-0001-hal-solenoide-drv8874-phen.md (rôles logiques
+// Contrat HAL : docs/adr/adr-0001-hal-solenoide-drv8874-phen.md (rôles logiques
 // pwm_channel / dir_channel / fault_channel / global_sleep).
 //
 //   IDLE -note_on-> PULL -> HOLD -note_off-> DIR_TO_RELEASE -> RELEASE

@@ -1,0 +1,39 @@
+# Tout ignorer par défaut
+*
+!**/
+
+!README.md
+!AGENTS.md
+!.gitignore
+
+!docs/**
+!shared/**
+!tests/**
+
+# Configuration des agents Kilo (l'état d'Agent Manager reste ignoré)
+!.kilo/agent/**
+!.kilo/command/**
+!.kilo/setup-script.ps1
+
+!3D/Instrument.3dm
+
+!Images/**
+
+!Électrique/Clavier/Clavier_drive_1/Clavier_drive_1.kicad_pcb
+!Électrique/Clavier/Clavier_drive_1/Clavier_drive_1.kicad_pro
+!Électrique/Clavier/Clavier_drive_1/Clavier_drive_1.kicad_sch
+
+!firmware/**
+
+!build/**
+
+!Solenoid_simulation/V3/**
+Solenoid_simulation/V3/README.md
+
+!Électrique/Moteur/Solenoide_drive/Solenoide_drive.kicad_pcb
+!Électrique/Moteur/Solenoide_drive/Solenoide_drive.kicad_pro
+!Électrique/Moteur/Solenoide_drive/Solenoide_drive.kicad_sch
+
+# Ignorer les caches Python
+__pycache__/
+*.pyc

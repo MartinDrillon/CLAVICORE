@@ -20,8 +20,10 @@
 
 // --- Phase HOLD (maintien) : duty bas, jusqu'à note_off ---------------------
 #define SOLENOID_HOLD_DUTY_PERCENT 25u  // à ajuster empiriquement sur prototype
-// Coupure de sécurité forcée : au-delà, le driver relâche seul (invariant 4).
-#define SOLENOID_HOLD_MAX_MS 2000u      // à ajuster empiriquement sur prototype
+// Coupure de sécurité forcée : au-delà, le driver relâche seul (invariant 4, ADR-0007).
+#define SOLENOID_HOLD_MAX_MS 20000u           // ADR-0007 (relevé de 2 s à 20 s)
+// Plafond absolu du duty HOLD (enveloppe thermique validée, ADR-0007).
+#define SOLENOID_HOLD_DUTY_MAX_PERCENT 25u
 
 // --- Phase RELEASE (polarité inversée), duty moyen, court -------------------
 #define SOLENOID_RELEASE_DURATION_MS 5u    // à ajuster empiriquement sur prototype

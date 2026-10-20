@@ -55,6 +55,9 @@ void keycode_press(keycode_state_t *state, keycode_t keycode) {
         case KEYCODE_TRANSPOSE_RIGHT_DOWN:
             --state->right_octaves;
             break;
+        case KEYCODE_UNTRANSPOSE:
+            keycode_state_init(state);
+            break;
         case KEYCODE_ALTERATION:
             if (keycode.value < KEYCODE_ALTERATION_COUNT) {
                 state->alteration_state[keycode.value] =
@@ -177,6 +180,8 @@ const char *keycode_name(keycode_t keycode) {
             return "GET_UID";
         case KEYCODE_MAINTENANCE_TOGGLE:
             return "MAINT";
+        case KEYCODE_UNTRANSPOSE:
+            return "UNTRANSPOSE";
         default:
             return "invalid";
     }
