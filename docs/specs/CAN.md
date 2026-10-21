@@ -4,8 +4,9 @@ Ce document synthétise les décisions actées dans
 [ADR-0002](../adr/adr-0002-integration-can2040.md),
 ADR-0005,
 [ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assignation-solenoide-command.md),
-[ADR-0009](../adr/adr-0009-commissioning-provisoire-bring-up-et-estimation-resistance-bobine.md) et
-[ADR-0010](../adr/adr-0010-ancrage-grave-mapping-commissioning.md).
+[ADR-0009](../adr/adr-0009-commissioning-provisoire-bring-up-et-estimation-resistance-bobine.md),
+[ADR-0010](../adr/adr-0010-ancrage-grave-mapping-commissioning.md) et
+[ADR-0012](../adr/adr-0012-mode-maintenance-force-inverse-duree-20s.md).
 
 **État réel** :
 - **Phase 3a validée sur bus réel** : premier UID relevé de bout en bout
@@ -25,6 +26,11 @@ ADR-0005,
 - **Assignation des touches (ADR-0010, implémenté)** : règle **ascendante**
   ancrée sur la touche 1 = `DO2`, motif `0x40 ANCHOR_SHIFT` ; voir la section
   « Règle d'assignation des touches » plus bas.
+- **Mode MAINTENANCE (ADR-0012, décidé — pas encore implémenté)** : le texte
+  ci-dessous décrit la cible. Dans le binaire actuel, la poussée maintenance est
+  encore en polarité **PULL** et bornée à **10 s**, et le keycode `MAINT`
+  (position 84) est inatteignable. Détail et liste des fichiers :
+  [`impact-adr-0012.md`](impact-adr-0012.md).
 
 **Historique** : avant ADR-0010, l'assignation était **descendante** (bloc aigu
 ancré sur la touche 49, ADR-0004 §6, remplacé) ; une table persistée avant cette
@@ -281,8 +287,10 @@ Règles :
   « **tous les canaux gérables autorisés** » ; le filtrage fonctionnel repose
   donc d'abord sur la **table persistante du Clavier** ;
 - aucune commande n'est appliquée pendant un auto-test en cours ;
-- `command = 2` applique le profil **MAINTENANCE** côté driver Moteur
-  (PULL seul, duty 50 %, coupure locale à 10 s, repos maintenance minimal) ;
+- `command = 2` applique le profil **MAINTENANCE** côté driver Moteur :
+  poussée en **polarité inverse** du jeu normal (« REPEL »), duty 50 %, **sans
+  phase HOLD ni RELEASE**, tenue tant que la commande est active, coupure locale
+  à 20 s, repos maintenance minimal (ADR-0006 §4 remplacé par ADR-0012) ;
 - pas d'acquittement applicatif en Phase 3b/Livraison 2 ;
 - la coupure de sécurité côté driver reste la dernière barrière.
 
@@ -407,8 +415,12 @@ Formats :
 Règles :
 - aucun MIDI USB n'est envoyé pendant le mode maintenance ;
 - `timeout` correspond à la coupure automatique du profil MAINTENANCE, bornée
-  à 10 s (`SOLENOID_MAINT_MAX_MS`, ADR-0006) ; le HOLD du jeu normal est borné
+  **à 20 s** des deux côtés : `MAINTENANCE_TIMEOUT_MS` côté Clavier (coupure
+  explicite envoyée par la trame `OFF`) et `SOLENOID_MAINT_MAX_MS` côté driver
+  Moteur (dernière barrière, ADR-0012) ; le HOLD du jeu normal est borné
   séparément à 20 s (`SOLENOID_HOLD_MAX_MS`, ADR-0007) ;
+- la poussée maintenance est en **polarité inverse** du jeu normal ; le sens
+  n'est porté par aucune trame (propriété du profil Moteur) ;
 - un nouveau cycle de poussée n'est autorisé qu'après relâchement de la
   touche.
 

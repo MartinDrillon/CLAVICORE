@@ -1,6 +1,6 @@
 ---
 title: "ADR-0012: Mode MAINTENANCE — poussée en polarité inverse (REPEL) tenue jusqu'au relâchement, bornée à 20 s"
-status: "Validated"
+status: "Accepted"
 date: "2026-10-21"
 authors: "Agent Architecte"
 tags: ["architecture", "firmware", "hardware"]
@@ -9,7 +9,8 @@ superseded_by: ""
 ---
 
 ### Status
-**Dérogation à un invariant — validation humaine requise.**
+**Dérogation à un invariant — validation humaine requise : validée par
+l'utilisateur le 2026-10-21 (invariant 4 de `AGENTS.md`, profil MAINTENANCE).**
 
 Cette ADR **remplace partiellement l'ADR-0006 (§4, direction de la poussée)** et
 **modifie la borne de durée** de la dérogation à l'invariant 4 de `AGENTS.md`
@@ -18,7 +19,7 @@ confinée dans `solenoid_driver.c`, reste **bornée** et reste **coupée
 automatiquement par le driver** : l'invariant 4 n'est pas rouvert, il est
 **re-borné** (10 s → 20 s, avec enveloppe énergétique inchangée).
 
-**Validated**
+**Accepted**
 
 ### Context
 
@@ -143,11 +144,15 @@ budget thermique ; c'est un allongement de **temps**, pas d'**énergie**.
 Ce budget devient une **borne de compilation**, pas une intention :
 
 ```
-SOLENOID_MAINT_ENERGY_BUDGET_MS_PCT = 20000 * 100     // enveloppe validée
+SOLENOID_MAINT_ENERGY_BUDGET_MS_PCT = 10000 * 100    // enveloppe validée : 10 s à 100 %
 _Static_assert(SOLENOID_MAINT_MAX_MS * SOLENOID_MAINT_DUTY_PERCENT
                <= SOLENOID_MAINT_ENERGY_BUDGET_MS_PCT,
                "profil MAINTENANCE hors enveloppe thermique validée");
 ```
+
+L'unité est la **(ms × %)** : le produit `durée × duty` est proportionnel à
+l'énergie déposée. L'enveloppe validée vaut `10 000 × 100 = 1 000 000`, et le
+profil retenu `20 000 × 50 = 1 000 000` la sature exactement — ni plus, ni moins.
 
 Un profil réglé au banc ne peut donc plus sortir de l'enveloppe validée sans
 casser la compilation — l'esprit de l'invariant 4 (« un profil mal réglé ne peut
@@ -283,7 +288,7 @@ vers IDLE), l'inversion passerait par un état transitoire calqué sur
   timeout de `SOLENOID_STATE_MAINTENANCE` (l.290-294).
 * **IMP-004**: `solenoid_profile.h` : ajouter `SOLENOID_MAINT_DIR_LEVEL`
   (= `SOLENOID_DIR_LEVEL_RELEASE`), passer `SOLENOID_MAINT_MAX_MS` à `20000u`,
-  ajouter `SOLENOID_MAINT_ENERGY_BUDGET_MS_PCT` = `20000u * 100u` et le
+  ajouter `SOLENOID_MAINT_ENERGY_BUDGET_MS_PCT` = `10000u * 100u` et le
   `_Static_assert` de la Décision 3 **dans** `solenoid_driver.c` avec les
   autres (l.11-23), pas dans le profil. Vérifier que
   `SOLENOID_MAINT_MAX_MS * US_PER_MS` ne déborde pas en `uint32_t`

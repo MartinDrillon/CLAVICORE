@@ -4,10 +4,13 @@
 //
 //   IDLE -note_on-> PULL -> HOLD -note_off-> DIR_TO_RELEASE -> RELEASE
 //        -> DIR_TO_PULL -> REST -> IDLE
+//   IDLE -push_start-> MAINTENANCE -note_off/timeout-> DIR_TO_PULL -> REST -> IDLE
 //   (tout état actif) -NFAULT bas-> FAULT (verrouillé, reset explicite)
 //
 // DIR_TO_RELEASE / DIR_TO_PULL sont les états transitoires imposés par l'ADR :
 // duty ramené à 0, attente du délai de sécurité, PUIS changement de dir_channel.
+// Le retour de MAINTENANCE emprunte DIR_TO_PULL comme celui de RELEASE, afin de
+// rendre dir_channel au niveau PULL avant le prochain jeu normal (ADR-0012).
 #ifndef MOTEUR_SOLENOID_DRIVER_H
 #define MOTEUR_SOLENOID_DRIVER_H
 
@@ -87,7 +90,9 @@ solenoid_result_t solenoid_driver_probe_start(solenoid_driver_t *drv, uint32_t n
 uint32_t solenoid_driver_probe_duration_us(void);
 uint32_t solenoid_driver_probe_duty_permil(void);
 
-// Poussée maintenance unidirectionnelle, bornée par le driver (duty + durée).
+// Poussée maintenance en POLARITÉ INVERSE du jeu normal (REPEL, ADR-0012),
+// bornée par le driver (duty, durée, budget thermique). La sortie repasse par
+// DIR_TO_PULL puis le repos maintenance : dir_channel est rendu au niveau PULL.
 // Refusée si le canal n'est pas IDLE, si le repos maintenance n'est pas écoulé,
 // si global_sleep n'est pas prêt, ou si un défaut est déjà actif.
 solenoid_result_t solenoid_driver_push_start(solenoid_driver_t *drv, uint32_t now_us);

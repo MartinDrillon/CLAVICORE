@@ -21,6 +21,16 @@ _Static_assert(SOLENOID_HOLD_MAX_MS > 0u && SOLENOID_PULL_DURATION_MS > 0u &&
 _Static_assert(SOLENOID_HOLD_DUTY_PERCENT <= SOLENOID_HOLD_DUTY_MAX_PERCENT, "duty HOLD > plafond ADR-0007");
 _Static_assert(SOLENOID_HOLD_MAX_MS <= 4000000u, "SOLENOID_HOLD_MAX_MS deborde en us sur 32 bits");
 _Static_assert(SOLENOID_DIR_LEVEL_PULL != SOLENOID_DIR_LEVEL_RELEASE, "polarités PULL/RELEASE identiques");
+// ADR-0012 : l'enveloppe thermique validée (équivalent de 10 s à 100 % de duty)
+// est une borne de compilation : un réglage de banc de durée ou de duty ne peut
+// pas la dépasser sans casser le build.
+_Static_assert(SOLENOID_MAINT_DUTY_PERCENT <= SOLENOID_MAINT_DUTY_MAX_PERCENT,
+               "duty MAINTENANCE > plafond ADR-0012");
+_Static_assert(SOLENOID_MAINT_MAX_MS * SOLENOID_MAINT_DUTY_PERCENT <=
+                   SOLENOID_MAINT_ENERGY_BUDGET_MS_PCT,
+               "profil MAINTENANCE hors enveloppe thermique validee (ADR-0012)");
+_Static_assert(SOLENOID_MAINT_MAX_MS <= 4000000u,
+               "SOLENOID_MAINT_MAX_MS deborde en us sur 32 bits");
 
 static uint32_t clamp_duty(uint32_t percent) {
     return percent > SOLENOID_DUTY_MAX_PERCENT ? SOLENOID_DUTY_MAX_PERCENT : percent;
@@ -132,6 +142,16 @@ static void begin_release(solenoid_driver_t *drv, uint32_t now_us) {
     set_state(drv, SOLENOID_STATE_DIR_TO_RELEASE, now_us);
 }
 
+// Retour à la polarité de jeu (ADR-0001, ADR-0012) : duty ramené à 0, attente du
+// délai de sécurité dans DIR_TO_PULL, PUIS réécriture de dir_channel. La durée de
+// repos à purger ensuite est mémorisée ici et consommée par le cas DIR_TO_PULL :
+// repos court du jeu normal, ou repos maintenance (2 s).
+static void begin_dir_to_pull(solenoid_driver_t *drv, uint32_t now_us, uint32_t rest_ms) {
+    pwm_hal_set_duty_percent(&drv->pwm_channel, 0u);
+    drv->rest_duration_us = rest_ms * US_PER_MS;
+    set_state(drv, SOLENOID_STATE_DIR_TO_PULL, now_us);
+}
+
 solenoid_result_t solenoid_driver_init(solenoid_driver_t *drv, unsigned int pwm_gpio,
                                        unsigned int dir_gpio, unsigned int fault_gpio) {
     if (drv == NULL) {
@@ -202,7 +222,9 @@ solenoid_result_t solenoid_driver_note_off(solenoid_driver_t *drv, uint32_t now_
     } else if (drv->state == SOLENOID_STATE_HOLD) {
         begin_release(drv, now_us);
     } else if (drv->state == SOLENOID_STATE_MAINTENANCE) {
-        begin_rest(drv, now_us, SOLENOID_MAINT_MIN_REST_MS);
+        // Fin de la poussée inverse (ADR-0012) : retour à la polarité de jeu AVANT
+        // le repos, sinon le prochain Note On partirait en sens inverse.
+        begin_dir_to_pull(drv, now_us, SOLENOID_MAINT_MIN_REST_MS);
     }
     return SOLENOID_OK;
 }
@@ -258,7 +280,13 @@ solenoid_result_t solenoid_driver_push_start(solenoid_driver_t *drv, uint32_t no
     }
     drv->note_off_pending = false;
     drv->hold_timed_out = false;
-    gpio_put(drv->dir_gpio, SOLENOID_DIR_LEVEL_PULL);
+    // ADR-0012 : polarité INVERSE du jeu normal (REPEL). L'écriture directe de
+    // dir_channel est sûre ici : la fonction n'est admise qu'en IDLE (contrôle
+    // ci-dessus), état atteint uniquement via REST, donc avec duty nul depuis au
+    // moins SOLENOID_MIN_REST_MS (10 ms) >> SOLENOID_DIR_SAFETY_DELAY_US (200 us).
+    // Si un chemin vers IDLE sans REST apparaît, passer par un état transitoire
+    // calqué sur DIR_TO_RELEASE (duty 0, attente, puis changement de niveau).
+    gpio_put(drv->dir_gpio, SOLENOID_MAINT_DIR_LEVEL);
     pwm_hal_set_duty_percent(&drv->pwm_channel, maint_duty_percent());
     pwm_hal_enable(&drv->pwm_channel);
     set_state(drv, SOLENOID_STATE_MAINTENANCE, now_us);
@@ -289,7 +317,9 @@ void solenoid_driver_tick(solenoid_driver_t *drv, uint32_t now_us) {
         break;
     case SOLENOID_STATE_MAINTENANCE:
         if (elapsed(now_us, drv->state_start_us, maint_duration_us())) {
-            begin_rest(drv, now_us, SOLENOID_MAINT_MIN_REST_MS);
+            // Coupure locale (invariant 4, ADR-0012) : retour à la polarité de jeu
+            // avant le repos, comme au relâchement.
+            begin_dir_to_pull(drv, now_us, SOLENOID_MAINT_MIN_REST_MS);
         }
         break;
     case SOLENOID_STATE_PULL:
@@ -317,14 +347,15 @@ void solenoid_driver_tick(solenoid_driver_t *drv, uint32_t now_us) {
         break;
     case SOLENOID_STATE_RELEASE:
         if (elapsed(now_us, drv->state_start_us, SOLENOID_RELEASE_DURATION_MS * US_PER_MS)) {
-            pwm_hal_set_duty_percent(&drv->pwm_channel, 0u);
-            set_state(drv, SOLENOID_STATE_DIR_TO_PULL, now_us);
+            begin_dir_to_pull(drv, now_us, SOLENOID_MIN_REST_MS);
         }
         break;
     case SOLENOID_STATE_DIR_TO_PULL:
         if (elapsed(now_us, drv->state_start_us, SOLENOID_DIR_SAFETY_DELAY_US)) {
             gpio_put(drv->dir_gpio, SOLENOID_DIR_LEVEL_PULL);  // duty nul : sûr
-            begin_rest(drv, now_us, SOLENOID_MIN_REST_MS);
+            // Restitution du repos mémorisé par begin_dir_to_pull() : repos court
+            // du jeu normal, ou repos maintenance (ADR-0012).
+            begin_rest(drv, now_us, drv->rest_duration_us / US_PER_MS);
         }
         break;
     case SOLENOID_STATE_REST:
@@ -358,7 +389,8 @@ solenoid_result_t solenoid_driver_reset_fault(solenoid_driver_t *drv, uint32_t n
     drv->fault = SOLENOID_FAULT_NONE;
     drv->note_off_pending = false;
     cut_output(drv);
-    set_state(drv, SOLENOID_STATE_DIR_TO_PULL, now_us);  // remet dir au niveau PULL puis repos
+    // Remet dir_channel au niveau PULL (duty nul depuis cut_output) puis repos.
+    begin_dir_to_pull(drv, now_us, SOLENOID_MIN_REST_MS);
     return SOLENOID_OK;
 }
 

@@ -15,7 +15,9 @@
       "Ordre de résolution de la note finale : altération (A_) appliquée d'abord, puis décalage cumulatif de transposition (T_).",
       "En cas de conflit entre A_ actifs, la dernière altération modifiée l'emporte pour la note revendiquée.",
       "Une note déjà active n'est pas modifiée rétroactivement par un changement d'état T_/A_ ; seules les prochaines pressions utilisent le nouvel état.",
-      "T_GlobUp et T_GlobDown existent comme comportements mais ne sont pas assignés dans le keymap actuel."
+      "T_GlobUp et T_GlobDown existent comme comportements mais ne sont pas assignés dans le keymap actuel.",
+      "La position 84 porte le code MAINT (mode maintenance), pas une alteration : la poussee maintenance est en polarite inverse du jeu normal, tenue jusqu'au relachement et coupee a 20 s (ADR-0006, ADR-0012).",
+      "L'alteration A_fa n'est plus assignee a aucune position : elle n'a pas ete deplacee (ADR-0006 s1)."
     ]
   },
   "gpio": {
@@ -755,7 +757,7 @@
       "81": "A_si",
       "82": "A_la",
       "83": "A_sol",
-      "84": "A_fa"
+      "84": "MAINT"
     }
   },
   "behaviors": {
@@ -1003,7 +1005,7 @@
         },
         "A_fa": {
           "root_pitch_class": "fa",
-          "keymap_position": 84
+          "keymap_position": null
         },
         "A_sol": {
           "root_pitch_class": "sol",
@@ -1016,6 +1018,23 @@
         "A_si": {
           "root_pitch_class": "si",
           "keymap_position": 81
+        }
+      }
+    },
+    "mode": {
+      "description": "Codes de mode operatoire (non musicaux). Bascule sur front d'appui uniquement, sans effet au relachement. Aucune note MIDI n'est emise pendant ces modes : seul le chemin CAN est utilise.",
+      "codes": {
+        "MAINT": {
+          "kind": "mode_toggle",
+          "keymap_position": 84,
+          "mode": "maintenance",
+          "toggle": true,
+          "requires_valid_commissioning_table": true,
+          "refused_while_selftest": true,
+          "cuts_active_solenoids_on_enter_and_leave": true,
+          "solenoid_profile": "MAINTENANCE : polarite inverse du jeu normal (aimant repousse), duty 50 %, tenue jusqu'au relachement, aucune phase HOLD/RELEASE, coupure a 20 s",
+          "adr": "ADR-0006, ADR-0012",
+          "replaces": "alteration A_fa precedemment en position 84 ; cette alteration n'a pas ete deplacee (ADR-0006 s1)"
         }
       }
     }

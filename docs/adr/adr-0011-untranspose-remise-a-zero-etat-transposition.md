@@ -1,6 +1,6 @@
 ---
 title: "ADR-0011: Sémantique du keycode UNTRANSPOSE — remise à zéro totale de l'état de transposition et d'altération"
-status: "Validated"
+status: "Accepted"
 date: "2026-10-21"
 authors: "Agent Architecte"
 tags: ["architecture", "firmware"]
@@ -9,7 +9,7 @@ superseded_by: ""
 ---
 
 ### Status
-**Validated**
+**Accepted**
 
 ### Context
 

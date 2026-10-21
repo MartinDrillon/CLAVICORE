@@ -28,7 +28,11 @@ typedef struct {
     uint32_t maintenance_started_ms;
 } clavier_state_t;
 
-#define MAINTENANCE_TIMEOUT_MS 10000u
+// Borne de la coupure EXPLICITE de la poussée maintenance envoyée par le Clavier
+// (trame OFF). Couplée à SOLENOID_MAINT_MAX_MS du Moteur (ADR-0012) : elle doit
+// rester inférieure ou égale à cette borne locale, qui est la dernière barrière
+// du driver.
+#define MAINTENANCE_TIMEOUT_MS 20000u
 
 static void emit_diag_line(size_t (*formatter)(char *, size_t, bool), bool value) {
     char line[DIAG_LOG_LINE_MAX];
@@ -239,12 +243,15 @@ static void handle_matrix_transition(uint8_t position, bool pressed, void *conte
             printf("position %u GET_UID result %d (0=sent 1=busy 2=tx_fail)\n", position,
                    (int)result);
         }
+        return;
+    }
 
-        if (keycode.kind == KEYCODE_MAINTENANCE_TOGGLE) {
-            if (pressed) {
-                handle_maintenance_toggle(state);
-            }
-            return;
+    // ADR-0006 §2 / ADR-0012 : bascule du mode maintenance, à l'appui seulement.
+    // Test au même niveau que GET_UID : imbriqué dans le bloc précédent, il était
+    // inatteignable et le mode maintenance ne pouvait jamais être activé.
+    if (keycode.kind == KEYCODE_MAINTENANCE_TOGGLE) {
+        if (pressed) {
+            handle_maintenance_toggle(state);
         }
         return;
     }
