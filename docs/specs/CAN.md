@@ -2,8 +2,9 @@
 
 Ce document synthétise les décisions actées dans
 [ADR-0002](../adr/adr-0002-integration-can2040.md),
-ADR-0005 et
-[ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assignation-solenoide-command.md).
+ADR-0005,
+[ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assignation-solenoide-command.md) et
+[ADR-0009](../adr/adr-0009-commissioning-provisoire-bring-up-et-estimation-resistance-bobine.md).
 
 **État réel** :
 - **Phase 3a validée sur bus réel** : premier UID relevé de bout en bout
@@ -11,6 +12,12 @@ ADR-0005 et
 - **Phase 3b / Livraison 2** : protocole, table flash, résolution
   note→(UID, canal) et `SOLENOID_COMMAND` implémentés ; les validations
   strictement matérielles restantes sont listées en fin de document.
+- **Bring-up / ADR-0009 (spécifié, non encore implémenté)** : table persistée à
+  chaque auto-test demandé avec état `FINAL`/`PROVISIONAL`, trame de diagnostic
+  `IPROPI_OHM` (`0x601`), PROBE **5 ms** avec fenêtre d'échantillonnage en fin
+  d'impulsion, lignes `[MAP]`. Les sections concernées ci-dessous décrivent la
+  cible ; le tableau de correspondance des fichiers à revoir est dans
+  [`impact-adr-0009.md`](impact-adr-0009.md).
 
 ## GPIO CAN par carte
 
@@ -116,7 +123,8 @@ Règles :
 - le Clavier la refuse pendant le jeu et émet alors `STATUS 0x21`
   `SELFTEST_REFUSED_PLAYING` ;
 - toutes les cartes Moteur testent et répondent.
-- si `bit7 = 1`, chaque carte émet aussi `IPROPI_RAW` (`0x600`) après la trame C ;
+- si `bit7 = 1`, chaque carte émet aussi `IPROPI_RAW` (`0x600`) puis
+  `IPROPI_OHM` (`0x601`) après la trame C ;
 - `reply_to` dans les réponses reprend seulement le `request_id` logique (`1..127`).
 
 #### `IPROPI_SELFTEST_TRIGGER` — ID `0x402`, DLC 2
@@ -163,8 +171,8 @@ Règles :
 | 0..1 | `uid_tag` | CRC16 LE |
 | 2 | `reply_to` | `request_id` logique `1..127` |
 | 3 | `channel` | `0..11` |
-| 4..5 | `idle_avg` | moyenne ADC 12 bits LE, canal mux stabilisé avant PROBE |
-| 6..7 | `probe_avg` | moyenne ADC 12 bits LE pendant PROBE |
+| 4..5 | `idle_avg` | moyenne ADC 12 bits LE, canal mux stabilisé **avant** l'impulsion |
+| 6..7 | `probe_avg` | moyenne ADC 12 bits LE des **N derniers échantillons** de l'impulsion (fenêtre en fin d'impulsion, ADR-0009 §5b) |
 
 Règles :
 - 12 trames, une par canal `0..11`, après la trame C ;
@@ -173,8 +181,56 @@ Règles :
   d'occupation officielle est prise côté Moteur sur
   `delta = max(probe_avg - idle_avg, 0)` ;
 - le seuil courant est **figé à 400 ADC** (`delta >= 400` => canal occupé) ;
+- `probe_avg` est prélevé en **fin** d'impulsion PROBE (durée 5 ms, duty 20 %) :
+  la même valeur sert au critère d'occupation et aux estimations d'`IPROPI_OHM` ;
 - le statut protocolaire `UNCALIBRATED` reste réservé pour compatibilité, mais
   n'est pas attendu avec le firmware actuel.
+
+#### `IPROPI_OHM` — ID `0x601`, DLC 8
+
+Émetteur : **Moteur** vers le Clavier, **uniquement** quand
+`IPROPI_SELFTEST_REQUEST` a été reçu avec `bit7 = 1`, **après** les trames
+`IPROPI_RAW`.
+
+| Octets | Nom | Valeurs / remarques |
+|---|---|---|
+| 0..1 | `uid_tag` | CRC16 LE |
+| 2 | `reply_to` | `request_id` logique `1..127` |
+| 3 | `channel` | `0..11` |
+| 4..5 | `ohm_milliohm` | résistance estimée, mΩ LE ; `0xFFFF` = invalide |
+| 6..7 | `i100_mA` | courant estimé à 100 % de duty, mA LE ; `0xFFFF` = invalide |
+
+Règles :
+- 12 trames, une par canal `0..11`, après les 12 trames `IPROPI_RAW`, même
+  espacement et même délai initial UID-dérivé ;
+- calcul côté **Moteur** (constantes de `solenoid_profile.h`), jamais côté
+  Clavier : le Clavier ne duplique aucune constante électrique ;
+- entrée du calcul : `delta` (voir `IPROPI_RAW`) et le **duty PROBE réellement
+  appliqué** après écrêtage par le pilote ;
+- `ohm_milliohm` invalide si `delta < IPROPI_SELFTEST_THRESHOLD_DELTA_ADC`,
+  `delta == 0`, ou résultat > 65 534 mΩ ; `i100_mA` invalide si
+  `ohm_milliohm` est invalide ; les deux sont clampés à 65 534 sinon ;
+- trame **purement informative** : sa perte ou son invalidité ne modifient ni
+  `occupation_bits`, ni `fault_bits`, ni l'écriture de la table ;
+
+Formules (constantes de `firmware/moteur/src/solenoid_profile.h`) :
+
+```text
+K (V/A)   = SOLENOID_IPROPI_UA_PER_A (450) x SOLENOID_IPROPI_RESISTOR_OHM (2400) / 1e6
+R (mOhm)  = (duty_permil x VM_mV x 4095 x K) / (1000 x delta x VREF_mV) - Rds_mOhm
+I100 (mA) = VM_mV x 1000 / (R_mOhm + Rds_mOhm)
+```
+
+Avec les valeurs nominales (`VM = 24.000 V`, `VREF = 3.300 V`, `K = 1.08 V/A`,
+`Rds = 240 mΩ`, duty `200 ‰`) :
+
+```text
+R (mOhm) = 32164 x duty_permil / delta - 240
+I100 (mA) = 24 000 000 / (R_mOhm + 240)
+```
+
+Repères : `delta = 1030` → `6.00 Ω` / `3.85 A` ; `delta = 800` → `7.80 Ω` /
+`2.99 A` ; `delta = 400` (seuil) → `15.84 Ω` / `1.49 A`.
 
 #### `SOLENOID_COMMAND` — ID `0x100`, DLC 5
 
@@ -205,17 +261,42 @@ Règles :
   `offset = PICO_FLASH_SIZE_BYTES - 4096`
 * lecture directe **XIP**
 * écriture via **`flash_safe_execute`**
+* format **version 2** (ADR-0009) ; une table **version 1** reste lisible et est
+  interprétée `state = FINAL`, `flags = 0` (une v1 n'a pu être écrite qu'avec
+  toutes les cartes présentes)
 
-En-tête :
+En-tête (16 octets) :
 
-| Champ | Type | Remarque |
+| Octet | Champ | Type | Remarque |
+|---|---|---|---|
+| 0..3 | `magic` | `u32` | `'CLVC'` |
+| 4..5 | `format_version` | `u16` | `2` |
+| 6..7 | `count` | `u16` | nombre d'enregistrements |
+| 8..11 | `crc32` | `u32` | CRC32 calculé sur les enregistrements **seulement** |
+| 12 | `state` | `u8` | `0 = FINAL`, `1 = PROVISIONAL` |
+| 13 | `flags` | `u8` | motifs (tableau ci-dessous) |
+| 14..15 | `reserved` | `u16` | `0` |
+
+Les enregistrements commencent à l'octet **16** ; l'enregistrement lui-même est
+**inchangé**.
+
+Motifs (`flags`) :
+
+| Bit | Nom | Sens |
 |---|---|---|
-| `magic` | `u32` | `'CLVC'` |
-| `format_version` | `u16` | `1` |
-| `count` | `u16` | nombre d'enregistrements |
-| `crc32` | `u32` | CRC calculé sur les enregistrements seulement |
+| `0x01` | `MISSING_BOARD` | une position listée dans `uid_position.h` n'a pas répondu |
+| `0x02` | `UNKNOWN_BOARD` | une carte répondante n'est pas dans `uid_position.h` (exclue de la table) |
+| `0x04` | `BOARD_NOT_OK` | une carte répondante a `test_status != OK` (entrée conservée, `bitmap = 0`) |
+| `0x08` | `FAULT_DURING_TEST` | au moins un `fault_bits != 0` |
+| `0x10` | `NOT_49_KEYS` | `total_occupied != 49` |
+| `0x20` | `DIAG_INCOMPLETE` | mode diagnostic demandé et trames `IPROPI_RAW` incomplètes |
+| `0x40`, `0x80` | réservés | émis à `0` |
 
-Enregistrement par carte :
+Règle unique : `state = FINAL` **si et seulement si** `flags == 0`. Une table
+`PROVISIONAL` reste **pleinement jouable** pour les canaux qu'elle contient :
+l'état est informatif, jamais un verrou.
+
+Enregistrement par carte (inchangé) :
 
 | Champ | Type | Remarque |
 |---|---|---|
@@ -223,7 +304,11 @@ Enregistrement par carte :
 | `bitmap_occupation` | `u16` | bits `0..11`, trous autorisés |
 | `reserved` | `u16` | `0` |
 
-### Lignes `[STATUS]` (codes `0x20+` d'ADR-0004)
+Règle de contenu (ADR-0009 §1 et §2) : la table est le **cliché du dernier
+auto-test explicitement demandé**. Elle n'est jamais écrite au boot, et il
+n'existe aucune commande d'édition ou d'écriture manuelle d'une entrée.
+
+### Lignes `[STATUS]` (codes `0x20+` d'ADR-0004, `0x31` d'ADR-0009)
 
 Format texte CDC :
 - par défaut : `[STATUS] code=NOM pos=N`
@@ -249,6 +334,38 @@ Format texte CDC :
 | `2E` | `FAULT_DURING_TEST` |
 | `2F` | `MAINTENANCE_BUSY` |
 | `30` | `MAINTENANCE_NO_TABLE` |
+| `31` | `TABLE_PROVISIONAL` |
+
+### Lignes `[TABLE]`
+
+Formats (existants, complétés par `state`/`flags`) :
+- `[TABLE] loaded state=FINAL|PROVISIONAL flags=0xNN cards=<0..5> keys=<0..49>`
+- `[TABLE] invalid ...`
+- `[TABLE] pos=<0..4> uid=<16 hex> bitmap=0xXYZ keys=<a>-<b>`
+- `[TABLE] diff pos=<0..4> old=0xXYZ new=0xXYZ`
+
+Règles :
+- la ligne `loaded` est émise au boot après chargement, **et** après chaque
+  écriture ;
+- `state=PROVISIONAL` est toujours accompagné de
+  `[STATUS] code=TABLE_PROVISIONAL` ;
+- `keys=a-b` donne la plage de touches de la carte ; le détail exact canal →
+  touche est donné par les lignes `[MAP]` ;
+- `diff` est émise position par position avant écriture, sans jamais corriger
+  silencieusement (invariant 1) ;
+- `cards` = nombre d'enregistrements écrits, `keys` = total occupé.
+
+### Lignes `[MAP]`
+
+Format :
+`[MAP] pos=<0..4> ch=<0..11> key=<1..49> midi=<36..84> note=<DO2..DO6>(<MIDI>)`
+
+Règles :
+- une ligne par canal **assigné**, émise après chaque écriture de table et à
+  chaque boot ;
+- nommage de note conforme à ADR-0008 (`DO2(36)` … `DO6(84)`) ;
+- sortie contrôlée par la constante `CLAVIER_MAP_LOG` : `1` pendant le bring-up,
+  `0` en configuration finale.
 
 ### Lignes `[MODE]` et `[PUSH]`
 
@@ -277,74 +394,137 @@ Format :
 
 Formats :
 - `[SELFTEST_RAW] req=<1..127> pos=<0..127> ch=<0..11> idle=<0..4095> probe=<0..4095>`
-- `[SELFTEST_RAW] req=<1..127> pos=<0..127> ch=<0..11> delta=<signé>`
+- `[SELFTEST_RAW] req=<1..127> pos=<0..127> ch=<0..11> delta=<signé> ohm_est=<Ω|--> i100=<A|-->`
 
 Règles :
-- émises uniquement quand le Clavier a été compilé avec
-  `-DCLAVIER_SELFTEST_CALIBRATION=ON` et a donc demandé le mode calibration ;
+- émises quand le mode diagnostic est actif : option CMake
+  `-DCLAVIER_SELFTEST_CALIBRATION=ON` (défaut **`ON`** pendant le bring-up,
+  ADR-0009 §7) ou bascule `c` de la console CDC (livraison B) ;
 - `delta = probe - idle` en décimal signé ;
 - la décision d'occupation, elle, utilise `max(delta, 0)` avant comparaison au
   seuil 400 ;
+- `ohm_est` : résistance estimée en ohms sur **2 décimales**, ou `--` si
+  invalide ; `i100` : courant estimé à 100 % de duty en ampères sur **2
+  décimales**, ou `--` si invalide (ADR-0009 §5c, §5d) ;
 - `pos=127` si le `uid_tag` reçu n'a pas pu être rattaché à une position de
   `uid_position.h`.
+
+### Ligne `[SELFTEST_OHM]` (synthèse par carte)
+
+Format :
+`[SELFTEST_OHM] pos=<0..4> n=<1..12> ohm_min=<Ω> ohm_max=<Ω> spread=<%> i100_min=<A> i100_max=<A>[ warn=i100>3.0A]`
+
+Règles :
+- calculée par le **Clavier** à partir des trames `0x601` des canaux **occupés**
+  de la carte, une fois les 12 trames reçues ;
+- `spread = (ohm_max - ohm_min) / moyenne`, en pourcent ;
+- `warn=i100>3.0A` n'apparaît que si au moins un canal occupé dépasse la
+  fenêtre 2–3 A en PULL 100 % ;
+- ligne de confort de bring-up : elle sert à repérer une bobine hors gabarit.
 
 ## Règle d'assignation des touches
 
 ### Convention musicale figée
 
-Notation scientifique, C4 = MIDI 60 (ADR-0008, amende ADR-0004 §6).
+Notation scientifique, C4 = MIDI 60 (ADR-0008 ; §6 d'ADR-0004 remplacé par
+ADR-0010 pour le sens de l'assignation).
 
 - **touche 1 = DO2 = MIDI 36**
 - **touche 49 = DO6 = MIDI 84**
 - formule : `touche = note_midi - 35`
 - hors plage MIDI `36..84` : note ignorée
 
-### Règle descendante
+### Règle ascendante (ADR-0010)
 
-- Les cartes de `uid_position.h` sont parcourues de la **position la plus
-  haute vers la plus basse**.
-- Le bloc courant commence à la touche **49** et descend.
+- L'ancrage se fait sur la touche **1** (`DO2`, MIDI 36) : la carte de
+  **position 0** (nœud CAN 2), canal occupé le plus bas, joue **DO2**.
+- Les cartes de `uid_position.h` sont parcourues de la **position la plus basse
+  vers la plus haute** (`0 → 4`).
+- Le bloc courant commence à la touche courante (initialement **1**) et
+  **monte**.
 - La taille d'un bloc = nombre de canaux occupés de la carte.
 - Dans un bloc, les **canaux occupés triés par index croissant** reçoivent les
   **touches croissantes** du bloc.
-- Les canaux non occupés sont sautés.
+- Les canaux non occupés sont sautés (trous autorisés).
+- Les touches non attribuées (total occupé < 49) sont celles du **haut** (aigu).
 
 ### Exemple
 
-Carte unique en position 4, avec canaux `0`, `1` et `2` occupés :
+Carte unique en position 0, avec canaux `0`, `1` et `2` occupés :
 
 | Canal | Touche | Note MIDI | Note |
 |---|---|---|---|
-| 0 | 47 | 82 | LA#5 / SIb5 |
-| 1 | 48 | 83 | SI5 |
-| 2 | 49 | 84 | DO6 |
+| 0 | 1 | 36 | DO2 |
+| 1 | 2 | 37 | DO#2 / RÉb2 |
+| 2 | 3 | 38 | RÉ2 |
 
-Une carte placée en position 3 recevrait le bloc immédiatement plus grave, se
-terminant à la touche 46.
+Une carte placée en position 1 recevrait le bloc immédiatement plus aigu,
+commençant à la touche 4.
 
 Exemple à 2 cartes :
 
-* position 4, `3` canaux occupés → touches `47,48,49`
-* position 3, `2` canaux occupés → touches `45,46`
+* position 0, `3` canaux occupés → touches `1,2,3`
+* position 1, `2` canaux occupés → touches `4,5`
 * dans chaque bloc, les canaux occupés les plus bas reçoivent les touches les
   plus graves du bloc.
+
+### Contiguïté des positions et motif `ANCHOR_SHIFT`
+
+L'ancrage étant grave, une position absente décale vers le haut **toutes** les
+cartes plus aiguës. Pour que ce décalage ne soit jamais tacite :
+
+- la table n'est `FINAL` que si les positions présentes sont **exactement
+  `0..K−1`** (aucun trou avant la position présente la plus haute, position 0
+  déclarée) ;
+- sinon l'assignation est **quand même construite** (remplissage compact
+  croissant des positions présentes) et la table est `PROVISIONAL` avec le motif
+  **`0x40 ANCHOR_SHIFT`** ;
+- aucune correction, aucun réordonnancement automatique (invariant 1) : c'est un
+  signalement, au même titre que `MISSING_BOARD`.
 
 ## Contraintes de commissioning
 
 - **Pas d'auto-test au boot** : au démarrage, le Moteur annonce seulement A et
   B ; la trame C n'est émise qu'en réponse à `0x401`.
-- **Table flash côté Clavier** : écriture automatique après auto-test réussi,
-  seulement si **toutes** les cartes listées dans `uid_position.h` ont répondu
-  avec `test_status = 0`.
-- **Pas de remapping silencieux** : toute divergence UID/bitmap/table doit être
-  signalée explicitement avant toute écriture.
-- **Table partielle admise** en bring-up : si le total occupé n'est pas 49, le
-  Clavier signale `TABLE_PARTIAL`.
+- **Table flash côté Clavier = cliché du dernier auto-test demandé** (ADR-0009) :
+  écriture uniquement si **au moins une** carte répondante a fourni un jeu
+  complet (A+B+C), si aucun `uid_tag` n'est dupliqué, et si le contenu diffère
+  de la table en mémoire. **Aucune** écriture au boot, **aucune** commande
+  d'édition ou d'écriture manuelle d'une entrée.
+- **Ce qui ne bloque plus l'écriture, mais marque la table** (`PROVISIONAL` +
+  motif) : position de `uid_position.h` sans réponse (`MISSING_BOARD`) ; carte
+  répondante absente de `uid_position.h`, exclue (`UNKNOWN_BOARD`) ; carte
+  répondante avec `test_status != OK`, entrée conservée avec `bitmap = 0`
+  (`BOARD_NOT_OK`) ; `fault_bits != 0` (`FAULT_DURING_TEST`) ; total occupé
+  différent de 49 (`NOT_49_KEYS`, déjà signalé `TABLE_PARTIAL`) ; trames
+  `IPROPI_RAW` incomplètes en mode diagnostic (`DIAG_INCOMPLETE`) ; positions
+  présentes non contiguës depuis 0, position 0 absente (`ANCHOR_SHIFT`, motif
+  `0x40`, ADR-0010).
+- **Ce qui bloque toujours** : aucune carte complète, `uid_tag` ou position
+  dupliqué, auto-test demandé pendant le jeu.
+- **Pas de remapping silencieux** : toute divergence UID/bitmap/table est
+  signalée explicitement (lignes `[TABLE]`, `[STATUS]`, `[MAP]`) avant et après
+  écriture.
+- **Table provisoire jouable** : une table `PROVISIONAL` reste utilisable pour
+  les canaux qu'elle contient ; les canaux d'une carte présente sur le bus mais
+  absente de la table restent refusés et signalés (`UID_NOT_IN_TABLE`), sans
+  remappage.
 
 ## Remarques
 
-- La **Livraison 1** n'implémente pas encore la table flash, l'assignation
-  persistante ni `SOLENOID_COMMAND` côté Moteur.
+- **Livraisons 1 et 2 implémentées** dans le dépôt : auto-test IPROPI, table
+  flash, assignation persistante et `SOLENOID_COMMAND`.
+- **Éléments ADR-0009 non encore implémentés** (au 2026-10-20) : format de table
+  v2 (état/motifs), trame `IPROPI_OHM` `0x601`, PROBE 5 ms avec fenêtre
+  d'échantillonnage en fin d'impulsion, lignes `[MAP]` et `[SELFTEST_OHM]`,
+  console CDC de bring-up. Les sections correspondantes de ce document les
+  décrivent comme **cible** ; le suivi fichier par fichier est dans
+  [`impact-adr-0009.md`](impact-adr-0009.md).
+- **Règle d'assignation ascendante (ADR-0010, 2026-10-20)** : décidée et
+  documentée ici comme **cible**. Tant que l'implémentation n'est pas faite, le
+  comportement réel de `commissioning_build_runtime` reste **descendant** (blocs
+  ancrés sur la touche 49) ; suivi fichier par fichier dans
+  [`impact-adr-0010.md`](impact-adr-0010.md).
 
 ## Tests manuels
 
@@ -353,6 +533,8 @@ Exemple à 2 cartes :
   [`tests/ipropi_selftest_phase3b.md`](../../tests/ipropi_selftest_phase3b.md)
 - Phase 3b / Livraison 2 :
   [`tests/phase3b_bout_en_bout.md`](../../tests/phase3b_bout_en_bout.md)
+- Bring-up commissioning provisoire (ADR-0009) :
+  [`tests/bringup_commissioning_provisoire.md`](../../tests/bringup_commissioning_provisoire.md)
 
 ## Points non démontrés sans matériel
 

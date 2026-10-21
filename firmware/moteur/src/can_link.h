@@ -22,6 +22,8 @@ typedef struct {
     uint32_t triggers_sent;
     uint32_t raw_reports_sent;
     uint32_t raw_reports_deferred;
+    uint32_t ohm_reports_sent;
+    uint32_t ohm_reports_deferred;
     uint32_t solenoid_commands_ok;
     uint32_t solenoid_ignored_tag;
     uint32_t solenoid_bad_channel;

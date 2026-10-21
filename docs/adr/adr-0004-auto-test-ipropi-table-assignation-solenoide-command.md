@@ -74,6 +74,14 @@ Le Moteur annonce seulement A et B au boot (ADR-0003). L'auto-test et la trame C
 * Le Clavier refuse une table contenant deux `uid_tag` identiques (collision CRC16).
 
 #### 6. Règle d'assignation (descendante, ancrée sur la touche 49)
+
+> **Remplacée par ADR-0010 (2026-10-20, `Accepted`).** La règle d'assignation
+> est désormais **ascendante** : ancrage sur la touche 1 = DO2 (position 0,
+> canal occupé le plus bas), positions parcourues de 0 à 4. Cette section et ses
+> exemples sont conservés **pour l'historique** et ne doivent pas être
+> implémentés. Références à jour :
+> [ADR-0010](./adr-0010-ancrage-grave-mapping-commissioning.md),
+> `docs/specs/CAN.md`, `docs/specs/impact-adr-0010.md`.
 * Clavecin 49 touches : touche 1 = DO1 (MIDI 36) … touche 49 = DO5 (MIDI 84). `touche = note_midi − 35` ; hors 36..84 ignoré. (Nommage Yamaha C3 = 60.)
 * Les cartes de `uid_position.h` sont parcourues de la position la plus haute vers la plus basse. Chacune reçoit un bloc contigu de touches **en descendant** depuis la touche courante (début = 49), de taille = nombre de canaux occupés. Dans un bloc, les canaux occupés triés par index croissant reçoivent les touches croissantes (canal plus bas = touche plus grave du bloc). Canaux non occupés sautés (trous autorisés).
 * Exemple : carte unique en position 4, canaux 0, 1, 2 occupés → canal 0 = touche 47 (MIDI 82, LA#4/SIb4), canal 1 = touche 48 (MIDI 83, SI4), canal 2 = touche 49 (MIDI 84, DO5). Une carte en position 3 aurait son bloc finissant à la touche 46.
@@ -102,7 +110,7 @@ Charge et valide la table flash (CRC/format). Invalide → **aucun solénoïde a
 * **POS-001**: Divergences détectées et signalées, jamais corrigées silencieusement (invariant 1).
 * **POS-002**: Moteur anonyme (invariant 2) ; seule vérité côté Clavier (invariant 3).
 * **POS-003**: Le test ne peut pas dépasser les bornes du driver (invariant 4).
-* **POS-004**: Ancrage descendant : l'absence d'une carte basse ne décale aucune touche des cartes hautes.
+* **POS-004** (remplacé par ADR-0010) : Ancrage descendant : l'absence d'une carte basse ne décale aucune touche des cartes hautes. La règle ascendante donne la propriété symétrique — l'absence d'une carte **aiguë** ne décale aucune carte grave.
 * **POS-005**: Livraison 1 testable sans flash ni commande solénoïde.
 
 #### Negative
@@ -110,7 +118,7 @@ Charge et valide la table flash (CRC/format). Invalide → **aucun solénoïde a
 * **NEG-002**: Détection IPROPI à 20 % : seuil non caractérisé, test « non calibré » en attendant.
 * **NEG-003**: Pas d'ack applicatif : notes manquées par perte de trame.
 * **NEG-004**: Écriture flash avec IRQ actives : risque de latence / blocage (à vérifier).
-* **NEG-005**: Un canal défaillant ou non câblé change l'assignation des touches de toutes les cartes plus graves au prochain test, **signalé mais effectif** (conséquence assumée de la règle compacte).
+* **NEG-005**: Un canal défaillant ou non câblé change l'assignation des touches de toutes les cartes plus graves au prochain test, **signalé mais effectif** (conséquence assumée de la règle compacte). Avec la règle ascendante (ADR-0010), le décalage joue dans l'autre sens — cartes plus **aiguës** — et reste signalé, avec en plus le motif `ANCHOR_SHIFT` quand des positions manquent.
 * **NEG-006**: Collision de `uid_tag` (CRC16) possible : table refusée.
 
 ### Alternatives Considered
@@ -130,6 +138,7 @@ Charge et valide la table flash (CRC/format). Invalide → **aucun solénoïde a
 #### Ancrage ascendant
 * **ALT-007**: **Description**: première carte (position 0) ancrée sur la touche 1.
 * **ALT-008**: **Rejection Reason**: remappe silencieusement les touches si une carte manque (invariant 1).
+  * **Décision inversée par ADR-0010 (2026-10-20)** : l'ancrage grave est retenu, le décalage restant **signalé** (`MISSING_BOARD`, `ANCHOR_SHIFT`, lignes `[MAP]`) et non silencieux.
 
 #### Auto-test avec mise à jour de la table à chaque boot
 * **ALT-009**: **Description**: la table se réécrit à chaque démarrage.
@@ -347,6 +356,11 @@ Vérification effectuée dans le **SDK 2.3.1** et dans le build courant :
   * `[PUSH] midi=M key=K pos=P ch=C start|stop|timeout`
 
 #### 5. Règle d'assignation figée pour le calcul pur
+
+> **Remplacée par ADR-0010 (2026-10-20, `Accepted`).** Le parcours est désormais
+> **ascendant** depuis la touche 1 (`DO2`), positions `0 → 4`. Les exemples
+> ci-dessous (ancrés sur la touche 49) sont **historiques** ; les vecteurs à
+> utiliser sont dans `docs/specs/impact-adr-0010.md`.
 
 * `touche = note_midi - 35`.
 * Seules les notes MIDI `36..84` sont routables ; hors plage : ignorées.

@@ -2,6 +2,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 static bool status_supports_bitmap(diag_status_code_t code) {
     return code == DIAG_STATUS_CHANNEL_DIVERGENCE || code == DIAG_STATUS_BOARD_REFUSED_BUSY ||
@@ -69,6 +70,7 @@ const char *diag_status_code_name(diag_status_code_t code) {
     case DIAG_STATUS_FAULT_DURING_TEST: return "FAULT_DURING_TEST";
     case DIAG_STATUS_MAINTENANCE_BUSY: return "MAINTENANCE_BUSY";
     case DIAG_STATUS_MAINTENANCE_NO_TABLE: return "MAINTENANCE_NO_TABLE";
+    case DIAG_STATUS_TABLE_PROVISIONAL: return "TABLE_PROVISIONAL";
     default: return NULL;
     }
 }
@@ -199,9 +201,28 @@ size_t diag_format_selftest_raw_line(char *out, size_t capacity,
     return (written < 0) ? 0u : (size_t)written;
 }
 
+// Rend une valeur en milli-unités sur 2 décimales ("6005" -> "6.00").
+// Faux si la valeur est absente : l'appelant écrit alors "--".
+static bool format_milli_2(char *out, size_t capacity, uint16_t milli_value) {
+    int written;
+
+    if (out == NULL || capacity == 0u || milli_value == CAN_IPROPI_VALUE_INVALID) {
+        return false;
+    }
+    written = snprintf(out, capacity, "%u.%02u", (unsigned)(milli_value / 1000u),
+                       (unsigned)((milli_value % 1000u) / 10u));
+    if (written < 0 || (size_t)written >= capacity) {
+        out[0] = '\0';
+        return false;
+    }
+    return true;
+}
+
 size_t diag_format_selftest_raw_delta_line(char *out, size_t capacity,
                                            const diag_selftest_raw_report_t *report) {
-    const int delta = (int)report->probe_avg - (int)report->idle_avg;
+    char ohm_text[8];
+    char i100_text[8];
+    int delta;
     int written;
 
     if (report == NULL || report->channel >= CAN_IPROPI_CHANNEL_COUNT ||
@@ -209,9 +230,85 @@ size_t diag_format_selftest_raw_delta_line(char *out, size_t capacity,
         return 0u;
     }
 
-    written = write_line(out, capacity, "[SELFTEST_RAW] req=%u pos=%u ch=%u delta=%d",
+    delta = (int)report->probe_avg - (int)report->idle_avg;
+    if (!format_milli_2(ohm_text, sizeof(ohm_text), report->ohm_milliohm)) {
+        strcpy(ohm_text, "--");
+    }
+    if (!format_milli_2(i100_text, sizeof(i100_text), report->i100_ma)) {
+        strcpy(i100_text, "--");
+    }
+
+    written = write_line(out, capacity,
+                         "[SELFTEST_RAW] req=%u pos=%u ch=%u delta=%d ohm_est=%s i100=%s",
                          (unsigned)report->request_id, (unsigned)report->position,
-                         (unsigned)report->channel, delta);
+                         (unsigned)report->channel, delta, ohm_text, i100_text);
+    return (written < 0) ? 0u : (size_t)written;
+}
+
+size_t diag_format_selftest_ohm_line(char *out, size_t capacity,
+                                     const diag_ohm_summary_t *summary) {
+    char ohm_min[8];
+    char ohm_max[8];
+    char i100_min[8];
+    char i100_max[8];
+    int written;
+
+    if (summary == NULL || summary->count == 0u || summary->count > CAN_IPROPI_CHANNEL_COUNT ||
+        !format_milli_2(ohm_min, sizeof(ohm_min), summary->ohm_min_milliohm) ||
+        !format_milli_2(ohm_max, sizeof(ohm_max), summary->ohm_max_milliohm) ||
+        !format_milli_2(i100_min, sizeof(i100_min), summary->i100_min_ma) ||
+        !format_milli_2(i100_max, sizeof(i100_max), summary->i100_max_ma)) {
+        return 0u;
+    }
+
+    if (summary->warn_i100_over_3a) {
+        written = write_line(out, capacity,
+                             "[SELFTEST_OHM] pos=%u n=%u ohm_min=%s ohm_max=%s spread=%u%% "
+                             "i100_min=%s i100_max=%s warn=i100>3.0A",
+                             (unsigned)summary->position, (unsigned)summary->count, ohm_min, ohm_max,
+                             (unsigned)summary->spread_percent, i100_min, i100_max);
+    } else {
+        written = write_line(out, capacity,
+                             "[SELFTEST_OHM] pos=%u n=%u ohm_min=%s ohm_max=%s spread=%u%% "
+                             "i100_min=%s i100_max=%s",
+                             (unsigned)summary->position, (unsigned)summary->count, ohm_min, ohm_max,
+                             (unsigned)summary->spread_percent, i100_min, i100_max);
+    }
+    return (written < 0) ? 0u : (size_t)written;
+}
+
+size_t diag_format_table_state_line(char *out, size_t capacity, const diag_table_state_t *state) {
+    const char *state_name;
+    int written;
+
+    if (state == NULL || (state->flags & ~COMMISSIONING_FLAG_ALL) != 0u ||
+        state->state != commissioning_table_state_from_flags(state->flags)) {
+        return 0u;
+    }
+    state_name = commissioning_table_state_name(state->state);
+    if (state_name == NULL) {
+        return 0u;
+    }
+
+    written = write_line(out, capacity, "[TABLE] loaded state=%s flags=0x%02X cards=%u keys=%u",
+                         state_name, (unsigned)state->flags, (unsigned)state->cards,
+                         (unsigned)state->keys);
+    return (written < 0) ? 0u : (size_t)written;
+}
+
+size_t diag_format_map_line(char *out, size_t capacity, uint8_t position, uint8_t channel,
+                            uint8_t key, uint8_t midi_note) {
+    char note[DIAG_NOTE_NAME_MAX];
+    int written;
+
+    if (channel >= CAN_IPROPI_CHANNEL_COUNT ||
+        !diag_format_note_name_fr(note, sizeof(note), midi_note)) {
+        return 0u;
+    }
+
+    written = write_line(out, capacity, "[MAP] pos=%u ch=%u key=%u midi=%u note=%s",
+                         (unsigned)position, (unsigned)channel, (unsigned)key,
+                         (unsigned)midi_note, note);
     return (written < 0) ? 0u : (size_t)written;
 }
 

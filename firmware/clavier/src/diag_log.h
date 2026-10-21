@@ -39,6 +39,7 @@ typedef enum {
     DIAG_STATUS_FAULT_DURING_TEST = 0x2E,
     DIAG_STATUS_MAINTENANCE_BUSY = 0x2F,
     DIAG_STATUS_MAINTENANCE_NO_TABLE = 0x30,
+    DIAG_STATUS_TABLE_PROVISIONAL = 0x31,
 } diag_status_code_t;
 
 typedef enum {
@@ -72,7 +73,31 @@ typedef struct {
     uint8_t channel;
     uint16_t idle_avg;
     uint16_t probe_avg;
+    // Diagnostic ADR-0009 : CAN_IPROPI_VALUE_INVALID si non calculable.
+    uint16_t ohm_milliohm;
+    uint16_t i100_ma;
 } diag_selftest_raw_report_t;
+
+// État persisté d'une table (ADR-0009 §3, §4).
+typedef struct {
+    commissioning_table_state_t state;
+    uint8_t flags;
+    uint8_t cards;
+    uint16_t keys;
+} diag_table_state_t;
+
+// Synthèse ohmique d'une carte (ADR-0009 §5c) : calculée par le Clavier sur les
+// canaux occupés, à partir des trames IPROPI_OHM.
+typedef struct {
+    uint8_t position;
+    uint8_t count;
+    uint16_t ohm_min_milliohm;
+    uint16_t ohm_max_milliohm;
+    uint8_t spread_percent;
+    uint16_t i100_min_ma;
+    uint16_t i100_max_ma;
+    bool warn_i100_over_3a;
+} diag_ohm_summary_t;
 
 typedef struct {
     uint8_t position;
@@ -135,12 +160,17 @@ size_t diag_format_selftest_raw_line(char *out, size_t capacity,
                                      const diag_selftest_raw_report_t *report);
 size_t diag_format_selftest_raw_delta_line(char *out, size_t capacity,
                                            const diag_selftest_raw_report_t *report);
+size_t diag_format_selftest_ohm_line(char *out, size_t capacity,
+                                     const diag_ohm_summary_t *summary);
 size_t diag_format_boot_line(char *out, size_t capacity, const char *table_state, uint8_t cards);
 size_t diag_format_help_line(char *out, size_t capacity);
 size_t diag_format_trigger_line(char *out, size_t capacity, uint8_t request_id);
 size_t diag_format_trigger_refused_line(char *out, size_t capacity, const char *reason);
 size_t diag_format_table_loaded_line(char *out, size_t capacity, bool loaded,
                                      const char *detail);
+size_t diag_format_table_state_line(char *out, size_t capacity, const diag_table_state_t *state);
+size_t diag_format_map_line(char *out, size_t capacity, uint8_t position, uint8_t channel,
+                            uint8_t key, uint8_t midi_note);
 size_t diag_format_table_entry_line(char *out, size_t capacity, const diag_table_entry_t *entry);
 size_t diag_format_table_diff_line(char *out, size_t capacity, uint8_t position, uint16_t old_bitmap,
                                    uint16_t new_bitmap);

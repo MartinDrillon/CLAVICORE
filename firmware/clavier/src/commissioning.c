@@ -46,6 +46,8 @@ void commissioning_state_init(commissioning_state_t *state) {
 
 commissioning_result_t commissioning_state_load(commissioning_state_t *state) {
     commissioning_entry_t entries[UID_POSITION_COUNT];
+    commissioning_table_state_t table_state = COMMISSIONING_TABLE_STATE_FINAL;
+    uint8_t table_flags = 0u;
     uint16_t count = 0u;
     commissioning_result_t result;
     commissioning_runtime_t runtime;
@@ -55,10 +57,12 @@ commissioning_result_t commissioning_state_load(commissioning_state_t *state) {
     }
 
     result = commissioning_flash_decode(commissioning_flash_base(), FLASH_SECTOR_SIZE, entries,
-                                        UID_POSITION_COUNT, &count);
+                                        UID_POSITION_COUNT, &count, &table_state, &table_flags);
     if (result != COMMISSIONING_OK) {
         state->valid = false;
         state->entry_count = 0u;
+        state->table_state = COMMISSIONING_TABLE_STATE_FINAL;
+        state->table_flags = 0u;
         memset(&state->runtime, 0, sizeof(state->runtime));
         memset(state->board_online, 0, sizeof(state->board_online));
         state->last_error = result;
@@ -69,6 +73,8 @@ commissioning_result_t commissioning_state_load(commissioning_state_t *state) {
     if (result != COMMISSIONING_OK) {
         state->valid = false;
         state->entry_count = 0u;
+        state->table_state = COMMISSIONING_TABLE_STATE_FINAL;
+        state->table_flags = 0u;
         memset(&state->runtime, 0, sizeof(state->runtime));
         memset(state->board_online, 0, sizeof(state->board_online));
         state->last_error = result;
@@ -78,6 +84,8 @@ commissioning_result_t commissioning_state_load(commissioning_state_t *state) {
     memset(state, 0, sizeof(*state));
     state->valid = true;
     state->entry_count = count;
+    state->table_state = table_state;
+    state->table_flags = table_flags;
     state->runtime = runtime;
     for (uint16_t i = 0u; i < count; ++i) {
         state->entries[i] = entries[i];
@@ -88,7 +96,9 @@ commissioning_result_t commissioning_state_load(commissioning_state_t *state) {
 
 commissioning_result_t commissioning_state_store(commissioning_state_t *state,
                                                  const commissioning_entry_t *entries,
-                                                 uint16_t count) {
+                                                 uint16_t count,
+                                                 commissioning_table_state_t table_state,
+                                                 uint8_t table_flags) {
     uint8_t sector[FLASH_SECTOR_SIZE];
     commissioning_runtime_t runtime;
     commissioning_flash_op_t op;
@@ -104,7 +114,8 @@ commissioning_result_t commissioning_state_store(commissioning_state_t *state,
         state->last_error = result;
         return result;
     }
-    result = commissioning_flash_encode(sector, sizeof(sector), entries, count);
+    result = commissioning_flash_encode(sector, sizeof(sector), entries, count, table_state,
+                                        table_flags);
     if (result != COMMISSIONING_OK) {
         state->last_error = result;
         return result;
@@ -122,6 +133,8 @@ commissioning_result_t commissioning_state_store(commissioning_state_t *state,
     memset(state, 0, sizeof(*state));
     state->valid = true;
     state->entry_count = count;
+    state->table_state = table_state;
+    state->table_flags = table_flags;
     state->runtime = runtime;
     for (uint16_t i = 0u; i < count; ++i) {
         state->entries[i] = entries[i];

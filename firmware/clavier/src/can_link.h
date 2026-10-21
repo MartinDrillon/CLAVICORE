@@ -35,6 +35,14 @@ typedef struct {
 void can_link_init(void);
 void can_link_poll(void);
 can_link_request_result_t can_link_request_uid(void);
+// Demande explicite d'auto-test (console de bring-up, ADR-0009 §9 livraison B) :
+// mêmes refus et même chemin que la trame TRIGGER d'un bouton Moteur.
+can_link_request_result_t can_link_request_selftest(void);
+bool can_link_calibration_enabled(void);
+void can_link_set_calibration_enabled(bool enabled);
+// Journalisation à la demande : table + correspondance canal/touche.
+void can_link_dump_table(void);
+void can_link_dump_status(void);
 bool can_link_has_valid_table(void);
 bool can_link_selftest_active(void);
 bool can_link_note_on(uint8_t midi_note, uint8_t velocity);

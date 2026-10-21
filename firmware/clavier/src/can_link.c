@@ -29,6 +29,11 @@
 #ifndef CLAVIER_SELFTEST_CALIBRATION
 #define CLAVIER_SELFTEST_CALIBRATION 0
 #endif
+// Lignes [MAP] (une par canal assigné) : confort de bring-up (ADR-0009 §4).
+// Passer à 0 en configuration finale.
+#ifndef CLAVIER_MAP_LOG
+#define CLAVIER_MAP_LOG 1
+#endif
 #ifndef CLAVIER_NOTE_LOG
 #define CLAVIER_NOTE_LOG 0
 #endif
@@ -83,6 +88,14 @@ typedef struct {
     bool duplicate_tag;
     bool unknown_board;
     bool any_non_ok_status;
+    // Diagnostic ADR-0009 : valeurs brutes par canal (pour recomposer la ligne
+    // `delta` quand l'IPROPI_OHM arrive) et valeurs estimées reçues.
+    uint16_t raw_idle[UID_POSITION_COUNT][CAN_IPROPI_CHANNEL_COUNT];
+    uint16_t raw_probe[UID_POSITION_COUNT][CAN_IPROPI_CHANNEL_COUNT];
+    bool ohm_received_position[UID_POSITION_COUNT][CAN_IPROPI_CHANNEL_COUNT];
+    uint16_t ohm_milliohm[UID_POSITION_COUNT][CAN_IPROPI_CHANNEL_COUNT];
+    uint16_t i100_ma[UID_POSITION_COUNT][CAN_IPROPI_CHANNEL_COUNT];
+    uint8_t ohm_received_count;
 } selftest_session_t;
 
 static struct can2040 cbus;
@@ -109,6 +122,9 @@ static uint32_t overrun_snapshot;
 static bool note_active;
 static uint32_t last_note_event_ms;
 static bool boot_card_summary_pending;
+// Mode diagnostic : défaut de compilation, modifiable à chaud par la console
+// de bring-up (ADR-0009 §7, livraison B).
+static bool calibration_enabled = CLAVIER_SELFTEST_CALIBRATION != 0;
 
 static void can_rx_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg);
 static void can_pio_irq_handler(void);
@@ -171,6 +187,74 @@ static void emit_table_loaded(bool loaded, const char *detail) {
         return;
     }
     emit_line(line);
+}
+
+static void emit_table_state_line(void) {
+    diag_table_state_t state;
+    char line[DIAG_LOG_LINE_MAX];
+
+    if (!commissioning.valid) {
+        return;
+    }
+    state.state = commissioning.table_state;
+    state.flags = commissioning.table_flags;
+    state.cards = (uint8_t)commissioning.entry_count;
+    state.keys = commissioning.runtime.total_occupied;
+    if (diag_format_table_state_line(line, sizeof(line), &state) == 0u) {
+        ++stats.events_dropped;
+        return;
+    }
+    emit_line(line);
+}
+
+// Une ligne `[MAP]` par canal assigné (ADR-0009 §4) : canal -> touche -> note.
+// Dans un bloc, les canaux occupés croissants reçoivent les touches croissantes.
+// La touche de départ du bloc vient de `runtime.position_first_key`, calculée par
+// `commissioning_build_runtime` : ancrage grave (règle ascendante, ADR-0010).
+static void emit_map_line(uint8_t position, uint8_t channel, uint8_t key) {
+    char line[DIAG_LOG_LINE_MAX];
+
+    if (diag_format_map_line(line, sizeof(line), position, channel, key,
+                             commissioning_key_to_midi_note(key)) == 0u) {
+        ++stats.events_dropped;
+        return;
+    }
+    emit_line(line);
+}
+
+static void emit_map_lines(void) {
+#if CLAVIER_MAP_LOG
+    for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
+        const commissioning_entry_t *entry;
+        uint8_t key;
+
+        if (!commissioning.runtime.position_present[position]) {
+            continue;
+        }
+        entry = commissioning_state_entry_by_position(&commissioning, position);
+        if (entry == NULL) {
+            continue;
+        }
+        key = commissioning.runtime.position_first_key[position];
+        if (key == 0u) {
+            continue;
+        }
+        for (uint8_t channel = 0u; channel < CAN_IPROPI_CHANNEL_COUNT; ++channel) {
+            if ((entry->occupation_bitmap & ((uint16_t)1u << channel)) == 0u) {
+                continue;
+            }
+            emit_map_line(position, channel, key);
+            ++key;
+        }
+    }
+#endif
+}
+
+// L'état provisoire est toujours signalé (invariant 1, ADR-0009 §4).
+static void emit_table_state_status(void) {
+    if (commissioning.valid && commissioning.table_state == COMMISSIONING_TABLE_STATE_PROVISIONAL) {
+        emit_status(DIAG_STATUS_TABLE_PROVISIONAL);
+    }
 }
 
 static void emit_table_entry_for_position(uint8_t position) {
@@ -656,7 +740,7 @@ static bool start_selftest_request(void) {
     const can_ipropi_selftest_request_t request = {
         .proto_version = CAN_PROTO_VERSION,
         .request_id = can_next_request_id(last_request_id),
-        .calibration_mode = CLAVIER_SELFTEST_CALIBRATION != 0,
+        .calibration_mode = calibration_enabled,
     };
 
     if (can_encode_ipropi_selftest_request(payload, &request) != CAN_PROTO_OK ||
@@ -870,32 +954,188 @@ static void emit_selftest_card_summary_lines(const commissioning_runtime_t *prev
     emit_summary_line(&summary);
 }
 
-static void emit_selftest_raw_report(const can_ipropi_raw_t *raw) {
-    const uint8_t position = selftest_position_for_tag(raw->uid_tag);
+// Ligne `idle`/`probe` d'un canal : émise dès réception de l'IPROPI_RAW.
+static void emit_selftest_raw_probe_line(uint8_t position, const can_ipropi_raw_t *raw) {
+    const uint8_t request_id = raw->reply_to;
+    const uint8_t channel = raw->channel;
+    const uint16_t idle_avg = raw->idle_avg;
+    const uint16_t probe_avg = raw->probe_avg;
     const diag_selftest_raw_report_t report = {
-        .request_id = raw->reply_to,
+        .request_id = request_id,
         .position = position,
-        .channel = raw->channel,
-        .idle_avg = raw->idle_avg,
-        .probe_avg = raw->probe_avg,
+        .channel = channel,
+        .idle_avg = idle_avg,
+        .probe_avg = probe_avg,
+        // Pas encore connues : l'IPROPI_OHM du canal suit les RAW (ADR-0009 §6).
+        .ohm_milliohm = CAN_IPROPI_VALUE_INVALID,
+        .i100_ma = CAN_IPROPI_VALUE_INVALID,
     };
     char line[DIAG_LOG_LINE_MAX];
 
     if (diag_format_selftest_raw_line(line, sizeof(line), &report) == 0u) {
         ++stats.events_dropped;
-    } else {
-        emit_line(line);
-        ++stats.reports_emitted;
+        return;
     }
+    emit_line(line);
+    ++stats.reports_emitted;
+}
+
+// Ligne `delta` + estimation ohmique : émise à la réception de l'IPROPI_OHM.
+static void emit_selftest_delta_line(uint8_t position, uint8_t channel, uint16_t idle_avg,
+                                     uint16_t probe_avg, uint16_t ohm_milliohm, uint16_t i100_ma,
+                                     uint8_t request_id) {
+    const diag_selftest_raw_report_t report = {
+        .request_id = request_id,
+        .position = position,
+        .channel = channel,
+        .idle_avg = idle_avg,
+        .probe_avg = probe_avg,
+        .ohm_milliohm = ohm_milliohm,
+        .i100_ma = i100_ma,
+    };
+    char line[DIAG_LOG_LINE_MAX];
+
     if (diag_format_selftest_raw_delta_line(line, sizeof(line), &report) == 0u) {
         ++stats.events_dropped;
-    } else {
+        return;
+    }
+    emit_line(line);
+    ++stats.reports_emitted;
+}
+
+// Lignes `delta` des canaux dont l'IPROPI_OHM n'est jamais arrivée : le journal
+// reste complet et l'absence est visible (`ohm_est=--`), jamais silencieuse.
+static void emit_missing_ohm_delta_lines(void) {
+    for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
+        for (uint8_t channel = 0u; channel < CAN_IPROPI_CHANNEL_COUNT; ++channel) {
+            if (!selftest_session.raw_received_position[position][channel] ||
+                selftest_session.ohm_received_position[position][channel]) {
+                continue;
+            }
+            emit_selftest_delta_line(position, channel,
+                                     selftest_session.raw_idle[position][channel],
+                                     selftest_session.raw_probe[position][channel],
+                                     CAN_IPROPI_VALUE_INVALID, CAN_IPROPI_VALUE_INVALID,
+                                     selftest_session.request_id);
+        }
+    }
+}
+
+// Synthèse ohmique par carte (ADR-0009 §5c), sur les canaux occupés mesurés :
+// min/max/écart et étendue du courant à 100 % de duty.
+static void emit_selftest_ohm_summaries(void) {
+    for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
+        diag_ohm_summary_t summary = {0};
+        uint32_t ohm_sum = 0u;
+        uint16_t ohm_min = 0u;
+        uint16_t ohm_max = 0u;
+        uint16_t i100_min = 0u;
+        uint16_t i100_max = 0u;
+        char line[DIAG_LOG_LINE_MAX];
+
+        if (!selftest_session.status_valid[position]) {
+            continue;
+        }
+        for (uint8_t channel = 0u; channel < CAN_IPROPI_CHANNEL_COUNT; ++channel) {
+            const uint16_t ohm = selftest_session.ohm_milliohm[position][channel];
+            const uint16_t i100 = selftest_session.i100_ma[position][channel];
+
+            if (!selftest_session.ohm_received_position[position][channel] ||
+                ohm == CAN_IPROPI_VALUE_INVALID) {
+                continue;
+            }
+            if (summary.count == 0u) {
+                ohm_min = ohm;
+                ohm_max = ohm;
+                i100_min = i100;
+                i100_max = i100;
+            } else {
+                if (ohm < ohm_min) {
+                    ohm_min = ohm;
+                }
+                if (ohm > ohm_max) {
+                    ohm_max = ohm;
+                }
+                if (i100 < i100_min) {
+                    i100_min = i100;
+                }
+                if (i100 > i100_max) {
+                    i100_max = i100;
+                }
+            }
+            ohm_sum += ohm;
+            if (i100 != CAN_IPROPI_VALUE_INVALID) {
+                if (i100 > 3000u) {
+                    summary.warn_i100_over_3a = true;
+                }
+            }
+            ++summary.count;
+        }
+        if (summary.count == 0u) {
+            continue;
+        }
+
+        summary.position = position;
+        summary.ohm_min_milliohm = ohm_min;
+        summary.ohm_max_milliohm = ohm_max;
+        summary.i100_min_ma = i100_min;
+        summary.i100_max_ma = i100_max;
+        // Écart relatif (max - min) / moyenne, en pourcent.
+        if (ohm_sum > 0u) {
+            const uint32_t mean = ohm_sum / summary.count;
+            const uint32_t spread = (mean > 0u) ? (((uint32_t)(ohm_max - ohm_min) * 100u) / mean) : 0u;
+
+            summary.spread_percent = (uint8_t)(spread > 255u ? 255u : spread);
+        }
+        if (diag_format_selftest_ohm_line(line, sizeof(line), &summary) == 0u) {
+            ++stats.events_dropped;
+            continue;
+        }
         emit_line(line);
         ++stats.reports_emitted;
     }
+}
+
+static void on_ipropi_raw(const can_ipropi_raw_t *raw) {
+    uint8_t position;
+
+    if (!selftest_session.active || raw->reply_to != selftest_session.request_id ||
+        !selftest_session.calibration_mode) {
+        return;
+    }
+    position = selftest_position_for_tag(raw->uid_tag);
+    if (position < UID_POSITION_COUNT && raw->channel < CAN_IPROPI_CHANNEL_COUNT) {
+        selftest_session.raw_idle[position][raw->channel] = raw->idle_avg;
+        selftest_session.raw_probe[position][raw->channel] = raw->probe_avg;
+    }
+    emit_selftest_raw_probe_line(position, raw);
     if (position < UID_POSITION_COUNT) {
         mark_selftest_raw_received(position, raw->channel);
     }
+}
+
+static void on_ipropi_ohm(const can_ipropi_ohm_t *ohm) {
+    uint8_t position;
+
+    if (!selftest_session.active || ohm->reply_to != selftest_session.request_id ||
+        !selftest_session.calibration_mode) {
+        return;
+    }
+    position = selftest_position_for_tag(ohm->uid_tag);
+    if (position >= UID_POSITION_COUNT || ohm->channel >= CAN_IPROPI_CHANNEL_COUNT) {
+        return;
+    }
+
+    selftest_session.ohm_milliohm[position][ohm->channel] = ohm->ohm_milliohm;
+    selftest_session.i100_ma[position][ohm->channel] = ohm->i100_ma;
+    if (!selftest_session.ohm_received_position[position][ohm->channel]) {
+        selftest_session.ohm_received_position[position][ohm->channel] = true;
+        ++selftest_session.ohm_received_count;
+    }
+    emit_selftest_delta_line(position, ohm->channel,
+                             selftest_session.raw_idle[position][ohm->channel],
+                             selftest_session.raw_probe[position][ohm->channel],
+                             ohm->ohm_milliohm, ohm->i100_ma, selftest_session.request_id);
 }
 
 static void emit_selftest_report(const uint8_t uid[CAN_UID_SIZE],
@@ -969,12 +1209,15 @@ static void finish_selftest_session(void) {
     commissioning_entry_t new_entries[UID_POSITION_COUNT];
     commissioning_runtime_t preview;
     uint16_t new_count = 0u;
+    uint8_t flags = 0u;
     bool can_write = true;
     bool differs = false;
     bool has_preview = false;
     commissioning_result_t build_result = COMMISSIONING_OK;
     const char *table_result_text = "NOT_WRITTEN(?)";
 
+    // Une position seedée sans réponse n'est plus bloquante : elle est absente de
+    // la table et devient un motif signalé (ADR-0009 §2).
     for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
         if (uid_position_table[position].position == UID_POSITION_EMPTY) {
             continue;
@@ -982,30 +1225,55 @@ static void finish_selftest_session(void) {
         if (!selftest_session.received_position[position]) {
             emit_status_position(DIAG_STATUS_BOARD_MISSING, position);
             ++stats.boot_missing;
-            can_write = false;
+            flags |= COMMISSIONING_FLAG_MISSING_BOARD;
         }
     }
 
-    if (selftest_session.unknown_board || selftest_session.duplicate_tag ||
-        selftest_session.any_non_ok_status) {
+    if (selftest_session.unknown_board) {
+        flags |= COMMISSIONING_FLAG_UNKNOWN_BOARD;
+    }
+    if (selftest_session.any_non_ok_status) {
+        flags |= COMMISSIONING_FLAG_BOARD_NOT_OK;
+    }
+    if (selftest_session.duplicate_tag) {
         can_write = false;
     }
     if (selftest_session.calibration_mode &&
         selftest_session.raw_received_count < selftest_session.raw_expected_count) {
-        can_write = false;
+        flags |= COMMISSIONING_FLAG_DIAG_INCOMPLETE;
     }
 
+    // Seules les cartes qui ont répondu entrent dans le cliché (ADR-0009 §1/§2).
     for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
-        if (uid_position_table[position].position == UID_POSITION_EMPTY) {
+        if (uid_position_table[position].position == UID_POSITION_EMPTY ||
+            !selftest_session.received_position[position]) {
             continue;
         }
         new_entries[new_count].identity.position = position;
         memcpy(new_entries[new_count].identity.uid.id, selftest_session.uid[position],
                CAN_UID_SIZE);
+        // Carte répondante en échec : bitmap inconnu, aucun canal activable —
+        // jamais un bitmap partiel deviné.
         new_entries[new_count].occupation_bitmap =
-            selftest_session.status[position].occupation_bits;
+            (selftest_session.status[position].test_status == CAN_SELFTEST_STATUS_OK)
+                ? selftest_session.status[position].occupation_bits
+                : 0u;
         new_entries[new_count].reserved = 0u;
+        if (selftest_session.status[position].fault_bits != 0u) {
+            flags |= COMMISSIONING_FLAG_FAULT_DURING_TEST;
+        }
         ++new_count;
+    }
+
+    // Ancrage grave (ADR-0010 §3) : la table n'est FINAL que si les positions
+    // présentes forment exactement 0..K-1. Sinon le bloc grave revient à la
+    // position présente la plus basse et toutes les suivantes sont décalées : le
+    // motif le signale (invariant 1), rien n'est remappé ni corrigé.
+    for (uint16_t i = 0u; i < new_count; ++i) {
+        if (new_entries[i].identity.position != (uint8_t)i) {
+            flags |= COMMISSIONING_FLAG_ANCHOR_SHIFT;
+            break;
+        }
     }
 
     if (new_count > 0u) {
@@ -1018,12 +1286,21 @@ static void finish_selftest_session(void) {
             emit_status(DIAG_STATUS_TABLE_ERROR_FINAL);
             can_write = false;
         } else if (preview.partial) {
+            flags |= COMMISSIONING_FLAG_NOT_49_KEYS;
             emit_status(DIAG_STATUS_TABLE_PARTIAL);
         }
+    } else {
+        // Aucune carte complète : la table en flash reste intacte.
+        can_write = false;
     }
 
     if (commissioning.valid) {
         if (commissioning.entry_count != new_count) {
+            differs = true;
+        }
+        // L'état et les motifs font partie du contenu persisté (ADR-0009 §3).
+        if (commissioning.table_state != commissioning_table_state_from_flags(flags) ||
+            commissioning.table_flags != flags) {
             differs = true;
         }
         for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
@@ -1043,17 +1320,12 @@ static void finish_selftest_session(void) {
         emit_status(DIAG_STATUS_TABLE_DIFFERS);
     }
 
-    if (!can_write || selftest_session.received_count < selftest_session.expected_count) {
+    if (!can_write) {
         emit_status(DIAG_STATUS_TABLE_NOT_WRITTEN_INCOMPLETE);
-        if (selftest_session.unknown_board) {
-            table_result_text = "NOT_WRITTEN(uid_inconnu)";
+        if (new_count == 0u) {
+            table_result_text = "NOT_WRITTEN(aucune_carte)";
         } else if (selftest_session.duplicate_tag) {
             table_result_text = "NOT_WRITTEN(tag_duplique)";
-        } else if (selftest_session.any_non_ok_status) {
-            table_result_text = "NOT_WRITTEN(carte_not_ok)";
-        } else if (selftest_session.calibration_mode &&
-                   selftest_session.raw_received_count < selftest_session.raw_expected_count) {
-            table_result_text = "NOT_WRITTEN(calibration_incomplete)";
         } else if (build_result != COMMISSIONING_OK) {
             table_result_text = "NOT_WRITTEN(erreur_table)";
         } else {
@@ -1073,7 +1345,9 @@ static void finish_selftest_session(void) {
     }
 
     if (strcmp(table_result_text, "UNCHANGED") != 0) {
-        if (commissioning_state_store(&commissioning, new_entries, new_count) != COMMISSIONING_OK) {
+        if (commissioning_state_store(&commissioning, new_entries, new_count,
+                                      commissioning_table_state_from_flags(flags),
+                                      flags) != COMMISSIONING_OK) {
             emit_status(DIAG_STATUS_TABLE_ERROR_FINAL);
             emit_selftest_card_summary_lines(&preview, "NOT_WRITTEN(flash_error)");
             selftest_session.active = false;
@@ -1088,9 +1362,18 @@ static void finish_selftest_session(void) {
             commissioning.board_online[position] = true;
         }
     }
-    emit_table_loaded(true, strcmp(table_result_text, "UNCHANGED") == 0 ? "count=unchanged"
-                                                                         : "count=updated");
+
+    // Diagnostic de bring-up (ADR-0009 §4/§5) : les lignes `delta` des canaux
+    // sans IPROPI_OHM, puis la synthèse ohmique par carte.
+    if (selftest_session.calibration_mode) {
+        emit_missing_ohm_delta_lines();
+        emit_selftest_ohm_summaries();
+    }
+
+    emit_table_state_line();
+    emit_table_state_status();
     emit_all_table_entries();
+    emit_map_lines();
     emit_selftest_card_summary_lines(&preview, table_result_text);
     selftest_session.active = false;
 }
@@ -1182,14 +1465,6 @@ static void on_announce_status(const can_announce_status_t *status, uint32_t fir
     slot->status = *status;
     slot->have_status = true;
     try_emit_slot(slot);
-}
-
-static void on_ipropi_raw(const can_ipropi_raw_t *raw) {
-    if (!selftest_session.active || raw->reply_to != selftest_session.request_id ||
-        !selftest_session.calibration_mode) {
-        return;
-    }
-    emit_selftest_raw_report(raw);
 }
 
 static void sweep_slots(uint32_t now) {
@@ -1310,6 +1585,15 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t first_ms) {
         }
         break;
     }
+    case CAN_ID_IPROPI_OHM: {
+        can_ipropi_ohm_t ohm;
+        result = can_decode_ipropi_ohm(msg->data, dlc, &ohm);
+        if (result == CAN_PROTO_OK) {
+            on_ipropi_ohm(&ohm);
+            return;
+        }
+        break;
+    }
     case CAN_ID_IPROPI_SELFTEST_TRIGGER:
         handle_selftest_trigger(dlc, msg->data);
         return;
@@ -1355,14 +1639,14 @@ void can_link_init(void) {
     load_result = commissioning_state_load(&commissioning);
     if (load_result == COMMISSIONING_OK) {
         emit_boot_line("loaded", (uint8_t)commissioning.entry_count);
-        snprintf(detail, sizeof(detail), "count=%u",
-                 (unsigned)commissioning.entry_count);
-        emit_table_loaded(true, detail);
+        emit_table_state_line();
+        emit_table_state_status();
         emit_all_table_entries();
         boot_card_summary_pending = true;
         if (commissioning.runtime.partial) {
             emit_status(DIAG_STATUS_TABLE_PARTIAL);
         }
+        emit_map_lines();
     } else {
         emit_boot_line(table_blank ? "absent" : "invalid", 0u);
         snprintf(detail, sizeof(detail), "reason=%s",
@@ -1441,8 +1725,8 @@ void can_link_poll(void) {
     if (selftest_session.active &&
         ((selftest_session.received_count >= selftest_session.expected_count &&
           (!selftest_session.calibration_mode ||
-           selftest_session.raw_received_count >=
-               selftest_session.raw_expected_count)) ||
+           (selftest_session.raw_received_count >= selftest_session.raw_expected_count &&
+            selftest_session.ohm_received_count >= selftest_session.raw_expected_count))) ||
          (uint32_t)(first_ms - selftest_session.start_ms) >=
              CAN_LINK_SELFTEST_TIMEOUT_MS)) {
         finish_selftest_session();
@@ -1468,6 +1752,59 @@ can_link_request_result_t can_link_request_uid(void) {
         return CAN_LINK_REQUEST_SENT;
     }
     return CAN_LINK_REQUEST_TX_FAIL;
+}
+
+can_link_request_result_t can_link_request_selftest(void) {
+    if (selftest_session.active) {
+        emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
+        return CAN_LINK_REQUEST_BUSY;
+    }
+    if (uid_inflight || control_tx_inflight) {
+        emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
+        return CAN_LINK_REQUEST_BUSY;
+    }
+    if (recent_playing()) {
+        emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
+        return CAN_LINK_REQUEST_BUSY;
+    }
+    if (!started || !start_selftest_request()) {
+        emit_status(DIAG_STATUS_CAN_TX_FAIL);
+        return CAN_LINK_REQUEST_TX_FAIL;
+    }
+    return CAN_LINK_REQUEST_SENT;
+}
+
+bool can_link_calibration_enabled(void) {
+    return calibration_enabled;
+}
+
+void can_link_set_calibration_enabled(bool enabled) {
+    calibration_enabled = enabled;
+}
+
+void can_link_dump_table(void) {
+    if (commissioning.valid) {
+        emit_table_state_line();
+        emit_all_table_entries();
+        emit_map_lines();
+    } else {
+        char detail[32];
+
+        snprintf(detail, sizeof(detail), "reason=%s",
+                 commissioning_result_name(commissioning.last_error));
+        emit_table_loaded(false, detail);
+    }
+}
+
+void can_link_dump_status(void) {
+    char detail[64];
+
+    snprintf(detail, sizeof(detail), "valid=%s state=%s flags=0x%02X cards=%u selftest=%s calib=%s",
+             commissioning.valid ? "oui" : "non",
+             commissioning_table_state_name(commissioning.table_state),
+             (unsigned)commissioning.table_flags, (unsigned)commissioning.entry_count,
+             selftest_session.active ? "en_cours" : "repos", calibration_enabled ? "ON" : "OFF");
+    emit_line(detail);
 }
 
 static bool send_note_command(uint8_t midi_note, uint8_t velocity,

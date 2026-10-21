@@ -48,6 +48,7 @@ Vérifier sur un Clavier et une ou plusieurs cartes Moteur que :
 | `0x411` | `BOARD_ANNOUNCE_INFO` | Moteur -> Clavier | réponse à la requête |
 | `0x412` | `BOARD_ANNOUNCE_STATUS` | Moteur -> Clavier | réponse à la requête |
 | `0x600` | `IPROPI_RAW` | Moteur -> Clavier | seulement si `request_id bit7 = 1` |
+| `0x601` | `IPROPI_OHM` | Moteur -> Clavier | seulement si `request_id bit7 = 1`, après les 12 `0x600` |
 
 ## 4. Lignes CDC attendues
 
@@ -69,8 +70,17 @@ n'est pas attendu avec le firmware Moteur courant (seuil delta figé à 400).
 ```text
 [SELFTEST] req=5 pos=4 status=OK bitmap=0x007 faults=0x000 tag=29B1
 [SELFTEST_RAW] req=5 pos=4 ch=2 idle=18 probe=79
-[SELFTEST_RAW] req=5 pos=4 ch=2 delta=61
+[SELFTEST_RAW] req=5 pos=4 ch=2 delta=61 ohm_est=5.12 i100=4.48
+[SELFTEST_OHM] pos=4 n=3 ohm_min=5.02 ohm_max=6.11 spread=10% i100_min=3.77 i100_max=4.55
 ```
+
+Notes (ADR-0009) :
+- `probe_avg` est la moyenne des **N derniers échantillons** d'une impulsion
+  PROBE de **5 ms** à 20 % : à courant établi, donc `delta` est **plus élevé**
+  qu'avec le firmware 3 ms / délai fixe du 2026-10-18. Les valeurs ci-dessus
+  sont des ordres de grandeur, pas des attendus stricts ;
+- `ohm_est` et `i100` sont des valeurs **estimées** ; `--` si invalides ;
+- `[SELFTEST_OHM]` est une synthèse par carte sur les canaux occupés.
 
 ## 5. Préparation matérielle
 
@@ -154,22 +164,34 @@ cartes), sans changer le protocole.
 
 ### 12.1 Préparation
 
-1. Créer un build Clavier avec `-DCLAVIER_SELFTEST_CALIBRATION=ON`.
-2. Flasher ce build Clavier de calibration.
-3. Laisser le firmware Moteur inchangé : il émet les RAW dès que le bit 7 est
-   présent dans `IPROPI_SELFTEST_REQUEST`.
+1. Le mode diagnostic est **actif par défaut** depuis ADR-0009 §7. Pour vérifier
+   explicitement qu'il est bien là, ou le forcer :
+
+   ```powershell
+   cmake -S "firmware/clavier" -B "build/clavier" -DCLAVIER_SELFTEST_CALIBRATION=ON
+   cmake --build "build/clavier"
+   ```
+
+2. Flasher ce build Clavier.
+3. Laisser le firmware Moteur inchangé : il émet les RAW (et les OHM) dès que le
+   bit 7 est présent dans `IPROPI_SELFTEST_REQUEST`.
 
 ### 12.2 Relevé
 
 1. Déclencher un auto-test au repos.
 2. Relever, pour plusieurs canaux **branchés** et **débranchés**, les lignes :
    - `[SELFTEST_RAW] ... idle=I probe=P`
-   - `[SELFTEST_RAW] ... delta=D`
+   - `[SELFTEST_RAW] ... delta=D ohm_est=<Ω|--> i100=<A|-->`
+   - `[SELFTEST_OHM] ...` (synthèse par carte)
 3. Comparer les `delta` :
    - canaux occupés / branchés : `delta` attendu nettement plus grand ;
-   - canaux non occupés / débranchés : `delta` attendu plus faible.
+   - canaux non occupés / débranchés : `delta` attendu plus faible, et
+     `ohm_est`/`i100` à `--`.
 4. Vérifier que la décision officielle utilise `max(delta, 0)` puis
    `delta >= 400`.
+5. Recouper `ohm_est` d'une bobine avec la mesure au multimètre (voir
+   [`bringup_commissioning_provisoire.md`](bringup_commissioning_provisoire.md),
+   §6.5) : c'est le contrôle de cohérence de la chaîne ADC/`VM`/`VREF`.
 
 ### 12.3 Seuil retenu
 

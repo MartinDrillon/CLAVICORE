@@ -36,6 +36,7 @@
 #define CAN_ID_BOARD_ANNOUNCE_INFO 0x411u
 #define CAN_ID_BOARD_ANNOUNCE_STATUS 0x412u
 #define CAN_ID_IPROPI_RAW 0x600u
+#define CAN_ID_IPROPI_OHM 0x601u
 #define CAN_ID_CONFIG_READ 0x500u
 #define CAN_ID_CONFIG_WRITE 0x501u
 
@@ -52,6 +53,7 @@
 #define CAN_DLC_ANNOUNCE_INFO 8u
 #define CAN_DLC_ANNOUNCE_STATUS 8u
 #define CAN_DLC_IPROPI_RAW 8u
+#define CAN_DLC_IPROPI_OHM 8u
 
 // --- Requêtes, délais, jitter (ADR-0003 §4) --------------------------------
 
@@ -76,6 +78,11 @@
 #define CAN_FAULT_BITS_MASK 0x0FFFu
 #define CAN_IPROPI_CHANNEL_COUNT 12u
 #define CAN_ADC_12BIT_MAX 4095u
+// Valeur « non calculable » transmise sur 16 bits (ADR-0009 §6) : résistance
+// ohmique ou courant estimé indisponible pour ce canal.
+#define CAN_IPROPI_VALUE_INVALID 0xFFFFu
+// Plafond transmis sur 16 bits : `0xFFFF` reste réservé à « invalide ».
+#define CAN_IPROPI_VALUE_MAX 0xFFFEu
 
 typedef enum {
     CAN_SELFTEST_STATUS_OK = 0,
@@ -138,6 +145,16 @@ typedef struct {
     uint16_t idle_avg;
     uint16_t probe_avg;
 } can_ipropi_raw_t;
+
+// Diagnostic de résistance estimée (ADR-0009 §5c, §5d).
+// `ohm_milliohm` et `i100_ma` valent CAN_IPROPI_VALUE_INVALID si non calculables.
+typedef struct {
+    uint16_t uid_tag;
+    uint8_t reply_to;
+    uint8_t channel;
+    uint16_t ohm_milliohm;
+    uint16_t i100_ma;
+} can_ipropi_ohm_t;
 
 typedef struct {
     uint16_t uid_tag;
@@ -209,5 +226,11 @@ can_proto_result_t can_encode_ipropi_raw(uint8_t out[CAN_DLC_IPROPI_RAW],
                                          const can_ipropi_raw_t *raw);
 can_proto_result_t can_decode_ipropi_raw(const uint8_t *data, uint8_t dlc,
                                          can_ipropi_raw_t *raw);
+
+// IPROPI_OHM (ID 0x601, DLC 8) — diagnostic, ADR-0009 §6.
+can_proto_result_t can_encode_ipropi_ohm(uint8_t out[CAN_DLC_IPROPI_OHM],
+                                         const can_ipropi_ohm_t *ohm);
+can_proto_result_t can_decode_ipropi_ohm(const uint8_t *data, uint8_t dlc,
+                                         can_ipropi_ohm_t *ohm);
 
 #endif  // CLAVICORE_CAN_PROTOCOL_H

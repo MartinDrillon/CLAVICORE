@@ -48,6 +48,9 @@ static ipropi_selftest_result_t selftest_result;
 static bool raw_reports_pending;
 static uint8_t raw_report_index;
 static uint32_t raw_report_due_us;
+static bool ohm_reports_pending;
+static uint8_t ohm_report_index;
+static uint32_t ohm_report_due_us;
 
 static void can_rx_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg) {
     (void)cd;
@@ -144,6 +147,24 @@ static void handle_solenoid_command(const struct can2040_msg *msg, uint32_t now_
     }
 }
 
+// Fin d'une salve de diagnostic en cours : plus rien à émettre pour ce test.
+static void finish_diagnostic_reports(void) {
+    selftest_result.report_ready = false;
+    selftest_result.raw_count = 0u;
+    selftest_result.ohm_count = 0u;
+}
+
+// Après les IPROPI_RAW, enchaîne les IPROPI_OHM s'il y en a (ADR-0009 §6).
+static void start_ohm_reports(uint32_t now_us) {
+    if (selftest_result.ohm_count > 0u) {
+        ohm_reports_pending = true;
+        ohm_report_index = 0u;
+        ohm_report_due_us = now_us + RAW_FRAME_SPACING_US;
+    } else {
+        finish_diagnostic_reports();
+    }
+}
+
 static void send_announce(uint32_t now_us) {
     uint8_t data[CAN_DLC_ANNOUNCE_STATUS];
     bool ok = true;
@@ -177,7 +198,7 @@ static void send_announce(uint32_t now_us) {
                 raw_report_index = 0u;
                 raw_report_due_us = now_us + RAW_FRAME_SPACING_US;
             } else {
-                selftest_result.report_ready = false;
+                start_ohm_reports(now_us);
             }
         }
     }
@@ -195,15 +216,13 @@ static void send_raw_report_if_due(uint32_t now_us) {
     }
     if (raw_report_index >= selftest_result.raw_count) {
         raw_reports_pending = false;
-        selftest_result.report_ready = false;
-        selftest_result.raw_count = 0u;
+        start_ohm_reports(now_us);
         return;
     }
     if (can_encode_ipropi_raw(data, &selftest_result.raw_reports[raw_report_index]) != CAN_PROTO_OK) {
         raw_reports_pending = false;
-        selftest_result.report_ready = false;
-        selftest_result.raw_count = 0u;
         ++stats.tx_fail;
+        finish_diagnostic_reports();
         return;
     }
     if (!send_frame(CAN_ID_IPROPI_RAW, CAN_DLC_IPROPI_RAW, data)) {
@@ -216,8 +235,39 @@ static void send_raw_report_if_due(uint32_t now_us) {
     raw_report_due_us = now_us + RAW_FRAME_SPACING_US;
     if (raw_report_index >= selftest_result.raw_count) {
         raw_reports_pending = false;
-        selftest_result.report_ready = false;
-        selftest_result.raw_count = 0u;
+        start_ohm_reports(now_us);
+    }
+}
+
+// Émission des IPROPI_OHM (0x601, ADR-0009 §6), une par canal, après les RAW.
+static void send_ohm_report_if_due(uint32_t now_us) {
+    uint8_t data[CAN_DLC_IPROPI_OHM];
+
+    if (!ohm_reports_pending || (int32_t)(now_us - ohm_report_due_us) < 0) {
+        return;
+    }
+    if (ohm_report_index >= selftest_result.ohm_count) {
+        ohm_reports_pending = false;
+        finish_diagnostic_reports();
+        return;
+    }
+    if (can_encode_ipropi_ohm(data, &selftest_result.ohm_reports[ohm_report_index]) != CAN_PROTO_OK) {
+        ohm_reports_pending = false;
+        ++stats.tx_fail;
+        finish_diagnostic_reports();
+        return;
+    }
+    if (!send_frame(CAN_ID_IPROPI_OHM, CAN_DLC_IPROPI_OHM, data)) {
+        ++stats.ohm_reports_deferred;
+        return;
+    }
+
+    ++stats.ohm_reports_sent;
+    ++ohm_report_index;
+    ohm_report_due_us = now_us + RAW_FRAME_SPACING_US;
+    if (ohm_report_index >= selftest_result.ohm_count) {
+        ohm_reports_pending = false;
+        finish_diagnostic_reports();
     }
 }
 
@@ -254,8 +304,8 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {
             can_decode_ipropi_selftest_request(msg->data, (uint8_t)msg->dlc, &request);
         if (result == CAN_PROTO_OK) {
             ++stats.requests_served;
-            if (!announce_pending && !raw_reports_pending && !selftest_result.report_ready &&
-                ipropi_selftest_start_request(&request)) {
+            if (!announce_pending && !raw_reports_pending && !ohm_reports_pending &&
+                !selftest_result.report_ready && ipropi_selftest_start_request(&request)) {
                 arm_announce(ANNOUNCE_KIND_SELFTEST_REPLY, request.request_id, now_us);
             } else {
                 ++stats.rx_bad_value;
@@ -272,6 +322,7 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {
     case CAN_ID_BOARD_ANNOUNCE_INFO:
     case CAN_ID_BOARD_ANNOUNCE_STATUS:
     case CAN_ID_IPROPI_RAW:
+    case CAN_ID_IPROPI_OHM:
         ++stats.rx_ignored;
         return;
     default:
@@ -301,6 +352,9 @@ void can_link_init(const uint8_t uid[BOARD_IDENTITY_UID_SIZE], solenoid_driver_t
     raw_reports_pending = false;
     raw_report_index = 0u;
     raw_report_due_us = 0u;
+    ohm_reports_pending = false;
+    ohm_report_index = 0u;
+    ohm_report_due_us = 0u;
 
     ipropi_selftest_init(drivers, driver_count, board_tag);
 
@@ -351,6 +405,7 @@ void can_link_poll(uint32_t now_us) {
         send_announce(now_us);
     }
     send_raw_report_if_due(now_us);
+    send_ohm_report_if_due(now_us);
 }
 
 bool can_link_send_selftest_trigger(void) {

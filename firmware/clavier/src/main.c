@@ -6,6 +6,7 @@
 #include "pico/time.h"
 
 #include "can_link.h"
+#include "bringup_console.h"
 #include "diag_log.h"
 #include "keycode.h"
 #include "keymap.h"
@@ -270,6 +271,7 @@ int main(void) {
     note_state_init(&state.notes);
     midi_init();
     can_link_init();
+    bringup_console_init();
 
     while (true) {
         const uint32_t now_ms = to_ms_since_boot(get_absolute_time());
@@ -283,6 +285,7 @@ int main(void) {
         // CAN et diagnostic texte avant le service USB/MIDI.
         can_link_set_note_activity(note_state_any_active(&state.notes), state.last_note_event_ms);
         can_link_poll();
+        bringup_console_poll();
         midi_task();
         usb_log_task();
         matrix_scan_poll(handle_matrix_transition, &state);

@@ -8,10 +8,12 @@ New-Item -ItemType Directory -Force -Path $out | Out-Null
 $exe = Join-Path $out "test_phase3_helpers.exe"
 & gcc -std=c11 -Wall -Wextra -Werror -pedantic `
     -I (Join-Path $root "shared\protocol") -I (Join-Path $root "firmware\clavier\src") `
+    -I (Join-Path $root "firmware\moteur\src") `
     (Join-Path $PSScriptRoot "test_phase3_helpers.c") `
     (Join-Path $root "shared\protocol\can_protocol.c") `
     (Join-Path $root "shared\protocol\commissioning_table.c") `
     (Join-Path $root "firmware\clavier\src\diag_log.c") `
+    (Join-Path $root "firmware\moteur\src\ipropi_ohm.c") `
     -o $exe
 if ($LASTEXITCODE -ne 0) { throw "Compilation hote en echec" }
 

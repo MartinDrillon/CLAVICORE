@@ -10,9 +10,13 @@
 
 #define COMMISSIONING_FLASH_MAGIC \
     ((uint32_t)'C' | ((uint32_t)'L' << 8u) | ((uint32_t)'V' << 16u) | ((uint32_t)'C' << 24u))
-#define COMMISSIONING_FLASH_FORMAT_VERSION 1u
+// v1 : en-tête 12 octets, sans état. v2 (ADR-0009) : en-tête 16 octets avec
+// `state` + `flags`. Une table v1 reste lisible et vaut FINAL / aucun motif.
+#define COMMISSIONING_FLASH_FORMAT_VERSION 2u
+#define COMMISSIONING_FLASH_FORMAT_VERSION_LEGACY 1u
 #define COMMISSIONING_FLASH_SECTOR_SIZE 4096u
-#define COMMISSIONING_FLASH_HEADER_SIZE 12u
+#define COMMISSIONING_FLASH_HEADER_SIZE 16u
+#define COMMISSIONING_FLASH_HEADER_SIZE_LEGACY 12u
 #define COMMISSIONING_FLASH_ENTRY_SIZE 13u
 
 #define COMMISSIONING_KEY_MIN 1u
@@ -29,6 +33,7 @@ typedef enum {
     COMMISSIONING_BAD_VERSION,
     COMMISSIONING_BAD_COUNT,
     COMMISSIONING_BAD_CRC,
+    COMMISSIONING_BAD_STATE,
     COMMISSIONING_INVALID_ENTRY,
     COMMISSIONING_INVALID_BITMAP,
     COMMISSIONING_DUPLICATE_POSITION,
@@ -37,6 +42,26 @@ typedef enum {
     COMMISSIONING_TOO_MANY_KEYS,
     COMMISSIONING_NOTE_NOT_FOUND,
 } commissioning_result_t;
+
+// État persisté de la table (ADR-0009 §3). Règle unique et testable :
+// `FINAL` si et seulement si `flags == 0`.
+typedef enum {
+    COMMISSIONING_TABLE_STATE_FINAL = 0,
+    COMMISSIONING_TABLE_STATE_PROVISIONAL = 1,
+} commissioning_table_state_t;
+
+// Motifs d'une table provisoire (ADR-0009 §3 ; `ANCHOR_SHIFT` ajouté par
+// ADR-0010 §3).
+#define COMMISSIONING_FLAG_MISSING_BOARD 0x01u
+#define COMMISSIONING_FLAG_UNKNOWN_BOARD 0x02u
+#define COMMISSIONING_FLAG_BOARD_NOT_OK 0x04u
+#define COMMISSIONING_FLAG_FAULT_DURING_TEST 0x08u
+#define COMMISSIONING_FLAG_NOT_49_KEYS 0x10u
+#define COMMISSIONING_FLAG_DIAG_INCOMPLETE 0x20u
+// Les positions présentes ne forment pas exactement 0..K-1 : le bloc grave est
+// attribué à la position présente la plus basse, les suivantes sont décalées.
+#define COMMISSIONING_FLAG_ANCHOR_SHIFT 0x40u
+#define COMMISSIONING_FLAG_ALL 0x7Fu
 
 typedef struct {
     uid_position_entry_t identity;
@@ -80,12 +105,18 @@ commissioning_result_t commissioning_build_runtime(const commissioning_entry_t *
 commissioning_result_t commissioning_lookup_midi_note(const commissioning_runtime_t *runtime,
                                                       uint8_t midi_note,
                                                       commissioning_note_target_t *target);
+// État déduit des motifs : `FINAL` si et seulement si `flags == 0`.
+commissioning_table_state_t commissioning_table_state_from_flags(uint8_t flags);
+const char *commissioning_table_state_name(commissioning_table_state_t state);
 commissioning_result_t commissioning_flash_encode(uint8_t *sector, size_t sector_size,
                                                   const commissioning_entry_t *entries,
-                                                  uint16_t count);
+                                                  uint16_t count,
+                                                  commissioning_table_state_t state, uint8_t flags);
 commissioning_result_t commissioning_flash_decode(const uint8_t *sector, size_t sector_size,
                                                   commissioning_entry_t *entries,
-                                                  uint16_t max_count, uint16_t *count_out);
+                                                  uint16_t max_count, uint16_t *count_out,
+                                                  commissioning_table_state_t *state_out,
+                                                  uint8_t *flags_out);
 const char *commissioning_result_name(commissioning_result_t result);
 
 #endif

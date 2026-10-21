@@ -1,11 +1,12 @@
 // Tests unitaires hôte des helpers purs : can_protocol, commissioning_table,
-// uid_position_format et diag_log.
+// uid_position_format, diag_log et ipropi_ohm (math Moteur d'ADR-0009).
 #include <stdio.h>
 #include <string.h>
 
 #include "can_protocol.h"
 #include "commissioning_table.h"
 #include "diag_log.h"
+#include "ipropi_ohm.h"
 #include "uid_position_format.h"
 
 static int g_failures = 0;
@@ -127,30 +128,42 @@ static void test_commissioning_assignment_examples(void) {
         make_entry(UID_B, 3u, 0x003u),
     };
 
+    // ADR-0010 : ancrage grave. Une carte seule reçoit le bloc grave quel que soit
+    // son numéro de position (le décalage est signalé côté Clavier, pas corrigé).
     CHECK(commissioning_build_runtime(single_hole, 1u, &runtime) == COMMISSIONING_OK);
     CHECK(runtime.partial);
-    CHECK(commissioning_lookup_midi_note(&runtime, 82u, &target) == COMMISSIONING_OK);
-    CHECK(target.position == 4u && target.channel == 0u && target.key == 47u);
-    CHECK(commissioning_lookup_midi_note(&runtime, 83u, &target) == COMMISSIONING_OK);
-    CHECK(target.channel == 1u && target.key == 48u);
-    CHECK(commissioning_lookup_midi_note(&runtime, 84u, &target) == COMMISSIONING_OK);
-    CHECK(target.channel == 3u && target.key == 49u);
+    CHECK(runtime.position_first_key[4] == 1u && runtime.position_last_key[4] == 3u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 36u, &target) == COMMISSIONING_OK);
+    CHECK(target.position == 4u && target.channel == 0u && target.key == 1u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 37u, &target) == COMMISSIONING_OK);
+    CHECK(target.channel == 1u && target.key == 2u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 38u, &target) == COMMISSIONING_OK);
+    CHECK(target.channel == 3u && target.key == 3u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 39u, &target) == COMMISSIONING_NOTE_NOT_FOUND);
 
+    // Trous de bitmap : les canaux occupés croissants montent dans le bloc.
     CHECK(commissioning_build_runtime(single_sparse, 1u, &runtime) == COMMISSIONING_OK);
-    CHECK(commissioning_lookup_midi_note(&runtime, 82u, &target) == COMMISSIONING_OK);
-    CHECK(target.channel == 0u);
-    CHECK(commissioning_lookup_midi_note(&runtime, 83u, &target) == COMMISSIONING_OK);
-    CHECK(target.channel == 6u);
-    CHECK(commissioning_lookup_midi_note(&runtime, 84u, &target) == COMMISSIONING_OK);
-    CHECK(target.channel == 11u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 36u, &target) == COMMISSIONING_OK);
+    CHECK(target.channel == 0u && target.key == 1u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 37u, &target) == COMMISSIONING_OK);
+    CHECK(target.channel == 6u && target.key == 2u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 38u, &target) == COMMISSIONING_OK);
+    CHECK(target.channel == 11u && target.key == 3u);
 
+    // Deux cartes : la position la plus basse prend le bloc grave.
     CHECK(commissioning_build_runtime(two_boards, 2u, &runtime) == COMMISSIONING_OK);
-    CHECK(commissioning_lookup_midi_note(&runtime, 84u, &target) == COMMISSIONING_OK);
-    CHECK(target.position == 4u && target.channel == 3u);
-    CHECK(commissioning_lookup_midi_note(&runtime, 81u, &target) == COMMISSIONING_OK);
-    CHECK(target.position == 3u && target.channel == 1u && target.key == 46u);
-    CHECK(commissioning_lookup_midi_note(&runtime, 80u, &target) == COMMISSIONING_OK);
-    CHECK(target.position == 3u && target.channel == 0u && target.key == 45u);
+    CHECK(runtime.position_first_key[3] == 1u && runtime.position_last_key[3] == 2u);
+    CHECK(runtime.position_first_key[4] == 3u && runtime.position_last_key[4] == 5u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 36u, &target) == COMMISSIONING_OK);
+    CHECK(target.position == 3u && target.channel == 0u && target.key == 1u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 37u, &target) == COMMISSIONING_OK);
+    CHECK(target.position == 3u && target.channel == 1u && target.key == 2u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 38u, &target) == COMMISSIONING_OK);
+    CHECK(target.position == 4u && target.channel == 0u && target.key == 3u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 39u, &target) == COMMISSIONING_OK);
+    CHECK(target.position == 4u && target.channel == 1u && target.key == 4u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 40u, &target) == COMMISSIONING_OK);
+    CHECK(target.position == 4u && target.channel == 3u && target.key == 5u);
 }
 
 static void test_commissioning_totals_and_duplicates(void) {
@@ -191,53 +204,274 @@ static void test_commissioning_five_boards_total_49(void) {
 
     CHECK(commissioning_build_runtime(full, 5u, &runtime) == COMMISSIONING_OK);
     CHECK(!runtime.partial && runtime.total_occupied == 49u);
+    // Positions 0..4 contiguës : chaque carte garde son bloc (ADR-0010 §3).
+    // pos 0 = 9 canaux (0x1FF) -> touches 1..9 ; pos 1..4 = 10 canaux chacune ->
+    // 10..19, 20..29, 30..39, 40..49.
+    static const uint8_t expected_first[UID_POSITION_COUNT] = {1u, 10u, 20u, 30u, 40u};
+    static const uint8_t expected_last[UID_POSITION_COUNT] = {9u, 19u, 29u, 39u, 49u};
+    for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
+        CHECK(runtime.position_present[position]);
+        CHECK(runtime.position_first_key[position] == expected_first[position]);
+        CHECK(runtime.position_last_key[position] == expected_last[position]);
+    }
     CHECK(commissioning_lookup_midi_note(&runtime, 36u, &target) == COMMISSIONING_OK);
     CHECK(target.position == 0u && target.key == 1u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 44u, &target) == COMMISSIONING_OK);
+    CHECK(target.position == 0u && target.channel == 8u && target.key == 9u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 45u, &target) == COMMISSIONING_OK);
+    CHECK(target.position == 1u && target.channel == 0u && target.key == 10u);
     CHECK(commissioning_lookup_midi_note(&runtime, 84u, &target) == COMMISSIONING_OK);
     CHECK(target.position == 4u && target.key == 49u);
 }
 
+// ADR-0010 §3 : ancrage grave et contiguïté depuis la position 0.
+static void test_commissioning_anchor_from_position_zero(void) {
+    commissioning_runtime_t runtime;
+    commissioning_note_target_t target;
+    commissioning_entry_t hole[] = {
+        make_entry(UID_A, 0u, 0x001u),
+        make_entry(UID_B, 2u, 0x001u),
+    };
+
+    // Trou de position : le remplissage reste compact et croissant ; la position 0
+    // conserve la touche 1 (DO2) et rien ne sort de 1..49.
+    CHECK(commissioning_build_runtime(hole, 2u, &runtime) == COMMISSIONING_OK);
+    CHECK(runtime.total_occupied == 2u && runtime.partial);
+    CHECK(runtime.position_first_key[0] == 1u && runtime.position_last_key[0] == 1u);
+    CHECK(runtime.position_first_key[2] == 2u && runtime.position_last_key[2] == 2u);
+    CHECK(!runtime.position_present[1]);
+    CHECK(commissioning_lookup_midi_note(&runtime, 36u, &target) == COMMISSIONING_OK);
+    CHECK(target.position == 0u && target.channel == 0u && target.key == 1u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 37u, &target) == COMMISSIONING_OK);
+    CHECK(target.position == 2u && target.channel == 0u && target.key == 2u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 38u, &target) == COMMISSIONING_NOTE_NOT_FOUND);
+}
+
+static void put_u32_le(uint8_t *out, uint32_t value) {
+    out[0] = (uint8_t)(value & 0xFFu);
+    out[1] = (uint8_t)((value >> 8u) & 0xFFu);
+    out[2] = (uint8_t)((value >> 16u) & 0xFFu);
+    out[3] = (uint8_t)((value >> 24u) & 0xFFu);
+}
+
 static void test_commissioning_flash_crc_and_header(void) {
     commissioning_entry_t decoded[UID_POSITION_COUNT];
+    commissioning_table_state_t state = COMMISSIONING_TABLE_STATE_PROVISIONAL;
     uint8_t sector[COMMISSIONING_FLASH_SECTOR_SIZE];
+    uint8_t flags = 0xFFu;
     uint16_t count = 0u;
     commissioning_entry_t entries[] = {
         make_entry(UID_A, 4u, 0x00Bu),
         make_entry(UID_B, 3u, 0x003u),
     };
 
-    CHECK(commissioning_flash_encode(sector, sizeof(sector), entries, 2u) == COMMISSIONING_OK);
-    CHECK(commissioning_flash_decode(sector, sizeof(sector), decoded, UID_POSITION_COUNT,
-                                     &count) == COMMISSIONING_OK);
+    CHECK(COMMISSIONING_FLASH_FORMAT_VERSION == 2u);
+    CHECK(COMMISSIONING_FLASH_HEADER_SIZE == 16u);
+    CHECK(commissioning_flash_encode(sector, sizeof(sector), entries, 2u,
+                                     COMMISSIONING_TABLE_STATE_FINAL, 0u) == COMMISSIONING_OK);
+    CHECK(commissioning_flash_decode(sector, sizeof(sector), decoded, UID_POSITION_COUNT, &count,
+                                     &state, &flags) == COMMISSIONING_OK);
     CHECK(count == 2u);
+    CHECK(state == COMMISSIONING_TABLE_STATE_FINAL && flags == 0u);
+    CHECK(sector[12] == 0u && sector[13] == 0u);
     CHECK(commissioning_entry_equal(&decoded[0], &entries[0]));
     CHECK(commissioning_entry_equal(&decoded[1], &entries[1]));
 
-    sector[12] ^= 0x01u;
-    CHECK(commissioning_flash_decode(sector, sizeof(sector), decoded, UID_POSITION_COUNT,
-                                     &count) == COMMISSIONING_BAD_CRC);
-    sector[12] ^= 0x01u;
+    // CRC : un octet d'enregistrement corrompu est rejeté (enregistrements à
+    // partir de l'octet 16 en v2).
+    sector[COMMISSIONING_FLASH_HEADER_SIZE] ^= 0x01u;
+    CHECK(commissioning_flash_decode(sector, sizeof(sector), decoded, UID_POSITION_COUNT, &count,
+                                     &state, &flags) == COMMISSIONING_BAD_CRC);
+    sector[COMMISSIONING_FLASH_HEADER_SIZE] ^= 0x01u;
+
     sector[0] = 0u;
-    CHECK(commissioning_flash_decode(sector, sizeof(sector), decoded, UID_POSITION_COUNT,
-                                     &count) == COMMISSIONING_BAD_MAGIC);
+    CHECK(commissioning_flash_decode(sector, sizeof(sector), decoded, UID_POSITION_COUNT, &count,
+                                     &state, &flags) == COMMISSIONING_BAD_MAGIC);
     sector[0] = (uint8_t)'C';
     sector[1] = (uint8_t)'L';
     sector[2] = (uint8_t)'V';
     sector[3] = (uint8_t)'C';
-    sector[4] = 0xFFu;
-    CHECK(commissioning_flash_decode(sector, sizeof(sector), decoded, UID_POSITION_COUNT,
-                                     &count) == COMMISSIONING_BAD_VERSION);
+    can_put_u16_le(&sector[4], 0xFFu);
+    CHECK(commissioning_flash_decode(sector, sizeof(sector), decoded, UID_POSITION_COUNT, &count,
+                                     &state, &flags) == COMMISSIONING_BAD_VERSION);
+
+    // Arguments obligatoires : l'état ne doit jamais être ignoré silencieusement.
+    CHECK(commissioning_flash_decode(sector, sizeof(sector), decoded, UID_POSITION_COUNT, &count,
+                                     NULL, &flags) == COMMISSIONING_BAD_ARG);
+    CHECK(commissioning_flash_decode(sector, sizeof(sector), decoded, UID_POSITION_COUNT, &count,
+                                     &state, NULL) == COMMISSIONING_BAD_ARG);
+}
+
+static void test_commissioning_flash_state_and_legacy(void) {
+    commissioning_entry_t decoded[UID_POSITION_COUNT];
+    commissioning_table_state_t state = COMMISSIONING_TABLE_STATE_FINAL;
+    uint8_t sector[COMMISSIONING_FLASH_SECTOR_SIZE];
+    uint8_t legacy[COMMISSIONING_FLASH_SECTOR_SIZE];
+    uint8_t flags = 0u;
+    uint16_t count = 0u;
+    commissioning_entry_t entries[] = {
+        make_entry(UID_A, 4u, 0x00Bu),
+        make_entry(UID_B, 3u, 0x003u),
+    };
+    const uint8_t provisory_flags =
+        (uint8_t)(COMMISSIONING_FLAG_MISSING_BOARD | COMMISSIONING_FLAG_NOT_49_KEYS |
+                  COMMISSIONING_FLAG_ANCHOR_SHIFT);
+
+    // Aller-retour d'une table PROVISIONAL avec motifs.
+    CHECK(commissioning_flash_encode(sector, sizeof(sector), entries, 2u,
+                                     COMMISSIONING_TABLE_STATE_PROVISIONAL,
+                                     provisory_flags) == COMMISSIONING_OK);
+    CHECK(sector[12] == (uint8_t)COMMISSIONING_TABLE_STATE_PROVISIONAL);
+    CHECK(sector[13] == provisory_flags);
+    CHECK(commissioning_flash_decode(sector, sizeof(sector), decoded, UID_POSITION_COUNT, &count,
+                                     &state, &flags) == COMMISSIONING_OK);
+    CHECK(state == COMMISSIONING_TABLE_STATE_PROVISIONAL);
+    CHECK(flags == provisory_flags);
+    CHECK(commissioning_table_state_from_flags(0u) == COMMISSIONING_TABLE_STATE_FINAL);
+    CHECK(commissioning_table_state_from_flags(provisory_flags) ==
+          COMMISSIONING_TABLE_STATE_PROVISIONAL);
+
+    // Cohérence état / motifs exigée à l'encodage.
+    CHECK(commissioning_flash_encode(sector, sizeof(sector), entries, 2u,
+                                     COMMISSIONING_TABLE_STATE_FINAL,
+                                     provisory_flags) == COMMISSIONING_BAD_STATE);
+    CHECK(commissioning_flash_encode(sector, sizeof(sector), entries, 2u,
+                                     COMMISSIONING_TABLE_STATE_PROVISIONAL,
+                                     0u) == COMMISSIONING_BAD_STATE);
+    // 0x40 est désormais un motif valide (`ANCHOR_SHIFT`, ADR-0010) ; tout bit
+    // hors `COMMISSIONING_FLAG_ALL` reste refusé.
+    CHECK(commissioning_flash_encode(sector, sizeof(sector), entries, 2u,
+                                     COMMISSIONING_TABLE_STATE_PROVISIONAL,
+                                     0x40u) == COMMISSIONING_OK);
+    CHECK(commissioning_flash_encode(sector, sizeof(sector), entries, 2u,
+                                     COMMISSIONING_TABLE_STATE_FINAL,
+                                     0x80u) == COMMISSIONING_BAD_STATE);
+
+    // Motif incohérent en flash : refusé à la lecture.
+    CHECK(commissioning_flash_encode(sector, sizeof(sector), entries, 2u,
+                                     COMMISSIONING_TABLE_STATE_FINAL, 0u) == COMMISSIONING_OK);
+    sector[13] = COMMISSIONING_FLAG_MISSING_BOARD;
+    CHECK(commissioning_flash_decode(sector, sizeof(sector), decoded, UID_POSITION_COUNT, &count,
+                                     &state, &flags) == COMMISSIONING_BAD_STATE);
+    sector[12] = 0x7Fu;
+    sector[13] = 0u;
+    CHECK(commissioning_flash_decode(sector, sizeof(sector), decoded, UID_POSITION_COUNT, &count,
+                                     &state, &flags) == COMMISSIONING_BAD_STATE);
+
+    // Table v1 (en-tête 12 octets, enregistrements à l'octet 12) : lisible et
+    // interprétée FINAL / aucun motif (ADR-0009 §8).
+    memset(legacy, 0xFF, sizeof(legacy));
+    put_u32_le(&legacy[0], COMMISSIONING_FLASH_MAGIC);
+    can_put_u16_le(&legacy[4], COMMISSIONING_FLASH_FORMAT_VERSION_LEGACY);
+    can_put_u16_le(&legacy[6], 1u);
+    memcpy(&legacy[12], UID_A, 8u);
+    legacy[20] = 4u;
+    can_put_u16_le(&legacy[21], 0x00Bu);
+    can_put_u16_le(&legacy[23], 0u);
+    put_u32_le(&legacy[8], commissioning_crc32(&legacy[12], COMMISSIONING_FLASH_ENTRY_SIZE));
+    state = COMMISSIONING_TABLE_STATE_PROVISIONAL;
+    flags = 0xFFu;
+    CHECK(commissioning_flash_decode(legacy, sizeof(legacy), decoded, UID_POSITION_COUNT, &count,
+                                     &state, &flags) == COMMISSIONING_OK);
+    CHECK(count == 1u);
+    CHECK(state == COMMISSIONING_TABLE_STATE_FINAL && flags == 0u);
+    CHECK(commissioning_entry_equal(&decoded[0], &entries[0]));
+}
+
+static void test_ipropi_ohm_math(void) {
+    const ipropi_ohm_config_t config = {
+        .vm_millivolt = 24000u,
+        .vref_millivolt = 3300u,
+        .ipropi_ua_per_a = 450u,
+        .ipropi_resistor_ohm = 2400u,
+        .rdson_milliohm = 240u,
+        .duty_permil = 200u,
+    };
+    ipropi_ohm_result_t result;
+
+    // Repères de l'ADR-0009 (IMP-011), delta = probe - idle.
+    result = ipropi_ohm_compute(&config, 1242u, 212u, 400u);
+    CHECK(result.valid);
+    CHECK(result.ohm_milliohm == 6005u);
+    CHECK(result.i100_ma == 3843u);
+
+    result = ipropi_ohm_compute(&config, 1000u, 200u, 400u);
+    CHECK(result.valid && result.ohm_milliohm == 7801u && result.i100_ma == 2984u);
+
+    result = ipropi_ohm_compute(&config, 1400u, 200u, 400u);
+    CHECK(result.valid && result.ohm_milliohm == 5120u && result.i100_ma == 4477u);
+
+    // Seuil d'occupation : pile au seuil => valide.
+    result = ipropi_ohm_compute(&config, 600u, 200u, 400u);
+    CHECK(result.valid && result.ohm_milliohm == 15842u && result.i100_ma == 1492u);
+
+    // Canal vide ou incohérent : invalide, jamais 0 ohm.
+    result = ipropi_ohm_compute(&config, 599u, 200u, 400u);
+    CHECK(!result.valid && result.ohm_milliohm == CAN_IPROPI_VALUE_INVALID &&
+          result.i100_ma == CAN_IPROPI_VALUE_INVALID);
+    result = ipropi_ohm_compute(&config, 200u, 200u, 400u);
+    CHECK(!result.valid && result.ohm_milliohm == CAN_IPROPI_VALUE_INVALID);
+    result = ipropi_ohm_compute(&config, 100u, 200u, 400u);
+    CHECK(!result.valid);
+
+    // Configuration incomplète : invalide, sans division par zéro.
+    result = ipropi_ohm_compute(NULL, 1242u, 212u, 400u);
+    CHECK(!result.valid);
+    result = ipropi_ohm_compute(&(ipropi_ohm_config_t){.vm_millivolt = 24000u,
+                                                       .vref_millivolt = 3300u,
+                                                       .ipropi_ua_per_a = 450u,
+                                                       .ipropi_resistor_ohm = 2400u,
+                                                       .rdson_milliohm = 240u,
+                                                       .duty_permil = 0u},
+                                1242u, 212u, 400u);
+    CHECK(!result.valid);
+}
+
+static void test_ipropi_ohm_codec(void) {
+    uint8_t data[CAN_DLC_IPROPI_OHM];
+    can_ipropi_ohm_t ohm = {0x29B1u, 42u, 3u, 6005u, 3846u};
+    can_ipropi_ohm_t out = {0};
+
+    CHECK(CAN_ID_IPROPI_OHM == 0x601u);
+    CHECK(CAN_DLC_IPROPI_OHM == 8u);
+    CHECK(can_encode_ipropi_ohm(data, &ohm) == CAN_PROTO_OK);
+    CHECK(data[0] == 0xB1u && data[1] == 0x29u && data[2] == 42u && data[3] == 3u);
+    CHECK(can_get_u16_le(&data[4]) == 6005u && can_get_u16_le(&data[6]) == 3846u);
+    CHECK(can_decode_ipropi_ohm(data, CAN_DLC_IPROPI_OHM, &out) == CAN_PROTO_OK);
+    CHECK(out.uid_tag == 0x29B1u && out.reply_to == 42u && out.channel == 3u);
+    CHECK(out.ohm_milliohm == 6005u && out.i100_ma == 3846u);
+
+    // Valeur invalide : transportée telle quelle, pas une erreur de trame.
+    ohm.ohm_milliohm = CAN_IPROPI_VALUE_INVALID;
+    ohm.i100_ma = CAN_IPROPI_VALUE_INVALID;
+    CHECK(can_encode_ipropi_ohm(data, &ohm) == CAN_PROTO_OK);
+    CHECK(can_decode_ipropi_ohm(data, CAN_DLC_IPROPI_OHM, &out) == CAN_PROTO_OK);
+    CHECK(out.ohm_milliohm == CAN_IPROPI_VALUE_INVALID &&
+          out.i100_ma == CAN_IPROPI_VALUE_INVALID);
+
+    // DLC strict, canal hors plage, reply_to hors plage.
+    CHECK(can_decode_ipropi_ohm(data, 7u, &out) == CAN_PROTO_BAD_DLC);
+    ohm.channel = CAN_IPROPI_CHANNEL_COUNT;
+    CHECK(can_encode_ipropi_ohm(data, &ohm) == CAN_PROTO_BAD_VALUE);
+    ohm.channel = 3u;
+    ohm.reply_to = 0u;
+    CHECK(can_encode_ipropi_ohm(data, &ohm) == CAN_PROTO_BAD_VALUE);
+    CHECK(can_encode_ipropi_ohm(data, &ohm) == CAN_PROTO_BAD_VALUE);
+    ohm.reply_to = 42u;
+    CHECK(can_encode_ipropi_ohm(data, &ohm) == CAN_PROTO_OK);
+    data[3] = CAN_IPROPI_CHANNEL_COUNT;
+    CHECK(can_decode_ipropi_ohm(data, CAN_DLC_IPROPI_OHM, &out) == CAN_PROTO_BAD_VALUE);
 }
 
 static void test_diag_lines(void) {
     char out[DIAG_LOG_LINE_MAX];
     diag_uid_report_t uid = {0u, {0}, 0u, 1u, 0u, 1u, 0x7Fu};
-    diag_table_entry_t table = {4u, {0}, 0x00Bu, 47u, 49u, true};
+    diag_table_entry_t table = {4u, {0}, 0x00Bu, 1u, 3u, true};
     diag_selftest_report_t report = {42u, 4u, CAN_SELFTEST_STATUS_OK, 0x0A5u, 0x003u, 0xF29Bu};
-    diag_selftest_raw_report_t raw = {42u, 4u, 3u, 12u, 345u};
+    diag_selftest_raw_report_t raw = {42u, 4u, 3u, 12u, 345u, 6005u, 3846u};
     diag_card_report_t card = {4u, 6u, {0}, DIAG_CARD_STATE_OK, 0x00Bu,
-                               "0,1,3", "47,48,49", "LA#5(82),SI5(83),DO6(84)"};
-    diag_summary_report_t summary = {1u, 1u, 3u, 3u, "1-46", "WRITTEN"};
+                               "0,1,3", "1,2,3", "DO2(36),DO#2(37),RE2(38)"};
+    diag_summary_report_t summary = {1u, 1u, 3u, 3u, "4-49", "WRITTEN"};
 
     memcpy(uid.uid, UID_A, 8u);
     memcpy(table.uid, UID_A, 8u);
@@ -259,8 +493,8 @@ static void test_diag_lines(void) {
           strlen("[TABLE] loaded count=2"));
     CHECK(strcmp(out, "[TABLE] loaded count=2") == 0);
     CHECK(diag_format_table_entry_line(out, sizeof(out), &table) ==
-          strlen("[TABLE] pos=4 uid=E660583883123456 bitmap=0x00B keys=47-49"));
-    CHECK(strcmp(out, "[TABLE] pos=4 uid=E660583883123456 bitmap=0x00B keys=47-49") == 0);
+          strlen("[TABLE] pos=4 uid=E660583883123456 bitmap=0x00B keys=1-3"));
+    CHECK(strcmp(out, "[TABLE] pos=4 uid=E660583883123456 bitmap=0x00B keys=1-3") == 0);
     CHECK(diag_format_diff_line(out, sizeof(out), 4u, 0x003u, 0x00Bu) ==
           strlen("[DIFF] pos=4 ancien=0x003 nouveau=0x00B"));
     CHECK(strcmp(out, "[DIFF] pos=4 ancien=0x003 nouveau=0x00B") == 0);
@@ -275,14 +509,14 @@ static void test_diag_lines(void) {
     CHECK(strcmp(out, "DO6(84)") == 0);
     CHECK(!diag_format_note_name_fr(out, sizeof(out), 35u));
     CHECK(diag_format_card_line(out, sizeof(out), &card) ==
-          strlen("[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#5(82),SI5(83),DO6(84)"));
-    CHECK(strcmp(out, "[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#5(82),SI5(83),DO6(84)") == 0);
+          strlen("[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=1,2,3 notes=DO2(36),DO#2(37),RE2(38)"));
+    CHECK(strcmp(out, "[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=1,2,3 notes=DO2(36),DO#2(37),RE2(38)") == 0);
     CHECK(diag_format_card_unknown_line(out, sizeof(out), UID_B) ==
           strlen("[CARD_UNKNOWN] uid=AA10203040506070"));
     CHECK(strcmp(out, "[CARD_UNKNOWN] uid=AA10203040506070") == 0);
     CHECK(diag_format_summary_line(out, sizeof(out), &summary) ==
-          strlen("[SUMMARY] cards_ok=1/1 channels=3 keys=3/49 missing_keys=1-46 table=WRITTEN"));
-    CHECK(strcmp(out, "[SUMMARY] cards_ok=1/1 channels=3 keys=3/49 missing_keys=1-46 table=WRITTEN") == 0);
+          strlen("[SUMMARY] cards_ok=1/1 channels=3 keys=3/49 missing_keys=4-49 table=WRITTEN"));
+    CHECK(strcmp(out, "[SUMMARY] cards_ok=1/1 channels=3 keys=3/49 missing_keys=4-49 table=WRITTEN") == 0);
     CHECK(diag_format_note_line(out, sizeof(out), 84u, 49u, 4u, 3u) ==
           strlen("[NOTE] midi=84 key=49 pos=4 ch=3"));
     CHECK(strcmp(out, "[NOTE] midi=84 key=49 pos=4 ch=3") == 0);
@@ -303,13 +537,62 @@ static void test_diag_lines(void) {
           strlen("[SELFTEST] req=42 pos=4 status=OK bitmap=0x0A5 faults=0x003 tag=F29B"));
     CHECK(diag_format_selftest_raw_line(out, sizeof(out), &raw) ==
           strlen("[SELFTEST_RAW] req=42 pos=4 ch=3 idle=12 probe=345"));
+    CHECK(strcmp(out, "[SELFTEST_RAW] req=42 pos=4 ch=3 idle=12 probe=345") == 0);
+    CHECK(diag_format_selftest_raw_delta_line(out, sizeof(out), &raw) ==
+          strlen("[SELFTEST_RAW] req=42 pos=4 ch=3 delta=333 ohm_est=6.00 i100=3.84"));
+    CHECK(strcmp(out, "[SELFTEST_RAW] req=42 pos=4 ch=3 delta=333 ohm_est=6.00 i100=3.84") == 0);
+
+    raw.ohm_milliohm = CAN_IPROPI_VALUE_INVALID;
+    raw.i100_ma = CAN_IPROPI_VALUE_INVALID;
+    CHECK(diag_format_selftest_raw_delta_line(out, sizeof(out), &raw) ==
+          strlen("[SELFTEST_RAW] req=42 pos=4 ch=3 delta=333 ohm_est=-- i100=--"));
+    CHECK(strcmp(out, "[SELFTEST_RAW] req=42 pos=4 ch=3 delta=333 ohm_est=-- i100=--") == 0);
+
+    CHECK(diag_format_status_line(out, sizeof(out), DIAG_STATUS_TABLE_PROVISIONAL) ==
+          strlen("[STATUS] code=TABLE_PROVISIONAL"));
+    CHECK(strcmp(out, "[STATUS] code=TABLE_PROVISIONAL") == 0);
+
+    diag_table_state_t table_state = {COMMISSIONING_TABLE_STATE_PROVISIONAL,
+                                      (uint8_t)(COMMISSIONING_FLAG_MISSING_BOARD |
+                                                COMMISSIONING_FLAG_NOT_49_KEYS),
+                                      1u, 3u};
+    CHECK(diag_format_table_state_line(out, sizeof(out), &table_state) ==
+          strlen("[TABLE] loaded state=PROVISIONAL flags=0x11 cards=1 keys=3"));
+    CHECK(strcmp(out, "[TABLE] loaded state=PROVISIONAL flags=0x11 cards=1 keys=3") == 0);
+    // État incohérent avec les motifs : refusé, jamais écrit au journal.
+    table_state.state = COMMISSIONING_TABLE_STATE_FINAL;
+    CHECK(diag_format_table_state_line(out, sizeof(out), &table_state) == 0u);
+    table_state.flags = 0u;
+    CHECK(diag_format_table_state_line(out, sizeof(out), &table_state) ==
+          strlen("[TABLE] loaded state=FINAL flags=0x00 cards=1 keys=3"));
+
+    CHECK(diag_format_map_line(out, sizeof(out), 0u, 0u, 1u, 36u) ==
+          strlen("[MAP] pos=0 ch=0 key=1 midi=36 note=DO2(36)"));
+    CHECK(strcmp(out, "[MAP] pos=0 ch=0 key=1 midi=36 note=DO2(36)") == 0);
+    CHECK(diag_format_map_line(out, sizeof(out), 4u, CAN_IPROPI_CHANNEL_COUNT, 49u, 84u) == 0u);
+    CHECK(diag_format_map_line(out, sizeof(out), 4u, 3u, 49u, 35u) == 0u);
+
+    diag_ohm_summary_t ohm_summary = {4u, 3u, 5020u, 6110u, 10u, 3770u, 4550u, false};
+    CHECK(diag_format_selftest_ohm_line(out, sizeof(out), &ohm_summary) ==
+          strlen("[SELFTEST_OHM] pos=4 n=3 ohm_min=5.02 ohm_max=6.11 spread=10% i100_min=3.77 "
+                 "i100_max=4.55"));
+    CHECK(strcmp(out, "[SELFTEST_OHM] pos=4 n=3 ohm_min=5.02 ohm_max=6.11 spread=10% "
+                      "i100_min=3.77 i100_max=4.55") == 0);
+    ohm_summary.warn_i100_over_3a = true;
+    CHECK(diag_format_selftest_ohm_line(out, sizeof(out), &ohm_summary) ==
+          strlen("[SELFTEST_OHM] pos=4 n=3 ohm_min=5.02 ohm_max=6.11 spread=10% i100_min=3.77 "
+                 "i100_max=4.55 warn=i100>3.0A"));
+    CHECK(strcmp(out, "[SELFTEST_OHM] pos=4 n=3 ohm_min=5.02 ohm_max=6.11 spread=10% "
+                      "i100_min=3.77 i100_max=4.55 warn=i100>3.0A") == 0);
+    ohm_summary.count = 0u;
+    CHECK(diag_format_selftest_ohm_line(out, sizeof(out), &ohm_summary) == 0u);
 }
 
 static void print_example_case_a(void) {
     char line[DIAG_LOG_LINE_MAX];
     diag_card_report_t card = {4u, 6u, {0}, DIAG_CARD_STATE_OK, 0x00Bu,
-                               "0,1,3", "47,48,49", "LA#5(82),SI5(83),DO6(84)"};
-    diag_summary_report_t summary = {1u, 1u, 3u, 3u, "1-46", "WRITTEN"};
+                               "0,1,3", "1,2,3", "DO2(36),DO#2(37),RE2(38)"};
+    diag_summary_report_t summary = {1u, 1u, 3u, 3u, "4-49", "WRITTEN"};
 
     memcpy(card.uid, UID_A, 8u);
 
@@ -337,7 +620,11 @@ int main(void) {
     test_commissioning_assignment_examples();
     test_commissioning_totals_and_duplicates();
     test_commissioning_five_boards_total_49();
+    test_commissioning_anchor_from_position_zero();
     test_commissioning_flash_crc_and_header();
+    test_commissioning_flash_state_and_legacy();
+    test_ipropi_ohm_math();
+    test_ipropi_ohm_codec();
     test_diag_lines();
     print_example_case_a();
 

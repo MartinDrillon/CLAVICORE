@@ -35,14 +35,21 @@ Procédure manuelle **PuTTY + matériel réel**.
 
 Après une écriture réussie :
 
-1. Jouer les touches correspondant aux notes MIDI 81/82/83/84.
-2. Vérifier que les solénoïdes correspondent à la règle d'assignation :
-   * un bloc aigu de 3 canaux sur la carte de position 4 donne les touches
-     **47, 48, 49**
-   * donc les notes MIDI **82, 83, 84** doivent activer les canaux occupés
-     croissants de cette carte
-   * si la carte de position 3 a 2 canaux occupés, les notes MIDI **80, 81**
-     doivent activer les touches **45, 46**.
+1. Jouer les touches des notes graves MIDI 36/37/38 (DO2, DO#2, RE2).
+2. Vérifier que les solénoïdes correspondent à la règle d'assignation
+   **ascendante** (ADR-0010 : ancrage sur la touche 1 = DO2) :
+   * la carte de **position 0**, canal occupé le plus bas, joue **DO2**
+     (touche 1, MIDI 36) ; avec 3 canaux occupés elle prend les touches
+     **1, 2, 3**, donc MIDI **36, 37, 38** ;
+   * si la carte de position 1 a 2 canaux occupés, elle prend les touches
+     **4, 5** (MIDI **39, 40**), immédiatement après le bloc de la position 0 ;
+   * dans chaque bloc, les canaux occupés croissants reçoivent les touches
+     croissantes ;
+   * **banc sans position 0** (cas fréquent pendant le bring-up) : le bloc grave
+     est attribué à la position présente la plus basse et la table est
+     `PROVISIONAL` avec `flags=0x40` (`ANCHOR_SHIFT`) ; les lignes `[MAP]`
+     donnent la touche réelle de chaque canal, et c'est **elles** qui font foi
+     pour le jeu.
 3. Si `CLAVIER_NOTE_LOG` a été activé à la compilation, vérifier en plus les
    lignes :
    * `[NOTE] midi=M key=K pos=P ch=C`
@@ -96,7 +103,11 @@ Attendu :
 ## Addendum — exemples de session PuTTY
 
 Les exemples ci-dessous **s'ajoutent** aux lignes existantes `[STATUS]`,
-`[SELFTEST]` et `[TABLE]`.
+`[SELFTEST]` et `[TABLE]`. Ils suivent la règle d'assignation **ascendante**
+(ADR-0010 : ancrage sur la touche 1 = DO2) et les cartes y sont volontairement
+déclarées aux positions hautes (4, 3) sans position 0 : c'est le cas d'un banc
+partiel, d'où le motif `ANCHOR_SHIFT` (`flags=0x40`). Les lignes `[CARD]` sont
+émises par position croissante.
 
 ### (a) Une carte, canaux 0,1,3 occupés
 
@@ -108,9 +119,15 @@ Les exemples ci-dessous **s'ajoutent** aux lignes existantes `[STATUS]`,
 [SELFTEST] req=42 pos=4 status=OK bitmap=0x00B faults=0x000 tag=29B1
 [STATUS] code=TABLE_PARTIAL
 [STATUS] code=TABLE_WRITTEN
-[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#5(82),SI5(83),DO6(84)
-[SUMMARY] cards_ok=1/1 channels=3 keys=3/49 missing_keys=1-46 table=WRITTEN
+[TABLE] state=PROVISIONAL flags=0x40 cards=1 keys=3
+[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=1,2,3 notes=DO2(36),DO#2(37),RE2(38)
+[SUMMARY] cards_ok=1/1 channels=3 keys=3/49 missing_keys=4-49 table=WRITTEN
 ```
+
+La carte est seule et déclarée en position 4 : le bloc grave lui revient
+(touches 1..3) et l'absence des positions 0..3 est signalée par `flags=0x40`
+(`ANCHOR_SHIFT`). Le motif disparaît dès que les positions présentes forment
+`0..K−1`.
 
 ### (b) Ajout d'une 2e carte
 
@@ -119,7 +136,7 @@ Exemple : la nouvelle carte arrive en position 3 avec canaux `0,1`.
 ```text
 [BOOT] table=loaded cards=1
 [HELP] bouton Moteur 3 s = auto-test ; table rechargee depuis la flash
-[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#5(82),SI5(83),DO6(84)
+[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=1,2,3 notes=DO2(36),DO#2(37),RE2(38)
 [TRIGGER] bouton Moteur recu -> auto-test lance (req=43)
 [STATUS] code=SELFTEST_STARTED
 [SELFTEST] req=43 pos=4 status=OK bitmap=0x00B faults=0x000 tag=29B1
@@ -128,10 +145,15 @@ Exemple : la nouvelle carte arrive en position 3 avec canaux `0,1`.
 [STATUS] code=TABLE_DIFFERS
 [DIFF] pos=3 ancien=0x000 nouveau=0x003
 [STATUS] code=TABLE_WRITTEN
-[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=47,48,49 notes=LA#5(82),SI5(83),DO6(84)
-[CARD] pos=3 node=5 uid=AA10203040506070 state=OK bitmap=0x003 channels=0,1 keys=45,46 notes=SOL#5(80),LA5(81)
-[SUMMARY] cards_ok=2/2 channels=5 keys=5/49 missing_keys=1-44 table=DIFFERS_WRITTEN
+[TABLE] state=PROVISIONAL flags=0x40 cards=2 keys=5
+[CARD] pos=3 node=5 uid=AA10203040506070 state=OK bitmap=0x003 channels=0,1 keys=1,2 notes=DO2(36),DO#2(37)
+[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=3,4,5 notes=RE2(38),RE#2(39),MI2(40)
+[SUMMARY] cards_ok=2/2 channels=5 keys=5/49 missing_keys=6-49 table=DIFFERS_WRITTEN
 ```
+
+La carte de position 3 est désormais la plus grave des deux : elle prend le bloc
+grave (touches 1..2) et repousse la carte de position 4 vers l'aigu. C'est un
+décalage **signalé** (`[TABLE]`, `[MAP]`), jamais silencieux.
 
 ### (c) Ajout d'un canal sur une carte existante
 
@@ -148,9 +170,10 @@ Exemple : la carte de position 4 passe de `0,1,3` à `0,1,2,3`.
 [STATUS] code=TABLE_DIFFERS
 [DIFF] pos=4 ancien=0x00B nouveau=0x00F
 [STATUS] code=TABLE_WRITTEN
-[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00F channels=0,1,2,3 keys=46,47,48,49 notes=LA5(81),LA#5(82),SI5(83),DO6(84)
-[CARD] pos=3 node=5 uid=AA10203040506070 state=OK bitmap=0x003 channels=0,1 keys=44,45 notes=SOL5(79),SOL#5(80)
-[SUMMARY] cards_ok=2/2 channels=6 keys=6/49 missing_keys=1-43 table=DIFFERS_WRITTEN
+[TABLE] state=PROVISIONAL flags=0x40 cards=2 keys=6
+[CARD] pos=3 node=5 uid=AA10203040506070 state=OK bitmap=0x003 channels=0,1 keys=1,2 notes=DO2(36),DO#2(37)
+[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00F channels=0,1,2,3 keys=3,4,5,6 notes=RE2(38),RE#2(39),MI2(40),FA2(41)
+[SUMMARY] cards_ok=2/2 channels=6 keys=6/49 missing_keys=7-49 table=DIFFERS_WRITTEN
 ```
 
 ## Non vérifiable sans matériel réel

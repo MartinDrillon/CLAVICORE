@@ -41,6 +41,7 @@ add_executable(moteur
     src/main.c
     src/board_identity.c
     src/can_link.c
+    src/ipropi_ohm.c
     src/ipropi_selftest.c
     src/pwm_hal.c
     src/solenoid_driver.c

@@ -50,6 +50,17 @@ static uint32_t probe_duty_percent(void) {
     return clamp_duty(capped);
 }
 
+// Paramètres PROBE réellement appliqués (après écrêtage). L'auto-test IPROPI
+// s'en sert pour positionner sa fenêtre de mesure et estimer la résistance
+// (ADR-0009 §5) : il ne doit jamais relire les constantes brutes du profil.
+uint32_t solenoid_driver_probe_duration_us(void) {
+    return probe_duration_us();
+}
+
+uint32_t solenoid_driver_probe_duty_permil(void) {
+    return probe_duty_percent() * 10u;
+}
+
 static uint32_t maint_duration_us(void) {
     return SOLENOID_MAINT_MAX_MS * US_PER_MS;
 }

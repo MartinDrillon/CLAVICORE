@@ -2,16 +2,28 @@
 
 #include "hardware/adc.h"
 #include "hardware/gpio.h"
+#include "pico/time.h"
 
 #include "config.h"
+#include "ipropi_ohm.h"
 #include "solenoid_profile.h"
 
 #define US_PER_MS 1000u
+#define US_PER_S 1000000u
 
-_Static_assert(IPROPI_SELFTEST_RAW_SAMPLES > 0u, "IPROPI raw samples must be non-zero");
-_Static_assert(IPROPI_SELFTEST_ADC_SAMPLE_DELAY_US <
-                   (SOLENOID_PROBE_DURATION_MS * US_PER_MS),
-               "ADC sample delay must fit inside SOLENOID_PROBE_DURATION_MS");
+// Durée PROBE effectivement appliquée = profil écrêté par le plafond du pilote.
+// Sert uniquement aux assertions de compilation ; la valeur d'exécution est
+// demandée au pilote (solenoid_driver_probe_duration_us).
+#define IPROPI_PROBE_MS_APPLIED                        \
+    ((SOLENOID_PROBE_DURATION_MS < SOLENOID_PROBE_MAX_MS) ? SOLENOID_PROBE_DURATION_MS \
+                                                          : SOLENOID_PROBE_MAX_MS)
+
+_Static_assert(IPROPI_SELFTEST_RAW_SAMPLES > 1u, "IPROPI raw samples must be non-trivial");
+_Static_assert(IPROPI_SELFTEST_ADC_SAMPLE_WINDOW_US >= (US_PER_S / SOLENOID_PWM_FREQ_HZ),
+               "la fenetre d'echantillonnage doit couvrir au moins une periode PWM");
+_Static_assert((IPROPI_SELFTEST_ADC_SAMPLE_WINDOW_US + IPROPI_SELFTEST_ADC_TAIL_MARGIN_US) <
+                   (IPROPI_PROBE_MS_APPLIED * US_PER_MS),
+               "fenetre + marge doivent se terminer avant la coupure de l'impulsion PROBE");
 
 typedef enum {
     SELFTEST_IDLE = 0,
@@ -39,6 +51,8 @@ static uint16_t g_idle_avg;
 static can_announce_status_t g_result;
 static can_ipropi_raw_t g_raw_reports[CAN_IPROPI_CHANNEL_COUNT];
 static uint8_t g_raw_count;
+static can_ipropi_ohm_t g_ohm_reports[CAN_IPROPI_CHANNEL_COUNT];
+static uint8_t g_ohm_count;
 
 static void mux_disable(void) {
     gpio_put(MOTEUR_MUX_EN_GPIO, true);
@@ -56,9 +70,38 @@ static uint16_t average_adc_samples(void) {
     uint32_t sum = 0u;
 
     for (uint8_t i = 0u; i < IPROPI_SELFTEST_RAW_SAMPLES; ++i) {
+        if (i > 0u) {
+            // Étalement de la fenêtre : couvre au moins une période PWM et
+            // moyenne l'ondulation de courant (ADR-0009 §5b).
+            busy_wait_us_32(IPROPI_SELFTEST_ADC_SAMPLE_SPACING_US);
+        }
         sum += adc_read();
     }
     return (uint16_t)((sum + (IPROPI_SELFTEST_RAW_SAMPLES / 2u)) / IPROPI_SELFTEST_RAW_SAMPLES);
+}
+
+// Instant, mesuré depuis le début de l'impulsion PROBE, où démarrer la fenêtre :
+// calée sur la FIN de l'impulsion, moins la marge de sécurité.
+static uint32_t probe_sample_delay_us(void) {
+    const uint32_t duration_us = solenoid_driver_probe_duration_us();
+    const uint32_t lead_us =
+        IPROPI_SELFTEST_ADC_SAMPLE_WINDOW_US + IPROPI_SELFTEST_ADC_TAIL_MARGIN_US;
+
+    return (duration_us > lead_us) ? (uint32_t)(duration_us - lead_us) : 0u;
+}
+
+// Constantes électriques + duty PROBE réellement appliqué (ADR-0009 §5c).
+static ipropi_ohm_config_t ohm_config(void) {
+    const ipropi_ohm_config_t config = {
+        .vm_millivolt = SOLENOID_VM_MILLIVOLT,
+        .vref_millivolt = SOLENOID_ADC_VREF_MILLIVOLT,
+        .ipropi_ua_per_a = SOLENOID_IPROPI_UA_PER_A,
+        .ipropi_resistor_ohm = SOLENOID_IPROPI_RESISTOR_OHM,
+        .rdson_milliohm = SOLENOID_RDSON_MILLIOHM,
+        .duty_permil = solenoid_driver_probe_duty_permil(),
+    };
+
+    return config;
 }
 
 static uint16_t occupancy_delta_adc(uint16_t probe_avg, uint16_t idle_avg) {
@@ -107,8 +150,10 @@ void ipropi_selftest_init(solenoid_driver_t *drivers, uint8_t driver_count, uint
     g_idle_avg = 0u;
     g_result = (can_announce_status_t){0};
     g_raw_count = 0u;
+    g_ohm_count = 0u;
     for (uint8_t i = 0u; i < CAN_IPROPI_CHANNEL_COUNT; ++i) {
         g_raw_reports[i] = (can_ipropi_raw_t){0};
+        g_ohm_reports[i] = (can_ipropi_ohm_t){0};
     }
 
     gpio_init(MOTEUR_MUX_EN_GPIO);
@@ -156,8 +201,10 @@ bool ipropi_selftest_start(uint8_t request_id) {
     g_calibration_mode = false;
     g_idle_avg = 0u;
     g_raw_count = 0u;
+    g_ohm_count = 0u;
     for (uint8_t i = 0u; i < CAN_IPROPI_CHANNEL_COUNT; ++i) {
         g_raw_reports[i] = (can_ipropi_raw_t){0};
+        g_ohm_reports[i] = (can_ipropi_ohm_t){0};
     }
     mux_select_channel(g_channel);
     gpio_put(MOTEUR_MUX_EN_GPIO, false);
@@ -208,26 +255,51 @@ void ipropi_selftest_tick(uint32_t now_us) {
         return;
 
     case SELFTEST_PROBING:
-        if (!g_sample_taken &&
-            (uint32_t)(now_us - g_state_since_us) >= IPROPI_SELFTEST_ADC_SAMPLE_DELAY_US) {
-            const bool fault = fault_is_active(g_channel);
-            const uint16_t probe_avg = average_adc_samples();
-            const uint16_t delta_adc = occupancy_delta_adc(probe_avg, g_idle_avg);
+        if (!g_sample_taken) {
+            const uint32_t elapsed_us = (uint32_t)(now_us - g_state_since_us);
 
-            if (g_calibration_mode && g_channel < CAN_IPROPI_CHANNEL_COUNT) {
-                g_raw_reports[g_channel].probe_avg = probe_avg;
-                if (g_raw_count < (g_channel + 1u)) {
-                    g_raw_count = (uint8_t)(g_channel + 1u);
+            if (elapsed_us >= solenoid_driver_probe_duration_us()) {
+                // Fenêtre d'échantillonnage ratée (boucle bloquée) : la mesure
+                // serait fausse (courant déjà coupé). Test avorté et signalé,
+                // jamais une occupation silencieusement erronée (invariant 1).
+                g_result.occupation_bits = non_idle_bits();
+                finish_now(CAN_SELFTEST_STATUS_ABORTED);
+                return;
+            }
+            if (elapsed_us >= probe_sample_delay_us()) {
+                const bool fault = fault_is_active(g_channel);
+                const uint16_t probe_avg = average_adc_samples();
+                const uint16_t delta_adc = occupancy_delta_adc(probe_avg, g_idle_avg);
+
+                if (g_calibration_mode && g_channel < CAN_IPROPI_CHANNEL_COUNT) {
+                    const ipropi_ohm_config_t config = ohm_config();
+                    const ipropi_ohm_result_t ohm = ipropi_ohm_compute(
+                        &config, probe_avg, g_idle_avg, IPROPI_SELFTEST_THRESHOLD_DELTA_ADC);
+
+                    g_raw_reports[g_channel].probe_avg = probe_avg;
+                    if (g_raw_count < (g_channel + 1u)) {
+                        g_raw_count = (uint8_t)(g_channel + 1u);
+                    }
+                    g_ohm_reports[g_channel] = (can_ipropi_ohm_t){
+                        .uid_tag = g_uid_tag,
+                        .reply_to = g_result.reply_to,
+                        .channel = g_channel,
+                        .ohm_milliohm = ohm.ohm_milliohm,
+                        .i100_ma = ohm.i100_ma,
+                    };
+                    if (g_ohm_count < (g_channel + 1u)) {
+                        g_ohm_count = (uint8_t)(g_channel + 1u);
+                    }
                 }
-            }
 
-            if (fault) {
-                g_result.fault_bits |= (uint16_t)(1u << g_channel);
-                g_result.occupation_bits &= (uint16_t)~(uint16_t)(1u << g_channel);
-            } else if (delta_adc >= IPROPI_SELFTEST_THRESHOLD_DELTA_ADC) {
-                g_result.occupation_bits |= (uint16_t)(1u << g_channel);
+                if (fault) {
+                    g_result.fault_bits |= (uint16_t)(1u << g_channel);
+                    g_result.occupation_bits &= (uint16_t)~(uint16_t)(1u << g_channel);
+                } else if (delta_adc >= IPROPI_SELFTEST_THRESHOLD_DELTA_ADC) {
+                    g_result.occupation_bits |= (uint16_t)(1u << g_channel);
+                }
+                g_sample_taken = true;
             }
-            g_sample_taken = true;
         }
         if (solenoid_driver_state(&g_drivers[g_channel]) == SOLENOID_STATE_IDLE ||
             solenoid_driver_state(&g_drivers[g_channel]) == SOLENOID_STATE_FAULT) {
@@ -264,16 +336,20 @@ bool ipropi_selftest_take_result(ipropi_selftest_result_t *out) {
     out->report_ready = true;
     out->report = g_result;
     out->raw_count = g_raw_count;
+    out->ohm_count = g_ohm_count;
     for (uint8_t i = 0u; i < CAN_IPROPI_CHANNEL_COUNT; ++i) {
         out->raw_reports[i] = g_raw_reports[i];
+        out->ohm_reports[i] = g_ohm_reports[i];
     }
     g_result_ready = false;
     g_calibration_mode = false;
     g_idle_avg = 0u;
     g_raw_count = 0u;
+    g_ohm_count = 0u;
     g_result = (can_announce_status_t){0};
     for (uint8_t i = 0u; i < CAN_IPROPI_CHANNEL_COUNT; ++i) {
         g_raw_reports[i] = (can_ipropi_raw_t){0};
+        g_ohm_reports[i] = (can_ipropi_ohm_t){0};
     }
     return true;
 }

@@ -30,8 +30,22 @@
 #define SOLENOID_RELEASE_DUTY_PERCENT 50u  // à ajuster empiriquement sur prototype
 
 // --- Phase PROBE (auto-test IPROPI) -----------------------------------------
-#define SOLENOID_PROBE_DURATION_MS 3u     // validé empiriquement 2026-10-18
+// 5 ms (ADR-0009) : le courant est quasi établi vers 3 ms, ce qui permet une
+// mesure de résistance sur la FIN de l'impulsion (§5b). Plafond pilote
+// SOLENOID_PROBE_MAX_MS inchangé : la borne reste appliquée par le driver.
+#define SOLENOID_PROBE_DURATION_MS 5u     // ADR-0009 (relevé de 3 ms à 5 ms)
 #define SOLENOID_PROBE_DUTY_PERCENT 20u   // validé empiriquement 2026-10-18
+
+// --- Constantes électriques du calcul ohmique (ADR-0009 §5c, §5d) -----------
+// Estimation de la résistance DC d'une bobine et du courant à 100 % de duty.
+// `A_IPROPI` et `R_IPROPI` sont des constantes de CARTE (documentation du
+// DRV8874 + schéma) : la sensibilité K = A_IPROPI x R_IPROPI est calculée à
+// partir d'elles, jamais écrite en dur.
+#define SOLENOID_IPROPI_UA_PER_A 450u     // A_IPROPI du DRV8874 (450 µA/A)
+#define SOLENOID_IPROPI_RESISTOR_OHM 2400u // R_IPROPI vers GND (2,4 kΩ)
+#define SOLENOID_VM_MILLIVOLT 24000u       // alimentation 24 V (à mesurer)
+#define SOLENOID_ADC_VREF_MILLIVOLT 3300u  // référence ADC (à mesurer)
+#define SOLENOID_RDSON_MILLIOHM 240u       // R_DS(on) du DRV8874 (datasheet)
 
 // --- Phase MAINTENANCE (push only) ------------------------------------------
 #define SOLENOID_MAINT_DUTY_PERCENT 50u

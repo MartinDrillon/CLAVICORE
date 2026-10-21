@@ -126,13 +126,18 @@ Premier test de communication entre la carte clavier et une unique carte moteur
 Décisions figées par [ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assignation-solenoide-command.md) :
 - **sens musical définitif** (notation scientifique, [ADR-0008](../adr/adr-0008-convention-nommage-octaves-notation-scientifique.md)) : touche 1 = **DO2** = MIDI 36 ; touche 49 =
   **DO6** = MIDI 84 ;
-- **règle d'assignation descendante** : l'ancrage se fait sur la touche 49 ;
+- **règle d'assignation ascendante** ([ADR-0010](../adr/adr-0010-ancrage-grave-mapping-commissioning.md),
+  remplace ADR-0004 §6) : l'ancrage se fait sur la **touche 1 = DO2** (position 0,
+  canal occupé le plus bas) et les blocs montent dans l'ordre des canaux puis des
+  positions ;
 - **exemple de carte unique** : 3 canaux occupés sur une seule carte donnent
-  les touches **47, 48, 49** donc MIDI **82, 83, 84** ;
+  les touches **1, 2, 3** donc MIDI **36, 37, 38** ;
 - **déclenchement local** : bouton Moteur maintenu **3 s** ;
 - **pas d'auto-test au boot** ;
-- **table persistante en flash côté Clavier**, écrite automatiquement après
-  auto-test réussi et complet.
+- **table persistante en flash côté Clavier**, cliché du dernier auto-test
+  **demandé** ([ADR-0009](../adr/adr-0009-commissioning-provisoire-bring-up-et-estimation-resistance-bobine.md)) :
+  écrite même si le test est partiel, avec un état `FINAL`/`PROVISIONAL` et ses
+  motifs signalés au journal.
 
 #### Livraison 1 — Auto-test observable et remontée d'état
 
@@ -159,8 +164,10 @@ Décisions figées par [ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assigna
       toutes les cartes attendues ; conserver l'ancienne table sinon
 - [x] Clavier : au boot, charger la table flash puis comparer seulement les UID
       présents ; **ne jamais lancer d'auto-test au boot**
-- [x] Clavier : appliquer la règle d'assignation descendante à partir de la
-      touche 49
+- [ ] Clavier : appliquer la règle d'assignation **ascendante** depuis la
+      touche 1 (`DO2`), positions parcourues de 0 à 4
+      ([ADR-0010](../adr/adr-0010-ancrage-grave-mapping-commissioning.md)) —
+      remplace l'ancrage descendant sur la touche 49 (ADR-0004 §6)
 - [x] Clavier : résoudre note MIDI -> (UID, canal) avant chaque commande
       `note on/off`
 - [x] Clavier + Moteur : implémenter `SOLENOID_COMMAND` (`0x100`, DLC 5)
@@ -168,6 +175,27 @@ Décisions figées par [ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assigna
       une seule touche, pas de MIDI, timeout 10 s)
 - [ ] Test bout-en-bout réel : touche pressée sur Clavier -> solénoïde activé
       sur la bonne carte Moteur (procédure écrite ; validation matérielle à faire)
+
+#### Bring-up — commissioning provisoire et tri des bobines (ADR-0009)
+
+- [ ] `shared/protocol` : format de table **v2** (en-tête 16 o, `state`,
+      `flags`) + lecture d'une v1 interprétée `FINAL`
+- [ ] `shared/protocol` : trame `IPROPI_OHM` (`0x601`, DLC 8) avec `ohm_milliohm`
+      et `i100_mA`
+- [ ] Moteur : PROBE **5 ms** avec fenêtre d'échantillonnage en fin d'impulsion
+      (plafond pilote `SOLENOID_PROBE_MAX_MS` inchangé à 10 ms)
+- [ ] Moteur : estimation `ohm` / `i100` à partir de `delta`, du duty appliqué et
+      des constantes de `solenoid_profile.h`
+- [ ] Clavier : écrire la table dès qu'**une** carte complète a répondu, calculer
+      les motifs `flags`, émettre `[TABLE]`, `[MAP]`, `[SELFTEST_RAW] ohm_est/i100`
+      et `[SELFTEST_OHM]`
+- [ ] Clavier : motif `0x40 ANCHOR_SHIFT` quand les positions présentes ne sont
+      pas contiguës depuis 0 (ADR-0010) ; vecteurs de test hôte à suivre
+      (`docs/specs/impact-adr-0010.md`)
+- [ ] Clavier : `CLAVIER_SELFTEST_CALIBRATION` à `ON` pendant le bring-up
+      (retour à `OFF` en configuration finale)
+- [ ] Clavier : console CDC de bring-up (`t`, `c`, `d`, `m`, `?`)
+- [ ] Validation manuelle : `tests/bringup_commissioning_provisoire.md`
 
 
 ### Phase 4 — Chainage 
@@ -197,17 +225,28 @@ Décisions figées par [ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assigna
 1. Mise sous tension d’une carte à la fois.
 2. Exécuter le relevé d’UID Phase 3a (`GET_UID` / annonce de boot), puis noter
    l’UID et la position physique de la carte.
-3. Remplir `uid_position.h` avec les 5 UID et leur ordre dans le nœud CAN.
+3. Remplir `uid_position.h` avec les 5 UID et leur ordre dans le nœud CAN : la
+   carte à l'extrémité **grave** (celle qui porte `DO2`) doit être déclarée en
+   **position 0** ([ADR-0010](../adr/adr-0010-ancrage-grave-mapping-commissioning.md)).
 4. Une fois toutes les cartes en place, lancer l’auto-test IPROPI **sur demande
    uniquement** (bouton Moteur 3 s -> `IPROPI_SELFTEST_TRIGGER` `0x402` ->
    diffusion Clavier `IPROPI_SELFTEST_REQUEST` `0x401`).
 5. Chaque carte renvoie `BOARD_ANNOUNCE_STATUS` (`0x412`) avec `uid_tag`,
    `bitmap_occupation`, `reply_to`, `test_status`, `fault_bits`.
-6. Si toutes les cartes attendues répondent avec `test_status = 0`, le Clavier
-   écrit automatiquement la table persistante en flash.
+6. Dès qu’**une** carte répondante a fourni un jeu complet (A+B+C), le Clavier
+   écrit la table persistante en flash : c’est le **cliché du dernier test
+   demandé** ([ADR-0009](../adr/adr-0009-commissioning-provisoire-bring-up-et-estimation-resistance-bobine.md)).
+   L’état est `FINAL` si toutes les positions attendues ont répondu sans échec
+   avec `total_occupied = 49` **et** des positions présentes contiguës depuis 0,
+   sinon `PROVISIONAL` avec ses motifs (`MISSING_BOARD`, `UNKNOWN_BOARD`,
+   `BOARD_NOT_OK`, `FAULT_DURING_TEST`, `NOT_49_KEYS`, `ANCHOR_SHIFT`).
 7. En cas de divergence, d’absence de carte, de collision de tag ou de table
    partielle, le Clavier signale explicitement l’erreur et ne remappe rien
-   silencieusement.
+   silencieusement ; une carte présente mais absente de la table a ses canaux
+   refusés.
+8. Procédure détaillée de mise en service progressive (chaîne complète -> carte
+   seule sous charge -> installation carte par carte) :
+   [`tests/bringup_commissioning_provisoire.md`](../tests/bringup_commissioning_provisoire.md).
 
 ## Vérification
 
@@ -220,8 +259,9 @@ Décisions figées par [ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assigna
 
 > ADR-0003 a figé le bring-up UID (`0x400`, `0x410`, `0x411`) et ADR-0004 a
 > ajouté l'auto-test IPROPI et la commande de jeu (`0x401`, `0x402`, `0x412`,
-> `0x100`). Voir [CAN.md](CAN.md) pour les champs détaillés et la règle
-> d'assignation.
+> `0x100`). [ADR-0009](../adr/adr-0009-commissioning-provisoire-bring-up-et-estimation-resistance-bobine.md)
+> ajoute le diagnostic `IPROPI_OHM` (`0x601`). Voir [CAN.md](CAN.md) pour les
+> champs détaillés et la règle d'assignation.
 `shared/protocol/can_protocol.h` définit (définira)  des messages versionnés, de taille fixe et sans
 allocation dynamique :
 
@@ -232,6 +272,8 @@ allocation dynamique :
 | `IPROPI_SELFTEST_TRIGGER` (`0x402`) | Moteur | version, réservé = 0 | Demander au Clavier d'orchestrer un auto-test |
 | `IPROPI_SELFTEST_REQUEST` (`0x401`) | Clavier | version, `request_id` | Lancer l'auto-test IPROPI sur toutes les cartes |
 | `BOARD_ANNOUNCE_STATUS` (`0x412`) | Moteur | `uid_tag`, bitmap 12 bits, `reply_to`, `test_status`, `fault_bits` | Retour d'auto-test IPROPI |
+| `IPROPI_RAW` (`0x600`) | Moteur | `uid_tag`, `reply_to`, canal, `idle_avg`, `probe_avg` | Valeurs ADC brutes (mode diagnostic) |
+| `IPROPI_OHM` (`0x601`) | Moteur | `uid_tag`, `reply_to`, canal, `ohm_milliohm`, `i100_mA` | Résistance et courant estimés d'une bobine (mode diagnostic) |
 | `BOARD_ASSIGN` | Clavier | UID 64 bits, identifiant de session | Confirmer que le Clavier reconnaît la carte |
 | `SOLENOID_COMMAND` (`0x100`) | Clavier | `uid_tag`, canal 0-11, commande note on/off, vélocité | Commander un driver sans mapping musical embarqué |
 | `CONFIG_READ` / `CONFIG_WRITE` | Hôte ou Clavier | version, enregistrement de commissioning, contrôle d'intégrité | Modifier la table persistante sans recompilation |
@@ -256,6 +298,9 @@ commande de session qui ne lui est pas attribuée.
       `SOLENOID_COMMAND`). Restent ouverts : `FAULT_REPORT`,
       `CONFIG_READ`/`CONFIG_WRITE`, `BOARD_ASSIGN`, accusés de réception
       applicatifs et payload détaillé des lignes `[STATUS]` `0x20+`.
-- **Auto-test IPROPI** : durée, duty cycle et seuils de courant doivent être
-      mesurés sur prototype. Tant qu'ils ne sont pas caractérisés, le test doit
-      signaler `SELFTEST_UNCALIBRATED` / `test_status = 3`.
+- **Auto-test IPROPI** : le profil PROBE est **figé** à 5 ms / 20 %
+      ([ADR-0009](../adr/adr-0009-commissioning-provisoire-bring-up-et-estimation-resistance-bobine.md)),
+      le seuil d'occupation à `delta >= 400` (ADR-0004, addendum 4), et
+      `SELFTEST_UNCALIBRATED` n'est plus émis. Restent à caractériser au banc :
+      la cohérence de `ohm_est` avec une mesure au multimètre et le tri des
+      bobines (fenêtre 2–3 A à 100 % de duty).

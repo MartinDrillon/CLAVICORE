@@ -357,3 +357,43 @@ can_proto_result_t can_decode_ipropi_raw(const uint8_t *data, uint8_t dlc,
     }
     return CAN_PROTO_OK;
 }
+
+can_proto_result_t can_encode_ipropi_ohm(uint8_t out[CAN_DLC_IPROPI_OHM],
+                                         const can_ipropi_ohm_t *ohm) {
+    if (out == NULL || ohm == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (!request_id_is_valid(ohm->reply_to) || ohm->channel >= CAN_IPROPI_CHANNEL_COUNT) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+
+    can_put_u16_le(&out[0], ohm->uid_tag);
+    out[2] = ohm->reply_to;
+    out[3] = ohm->channel;
+    can_put_u16_le(&out[4], ohm->ohm_milliohm);
+    can_put_u16_le(&out[6], ohm->i100_ma);
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_ipropi_ohm(const uint8_t *data, uint8_t dlc,
+                                         can_ipropi_ohm_t *ohm) {
+    if (data == NULL || ohm == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_IPROPI_OHM) {
+        return CAN_PROTO_BAD_DLC;
+    }
+
+    ohm->uid_tag = can_get_u16_le(&data[0]);
+    ohm->reply_to = data[2];
+    ohm->channel = data[3];
+    ohm->ohm_milliohm = can_get_u16_le(&data[4]);
+    ohm->i100_ma = can_get_u16_le(&data[6]);
+
+    // Les valeurs 16 bits sont toutes acceptées : `CAN_IPROPI_VALUE_INVALID`
+    // signale un canal non calculable (pas une trame invalide), ADR-0009 §6.
+    if (!request_id_is_valid(ohm->reply_to) || ohm->channel >= CAN_IPROPI_CHANNEL_COUNT) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    return CAN_PROTO_OK;
+}

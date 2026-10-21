@@ -12,7 +12,11 @@ pico_sdk_init()
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
-option(CLAVIER_SELFTEST_CALIBRATION "Emet la calibration IPROPI_RAW lors des auto-tests demandes" OFF)
+# Mode diagnostic (IPROPI_RAW + IPROPI_OHM) : actif par défaut pendant le
+# bring-up (ADR-0009 §7). À repasser à OFF en configuration finale.
+option(CLAVIER_SELFTEST_CALIBRATION "Emet la calibration IPROPI_RAW/OHM lors des auto-tests demandes" ON)
+# Console de bring-up sur CDC (t/c/d/m/?) : ADR-0009 §9 livraison B.
+option(CLAVIER_CDC_CONSOLE "Active la console de bring-up sur le port CDC" ON)
 
 set(PINMAP_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/../../Netlist/netlist_to_pinmap.py)
 set(PINMAP_NETLIST ${CMAKE_CURRENT_LIST_DIR}/../../Électrique/Clavier/Clavier_drive_1/Clavier_drive_1.xml)
@@ -30,6 +34,7 @@ add_custom_target(clavier_pinmap
 
 add_executable(clavier
     src/main.c
+    src/bringup_console.c
     src/can_link.c
     src/commissioning.c
     src/keycode.c
@@ -72,6 +77,11 @@ if(CLAVIER_SELFTEST_CALIBRATION)
     target_compile_definitions(clavier PRIVATE CLAVIER_SELFTEST_CALIBRATION=1)
 else()
     target_compile_definitions(clavier PRIVATE CLAVIER_SELFTEST_CALIBRATION=0)
+endif()
+if(CLAVIER_CDC_CONSOLE)
+    target_compile_definitions(clavier PRIVATE CLAVIER_CDC_CONSOLE=1)
+else()
+    target_compile_definitions(clavier PRIVATE CLAVIER_CDC_CONSOLE=0)
 endif()
 
 pico_enable_stdio_uart(clavier 0)

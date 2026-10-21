@@ -81,6 +81,12 @@ solenoid_result_t solenoid_driver_note_off(solenoid_driver_t *drv, uint32_t now_
 // pas IDLE, si global_sleep n'est pas prêt, ou si un défaut est déjà actif.
 solenoid_result_t solenoid_driver_probe_start(solenoid_driver_t *drv, uint32_t now_us);
 
+// Paramètres PROBE réellement appliqués, après écrêtage par le pilote : durée
+// (µs) et duty (pour mille). Base de la fenêtre d'échantillonnage et de
+// l'estimation ohmique de l'auto-test (ADR-0009 §5).
+uint32_t solenoid_driver_probe_duration_us(void);
+uint32_t solenoid_driver_probe_duty_permil(void);
+
 // Poussée maintenance unidirectionnelle, bornée par le driver (duty + durée).
 // Refusée si le canal n'est pas IDLE, si le repos maintenance n'est pas écoulé,
 // si global_sleep n'est pas prêt, ou si un défaut est déjà actif.
