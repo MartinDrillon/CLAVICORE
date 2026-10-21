@@ -6,6 +6,7 @@
 
 #include "can_protocol.h"
 #include "solenoid_driver.h"
+#include "solenoid_profile.h"
 
 #define IPROPI_SELFTEST_BUTTON_HOLD_US 3000000u
 #define IPROPI_SELFTEST_MUX_SETTLE_US 150u
@@ -44,5 +45,11 @@ bool ipropi_selftest_start_request(const can_ipropi_selftest_request_t *request)
 bool ipropi_selftest_take_result(ipropi_selftest_result_t *out);
 bool ipropi_selftest_is_running(void);
 bool ipropi_selftest_button_update(bool pressed, uint32_t now_us);
+
+// Contrôle FONCTIONNEL de mesure d'un profil (ADR-0013 §2, ADR-0014 §3) : la
+// fenêtre d'échantillonnage doit couvrir au moins une période PWM et se terminer
+// avant la coupure de l'impulsion PROBE. Dépend de la carte (constantes ADC) :
+// le contrôle n'est donc pas dans le validateur structurel partagé.
+bool ipropi_selftest_profile_is_compatible(const solenoid_profile_t *profile);
 
 #endif  // MOTEUR_IPROPI_SELFTEST_H

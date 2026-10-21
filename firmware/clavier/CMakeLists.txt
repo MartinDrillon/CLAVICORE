@@ -47,6 +47,7 @@ add_executable(clavier
     src/usb_descriptors.c
     ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol/can_protocol.c
     ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol/commissioning_table.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol/solenoid_profile.c
 )
 
 # can2040 (ADR-0002) : sous-module git épinglé v1.7.0. Jamais de copie fabriquée.

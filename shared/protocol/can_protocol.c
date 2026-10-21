@@ -397,3 +397,167 @@ can_proto_result_t can_decode_ipropi_ohm(const uint8_t *data, uint8_t dlc,
     }
     return CAN_PROTO_OK;
 }
+
+// --- Transfert du profil d'activation (0x420-0x423, ADR-0013) ----------------
+
+static bool profile_result_is_valid(can_profile_result_t result) {
+    // `CAN_PROFILE_RESULT_OK` vaut 0 : la borne basse est implicite (énumération
+    // non signée), ne comparer que la borne haute évite -Wtype-limits.
+    return result <= CAN_PROFILE_RESULT_UNSUPPORTED_VERSION;
+}
+
+static bool profile_source_is_valid(can_profile_source_t source) {
+    return source == CAN_PROFILE_SOURCE_DEFAULTS || source == CAN_PROFILE_SOURCE_NVM;
+}
+
+can_proto_result_t can_encode_profile_begin(uint8_t out[CAN_DLC_PROFILE_BEGIN],
+                                            const can_profile_begin_t *begin) {
+    if (out == NULL || begin == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (begin->format_version == 0u ||
+        begin->payload_len == 0u || begin->payload_len > CAN_PROFILE_PAYLOAD_MAX ||
+        begin->chunk_size != CAN_PROFILE_CHUNK_SIZE ||
+        (begin->flags & (uint8_t)~CAN_PROFILE_FLAG_GLOBAL) != 0u) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    out[0] = begin->proto_version;
+    out[1] = begin->format_version;
+    out[2] = begin->transfer_id;
+    out[3] = begin->flags;
+    can_put_u16_le(&out[4], begin->payload_len);
+    out[6] = begin->chunk_size;
+    out[7] = 0u;
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_profile_begin(const uint8_t *data, uint8_t dlc,
+                                            can_profile_begin_t *begin) {
+    if (data == NULL || begin == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_PROFILE_BEGIN) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    begin->proto_version = data[0];
+    begin->format_version = data[1];
+    begin->transfer_id = data[2];
+    begin->flags = data[3];
+    begin->payload_len = can_get_u16_le(&data[4]);
+    begin->chunk_size = data[6];
+    begin->reserved = data[7];
+    if (begin->format_version == 0u ||
+        begin->payload_len == 0u || begin->payload_len > CAN_PROFILE_PAYLOAD_MAX ||
+        begin->chunk_size != CAN_PROFILE_CHUNK_SIZE ||
+        (begin->flags & (uint8_t)~CAN_PROFILE_FLAG_GLOBAL) != 0u) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_encode_profile_chunk(uint8_t out[CAN_DLC_PROFILE_CHUNK],
+                                            const can_profile_chunk_t *chunk) {
+    if (out == NULL || chunk == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    out[0] = chunk->transfer_id;
+    out[1] = chunk->seq;
+    for (uint8_t i = 0u; i < CAN_PROFILE_CHUNK_SIZE; ++i) {
+        out[2u + i] = chunk->data[i];
+    }
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_profile_chunk(const uint8_t *data, uint8_t dlc,
+                                            can_profile_chunk_t *chunk) {
+    if (data == NULL || chunk == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_PROFILE_CHUNK) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    chunk->transfer_id = data[0];
+    chunk->seq = data[1];
+    for (uint8_t i = 0u; i < CAN_PROFILE_CHUNK_SIZE; ++i) {
+        chunk->data[i] = data[2u + i];
+    }
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_encode_profile_commit(uint8_t out[CAN_DLC_PROFILE_COMMIT],
+                                             const can_profile_commit_t *commit) {
+    if (out == NULL || commit == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (commit->format_version == 0u) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    out[0] = commit->proto_version;
+    out[1] = commit->format_version;
+    out[2] = commit->transfer_id;
+    out[3] = 0u;
+    out[4] = (uint8_t)(commit->crc32 & 0xFFu);
+    out[5] = (uint8_t)((commit->crc32 >> 8u) & 0xFFu);
+    out[6] = (uint8_t)((commit->crc32 >> 16u) & 0xFFu);
+    out[7] = (uint8_t)((commit->crc32 >> 24u) & 0xFFu);
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_profile_commit(const uint8_t *data, uint8_t dlc,
+                                             can_profile_commit_t *commit) {
+    if (data == NULL || commit == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_PROFILE_COMMIT) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    commit->proto_version = data[0];
+    commit->format_version = data[1];
+    commit->transfer_id = data[2];
+    commit->reserved = data[3];
+    commit->crc32 = (uint32_t)data[4] | ((uint32_t)data[5] << 8u) |
+                    ((uint32_t)data[6] << 16u) | ((uint32_t)data[7] << 24u);
+    if (commit->format_version == 0u) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_encode_profile_status(uint8_t out[CAN_DLC_PROFILE_STATUS],
+                                             const can_profile_status_t *status) {
+    if (out == NULL || status == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (!profile_result_is_valid(status->result) || !profile_source_is_valid(status->source)) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    can_put_u16_le(&out[0], status->uid_tag);
+    out[2] = status->transfer_id;
+    out[3] = (uint8_t)(((uint8_t)status->result & 0x07u) |
+                       (((uint8_t)status->source & 0x03u) << 3u));
+    out[4] = (uint8_t)(status->profile_tag32 & 0xFFu);
+    out[5] = (uint8_t)((status->profile_tag32 >> 8u) & 0xFFu);
+    out[6] = (uint8_t)((status->profile_tag32 >> 16u) & 0xFFu);
+    out[7] = (uint8_t)((status->profile_tag32 >> 24u) & 0xFFu);
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_profile_status(const uint8_t *data, uint8_t dlc,
+                                             can_profile_status_t *status) {
+    if (data == NULL || status == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_PROFILE_STATUS) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    status->uid_tag = can_get_u16_le(&data[0]);
+    status->transfer_id = data[2];
+    status->result = (can_profile_result_t)(data[3] & 0x07u);
+    status->source = (can_profile_source_t)((data[3] >> 3u) & 0x03u);
+    status->profile_tag32 = (uint32_t)data[4] | ((uint32_t)data[5] << 8u) |
+                            ((uint32_t)data[6] << 16u) | ((uint32_t)data[7] << 24u);
+    if (!profile_result_is_valid(status->result) || !profile_source_is_valid(status->source)) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    return CAN_PROTO_OK;
+}

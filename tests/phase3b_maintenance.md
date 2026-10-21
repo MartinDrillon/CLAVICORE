@@ -133,8 +133,8 @@ normal suivant inversé).
 | Aucune ligne `[MODE] maintenance=ON` et le journal affiche `position 84 behavior MAINT pressed` | Le dispatch de `main.c` est cassé : le bloc `KEYCODE_MAINTENANCE_TOGGLE` est imbriqué dans le test `KEYCODE_GET_UID` et inatteignable (voir `impact-adr-0012.md` §3). |
 | `[STATUS] code=MAINTENANCE_NO_TABLE` | Table de commissioning absente ou invalide : lancer d'abord un auto-test (bouton Moteur 3 s). |
 | `[STATUS] code=BUSY` | Un auto-test est en cours. |
-| La poussée va dans le **même** sens qu'une note du jeu normal | Le profil Moteur n'a pas été reflashé (`SOLENOID_MAINT_DIR_LEVEL`), ou `firmware/moteur` est resté à la version ADR-0006. |
-| La poussée s'arrête vers 10 s | Une des deux bornes n'a pas été mise à jour : `MAINTENANCE_TIMEOUT_MS` (Clavier, `main.c`) ou `SOLENOID_MAINT_MAX_MS` (Moteur, `solenoid_profile.h`). |
+| La poussée va dans le **même** sens qu'une note du jeu normal | `dir_level_maint` du profil actif n'inverse pas la polarité (ADR-0012), ou la carte Moteur n'a pas reçu le profil (lancer un auto-test, ADR-0013). |
+| La poussée s'arrête vers 10 s | Une des deux bornes n'a pas été mise à jour : `MAINTENANCE_TIMEOUT_MS` (Clavier, `main.c`) ou `maint_max_ms` du profil actif (Moteur, `solenoid_profile_store`/profil Clavier). |
 | Le jeu normal est inversé après un passage en maintenance | Sortie de MAINTENANCE qui ne repasse pas par `DIR_TO_PULL` (voir `impact-adr-0012.md` §2.1). |
 
 ## Non vérifiable sans matériel réel

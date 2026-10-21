@@ -18,8 +18,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-// Constantes électriques du profil Moteur (solenoid_profile.h) et duty PROBE
-// réellement appliqué par le pilote (après écrêtage).
+// Constantes électriques de la carte (solenoid_ohm_constants.h) et duty PROBE
+// réellement appliqué par le pilote (après écrêtage par le profil actif).
 typedef struct {
     uint32_t vm_millivolt;         // SOLENOID_VM_MILLIVOLT
     uint32_t vref_millivolt;       // SOLENOID_ADC_VREF_MILLIVOLT

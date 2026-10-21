@@ -11,6 +11,7 @@
 #include "config.h"
 #include "ipropi_selftest.h"
 #include "solenoid_driver.h"
+#include "solenoid_profile_store.h"
 
 #define BUTTON_DEBOUNCE_US 20000u
 #define MANUAL_TEST_CHANNEL_COUNT 2u
@@ -64,6 +65,10 @@ int main(void) {
 
     solenoid_global_sleep_init();
 
+    // Le profil actif (flash, ou valeurs de repli) doit être chargé AVANT
+    // l'init des drivers : ceux-ci en tirent fréquence PWM, polarités et repos.
+    solenoid_profile_store_load();
+
     solenoid_driver_t drivers[MOTEUR_CHANNEL_COUNT];
     for (uint8_t i = 0u; i < MOTEUR_CHANNEL_COUNT; ++i) {
         const solenoid_result_t init_result =
@@ -97,6 +102,9 @@ int main(void) {
     // l'appui long 3 s coupe ce test puis émet 0x402 dès que tous les canaux sont
     // revenus IDLE. Le clock-test 5 s reste accessible sur le même bouton.
     printf("[moteur] Livraison 1 prete. Etat canal0: %s\n", solenoid_state_name(last_state));
+    printf("[moteur] profil actif tag=0x%08lX source=%s\n",
+           (unsigned long)solenoid_profile_active_tag(),
+           solenoid_profile_active_source() == CAN_PROFILE_SOURCE_NVM ? "NVM" : "DEFAULTS");
 
     while (true) {
         const uint32_t now_us = time_us_32();

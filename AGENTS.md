@@ -39,7 +39,7 @@ devrait en enfreindre un s'arrête et demande confirmation humaine.
    ou logicielle explicite, **sauf deux dérogations bornées dans la couche
    pilote** : le profil **MAINTENANCE** d'ADR-0006 (push-only, coupure à 10 s)
    et la phase **HOLD** du jeu normal d'ADR-0007 (coupure autonome à 20 s, duty
-   HOLD plafonné à 25 %).
+   HOLD plafonné à 25 %). DEPRECATED : dérogation à l'invariant 4 est validée par ADR-0014.
 5. **Un changement d'interface partagée** (structure d'un message CAN, format
    de la table de commissioning, contrat d'une HAL) nécessite une ADR
    (`docs/adr/`) *avant* l'implémentation. Jamais après, jamais en même temps

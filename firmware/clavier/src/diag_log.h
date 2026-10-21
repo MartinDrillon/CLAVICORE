@@ -40,6 +40,10 @@ typedef enum {
     DIAG_STATUS_MAINTENANCE_BUSY = 0x2F,
     DIAG_STATUS_MAINTENANCE_NO_TABLE = 0x30,
     DIAG_STATUS_TABLE_PROVISIONAL = 0x31,
+    // ADR-0013 : synchronisation du profil d'activation des solénoïdes.
+    DIAG_STATUS_PROFILE_SYNC_FAILED = 0x32,
+    DIAG_STATUS_PROFILE_DIVERGENT = 0x33,
+    DIAG_STATUS_PROFILE_FALLBACK_IN_USE = 0x34,
 } diag_status_code_t;
 
 typedef enum {

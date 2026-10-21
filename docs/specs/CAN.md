@@ -5,8 +5,10 @@ Ce document synthétise les décisions actées dans
 ADR-0005,
 [ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assignation-solenoide-command.md),
 [ADR-0009](../adr/adr-0009-commissioning-provisoire-bring-up-et-estimation-resistance-bobine.md),
-[ADR-0010](../adr/adr-0010-ancrage-grave-mapping-commissioning.md) et
-[ADR-0012](../adr/adr-0012-mode-maintenance-force-inverse-duree-20s.md).
+[ADR-0010](../adr/adr-0010-ancrage-grave-mapping-commissioning.md),
+[ADR-0012](../adr/adr-0012-mode-maintenance-force-inverse-duree-20s.md),
+[ADR-0013](../adr/adr-0013-profil-activation-solenoides-centralise-clavier.md) et
+[ADR-0014](../adr/adr-0014-limites-activation-pilotees-profil-clavier-derogation-invariant-4.md).
 
 **État réel** :
 - **Phase 3a validée sur bus réel** : premier UID relevé de bout en bout
@@ -31,6 +33,14 @@ ADR-0005,
   encore en polarité **PULL** et bornée à **10 s**, et le keycode `MAINT`
   (position 84) est inatteignable. Détail et liste des fichiers :
   [`impact-adr-0012.md`](impact-adr-0012.md).
+- **Profil d'activation (ADR-0013, ADR-0014 — décidé, pas encore implémenté)** :
+  le profil des solénoïdes est réglé dans un fichier unique côté Clavier,
+  transmis aux cartes Moteur par les trames `PROFILE_*` (`0x420`–`0x423`) au
+  lancement de l'auto-test IPROPI, puis persisté en flash côté Moteur (deux
+  secteurs A/B). Toutes les limites deviennent des données du profil ; plus
+  aucune enveloppe thermique n'est figée dans le firmware Moteur (dérogation à
+  l'invariant 4). Détail : [`profil-solenoides.md`](profil-solenoides.md) ;
+  liste des fichiers : [`impact-adr-0013.md`](impact-adr-0013.md).
 
 **Historique** : avant ADR-0010, l'assignation était **descendante** (bloc aigu
 ancré sur la touche 49, ADR-0004 §6, remplacé) ; une table persistée avant cette
@@ -221,7 +231,7 @@ Règles :
 Règles :
 - 12 trames, une par canal `0..11`, après les 12 trames `IPROPI_RAW`, même
   espacement et même délai initial UID-dérivé ;
-- calcul côté **Moteur** (constantes de `solenoid_profile.h`), jamais côté
+- calcul côté **Moteur** (constantes de `solenoid_ohm_constants.h`), jamais côté
   Clavier : le Clavier ne duplique aucune constante électrique ;
 - entrée du calcul : `delta` (voir `IPROPI_RAW`) et le **duty PROBE réellement
   appliqué** après écrêtage par le pilote ;
@@ -231,7 +241,7 @@ Règles :
 - trame **purement informative** : sa perte ou son invalidité ne modifient ni
   `occupation_bits`, ni `fault_bits`, ni l'écriture de la table ;
 
-Formules (constantes de `firmware/moteur/src/solenoid_profile.h`), telles
+Formules (constantes de `firmware/moteur/src/solenoid_ohm_constants.h`), telles
 qu'**implémentées et testées** (`firmware/moteur/src/ipropi_ohm.c`,
 `tests/host/test_phase3_helpers.c`) :
 
@@ -268,6 +278,78 @@ Repères **exacts** (ce sont les vecteurs des tests hôte, `delta = probe - idle
 
 L'affichage journal tronque à 2 décimales : `delta = 1030` donne `6.00` et
 `3.84`, pas `3.85` (l'ancien repère supposait `R` arrondie à 6000 mΩ).
+
+#### `PROFILE_BEGIN` — ID `0x420`, DLC 8
+
+Émetteur : **Clavier** vers diffusion. Ouvre le transfert du profil
+d'activation (ADR-0013 §3).
+
+| Octet | Nom | Valeurs / remarques |
+|---|---|---|
+| 0 | `proto_version` | version du protocole |
+| 1 | `format_version` | `1` (payload de 57 octets) |
+| 2 | `transfer_id` | `1..255`, incrémenté à chaque tentative ; `0` réservé à l'annonce de boot |
+| 3 | `flags` | bit 0 = `1` (profil global) ; bits 1..7 = 0 |
+| 4..5 | `payload_len` | u16 LE, `57` pour v1 |
+| 6 | `chunk_size` | `6` |
+| 7 | `reserved` | `0` |
+
+#### `PROFILE_CHUNK` — ID `0x421`, DLC 8
+
+Émetteur : **Clavier** vers diffusion.
+
+| Octet | Nom | Valeurs / remarques |
+|---|---|---|
+| 0 | `transfer_id` | recopie du `PROFILE_BEGIN` |
+| 1 | `seq` | `0..9`, croissant, sans trou |
+| 2..7 | `data[6]` | 6 octets du payload canonique |
+
+Payload de 57 octets ⇒ **10 chunks** (9×6 + 3). Un chunk orphelin (pas de
+`BEGIN` actif, `transfer_id` inconnu, `seq` inattendu ou dupliqué) est ignoré et
+compté, jamais appliqué partiellement.
+
+#### `PROFILE_COMMIT` — ID `0x422`, DLC 8
+
+Émetteur : **Clavier** vers diffusion.
+
+| Octet | Nom | Valeurs / remarques |
+|---|---|---|
+| 0 | `proto_version` | version du protocole |
+| 1 | `format_version` | `1` |
+| 2 | `transfer_id` | recopie du `PROFILE_BEGIN` |
+| 3 | `reserved` | `0` |
+| 4..7 | `crc32` | CRC32 u32 LE du payload canonique |
+
+Le Moteur vérifie : transfert actif, chunks `0..9` reçus une seule fois,
+longueur exacte, CRC, version supportée, contrôles structurels et contrôles de
+mesure. En cas d'échec, il **conserve le profil actif** et répond avec le code
+d'erreur correspondant : aucun écrêtage, aucune application partielle.
+
+#### `PROFILE_STATUS` — ID `0x423`, DLC 8
+
+Émetteur : **Moteur** vers le Clavier, en complément des trames A (`0x410`) et B
+(`0x411`) à chaque `UID_REQUEST`, et une fois au boot de la carte.
+
+| Octets | Nom | Valeurs / remarques |
+|---|---|---|
+| 0..1 | `uid_tag` | CRC16 LE |
+| 2 | `transfer_id` | `0` = annonce de boot ; sinon recopie |
+| 3 | `result` (bits 0..2) + `source` (bits 3..4) | bits 5..7 = 0 |
+| 4..7 | `profile_tag32` | CRC32 u32 LE du profil canonique actif |
+
+`result` : `0` OK, `1` pas de transfert actif, `2` séquence/longueur invalide,
+`3` CRC invalide, `4` champ invalide ou incohérent, `5` occupé (canal actif),
+`6` erreur flash, `7` version non supportée.
+
+`source` : `0` valeurs de repli compilées, `1` enregistrement flash valide.
+
+Règles :
+- le profil est diffusé **avant** `IPROPI_SELFTEST_REQUEST` ; si toutes les
+  cartes présentes n'acquittent pas `result = OK`, le Clavier **n'émet pas**
+  `0x401` et signale `PROFILE_SYNC_FAILED` ;
+- aucune trame existante n'est modifiée : `CAN_PROTO_VERSION` reste `1` ;
+- le payload canonique (57 octets) et le format flash Moteur sont décrits dans
+  [`profil-solenoides.md`](profil-solenoides.md).
 
 #### `SOLENOID_COMMAND` — ID `0x100`, DLC 5
 
@@ -347,7 +429,23 @@ Règle de contenu (ADR-0009 §1 et §2) : la table est le **cliché du dernier
 auto-test explicitement demandé**. Elle n'est jamais écrite au boot, et il
 n'existe aucune commande d'édition ou d'écriture manuelle d'une entrée.
 
-### Lignes `[STATUS]` (codes `0x20+` d'ADR-0004, `0x31` d'ADR-0009)
+### Format flash du profil solénoïde (Moteur)
+
+Deux secteurs de 4 Kio en fin de flash :
+`slot A = PICO_FLASH_SIZE_BYTES - 2 * 4096`, `slot B = ... - 4096`.
+
+En-tête de 32 octets : `magic` `'CVPF'` (`0x46505643`), `format_version` u16
+(`1`), `header_size` u16 (`32`), `payload_len` u16 (`57`), `reserved` u16,
+`seq` u32 monotone, `crc32` u32 (payload seul), `reserved[12]`. Le payload
+canonique (57 octets, ADR-0013) suit l'en-tête.
+
+Au boot, le Moteur applique le slot valide de `seq` le plus élevé ; aucun slot
+valide → valeurs de repli compilées (`source = DEFAULTS`). Écriture hors IRQ,
+canaux IDLE, avec `flash_safe_execute` : effacer le slot au `seq` le plus
+faible, programmer `seq + 1`, relire et vérifier, puis appliquer en RAM. Détail
+complet : [`profil-solenoides.md`](profil-solenoides.md) §5.
+
+### Lignes `[STATUS]` (codes `0x20+` d'ADR-0004, `0x31` d'ADR-0009, `0x32+` d'ADR-0013)
 
 Format texte CDC :
 - par défaut : `[STATUS] code=NOM pos=N`
@@ -374,6 +472,9 @@ Format texte CDC :
 | `2F` | `MAINTENANCE_BUSY` |
 | `30` | `MAINTENANCE_NO_TABLE` |
 | `31` | `TABLE_PROVISIONAL` |
+| `32` | `PROFILE_SYNC_FAILED` |
+| `33` | `PROFILE_DIVERGENT` |
+| `34` | `PROFILE_FALLBACK_IN_USE` |
 
 ### Lignes `[TABLE]`
 
@@ -416,11 +517,11 @@ Règles :
 - aucun MIDI USB n'est envoyé pendant le mode maintenance ;
 - `timeout` correspond à la coupure automatique du profil MAINTENANCE, bornée
   **à 20 s** des deux côtés : `MAINTENANCE_TIMEOUT_MS` côté Clavier (coupure
-  explicite envoyée par la trame `OFF`) et `SOLENOID_MAINT_MAX_MS` côté driver
-  Moteur (dernière barrière, ADR-0012) ; le HOLD du jeu normal est borné
-  séparément à 20 s (`SOLENOID_HOLD_MAX_MS`, ADR-0007) ;
+  explicite envoyée par la trame `OFF`) et `maint_max_ms` du profil actif côté
+  driver Moteur (dernière barrière, ADR-0012) ; le HOLD du jeu normal est borné
+  séparément à 20 s (`hold_max_ms` du profil actif, ADR-0007) ;
 - la poussée maintenance est en **polarité inverse** du jeu normal ; le sens
-  n'est porté par aucune trame (propriété du profil Moteur) ;
+  n'est porté par aucune trame (propriété du profil actif, `dir_level_maint`) ;
 - un nouveau cycle de poussée n'est autorisé qu'après relâchement de la
   touche.
 

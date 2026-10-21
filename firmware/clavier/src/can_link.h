@@ -30,6 +30,8 @@ typedef struct {
     uint32_t note_tx_fail;
     uint32_t boot_missing;
     uint32_t boot_unknown;
+    uint32_t profile_sync_failed;
+    uint32_t profile_divergent;
 } can_link_stats_t;
 
 void can_link_init(void);

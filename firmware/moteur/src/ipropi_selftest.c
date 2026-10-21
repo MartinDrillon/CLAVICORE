@@ -6,24 +6,54 @@
 
 #include "config.h"
 #include "ipropi_ohm.h"
-#include "solenoid_profile.h"
+#include "solenoid_ohm_constants.h"
+#include "solenoid_profile_store.h"
 
 #define US_PER_MS 1000u
 #define US_PER_S 1000000u
 
-// Durée PROBE effectivement appliquée = profil écrêté par le plafond du pilote.
-// Sert uniquement aux assertions de compilation ; la valeur d'exécution est
-// demandée au pilote (solenoid_driver_probe_duration_us).
-#define IPROPI_PROBE_MS_APPLIED                        \
-    ((SOLENOID_PROBE_DURATION_MS < SOLENOID_PROBE_MAX_MS) ? SOLENOID_PROBE_DURATION_MS \
-                                                          : SOLENOID_PROBE_MAX_MS)
-
 _Static_assert(IPROPI_SELFTEST_RAW_SAMPLES > 1u, "IPROPI raw samples must be non-trivial");
-_Static_assert(IPROPI_SELFTEST_ADC_SAMPLE_WINDOW_US >= (US_PER_S / SOLENOID_PWM_FREQ_HZ),
-               "la fenetre d'echantillonnage doit couvrir au moins une periode PWM");
-_Static_assert((IPROPI_SELFTEST_ADC_SAMPLE_WINDOW_US + IPROPI_SELFTEST_ADC_TAIL_MARGIN_US) <
-                   (IPROPI_PROBE_MS_APPLIED * US_PER_MS),
-               "fenetre + marge doivent se terminer avant la coupure de l'impulsion PROBE");
+
+// La fenêtre d'échantillonnage dépend désormais de la fréquence PWM du profil
+// (ADR-0013 §2). Les anciennes `_Static_assert` (couverture d'une période PWM,
+// fin avant la coupure PROBE) deviennent des contrôles d'exécution :
+// `ipropi_selftest_profile_is_compatible()` à la réception du profil, et
+// `update_sampling()` au démarrage de chaque auto-test.
+static uint32_t g_sample_spacing_us = IPROPI_SELFTEST_ADC_SAMPLE_SPACING_US;
+static uint32_t g_sample_window_us = IPROPI_SELFTEST_ADC_SAMPLE_WINDOW_US;
+
+static uint32_t compute_sample_spacing_us(uint32_t pwm_freq_hz) {
+    const uint32_t intervals = IPROPI_SELFTEST_RAW_SAMPLES - 1u;
+    const uint32_t period_us = (pwm_freq_hz == 0u) ? IPROPI_SELFTEST_ADC_SAMPLE_SPACING_US
+                                                   : (US_PER_S / pwm_freq_hz);
+    uint32_t spacing = (period_us + (intervals - 1u)) / intervals;
+
+    if (spacing < IPROPI_SELFTEST_ADC_SAMPLE_SPACING_US) {
+        spacing = IPROPI_SELFTEST_ADC_SAMPLE_SPACING_US;
+    }
+    return spacing;
+}
+
+static uint32_t compute_sample_window_us(uint32_t spacing_us) {
+    return spacing_us * (IPROPI_SELFTEST_RAW_SAMPLES - 1u) + IPROPI_SELFTEST_ADC_SAMPLE_TIME_US;
+}
+
+static void update_sampling(void) {
+    const solenoid_profile_t *profile = solenoid_profile_active();
+
+    g_sample_spacing_us = compute_sample_spacing_us(profile->pwm_freq_hz);
+    g_sample_window_us = compute_sample_window_us(g_sample_spacing_us);
+}
+
+bool ipropi_selftest_profile_is_compatible(const solenoid_profile_t *profile) {
+    uint32_t window_us;
+
+    if (profile == NULL) {
+        return false;
+    }
+    window_us = compute_sample_window_us(compute_sample_spacing_us(profile->pwm_freq_hz));
+    return (window_us + IPROPI_SELFTEST_ADC_TAIL_MARGIN_US) < profile->probe_duration_us;
+}
 
 typedef enum {
     SELFTEST_IDLE = 0,
@@ -72,8 +102,9 @@ static uint16_t average_adc_samples(void) {
     for (uint8_t i = 0u; i < IPROPI_SELFTEST_RAW_SAMPLES; ++i) {
         if (i > 0u) {
             // Étalement de la fenêtre : couvre au moins une période PWM et
-            // moyenne l'ondulation de courant (ADR-0009 §5b).
-            busy_wait_us_32(IPROPI_SELFTEST_ADC_SAMPLE_SPACING_US);
+            // moyenne l'ondulation de courant (ADR-0009 §5b). L'espacement est
+            // recalculé depuis la fréquence PWM du profil (ADR-0013 §2).
+            busy_wait_us_32(g_sample_spacing_us);
         }
         sum += adc_read();
     }
@@ -84,8 +115,7 @@ static uint16_t average_adc_samples(void) {
 // calée sur la FIN de l'impulsion, moins la marge de sécurité.
 static uint32_t probe_sample_delay_us(void) {
     const uint32_t duration_us = solenoid_driver_probe_duration_us();
-    const uint32_t lead_us =
-        IPROPI_SELFTEST_ADC_SAMPLE_WINDOW_US + IPROPI_SELFTEST_ADC_TAIL_MARGIN_US;
+    const uint32_t lead_us = g_sample_window_us + IPROPI_SELFTEST_ADC_TAIL_MARGIN_US;
 
     return (duration_us > lead_us) ? (uint32_t)(duration_us - lead_us) : 0u;
 }
@@ -100,7 +130,6 @@ static ipropi_ohm_config_t ohm_config(void) {
         .rdson_milliohm = SOLENOID_RDSON_MILLIOHM,
         .duty_permil = solenoid_driver_probe_duty_permil(),
     };
-
     return config;
 }
 
@@ -210,6 +239,7 @@ bool ipropi_selftest_start(uint8_t request_id) {
     gpio_put(MOTEUR_MUX_EN_GPIO, false);
     g_state_since_us = 0u;
     g_state = SELFTEST_MUX_SETTLING;
+    update_sampling();
     return true;
 }
 

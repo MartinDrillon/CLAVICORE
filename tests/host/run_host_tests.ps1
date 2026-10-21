@@ -12,6 +12,7 @@ $exe = Join-Path $out "test_phase3_helpers.exe"
     (Join-Path $PSScriptRoot "test_phase3_helpers.c") `
     (Join-Path $root "shared\protocol\can_protocol.c") `
     (Join-Path $root "shared\protocol\commissioning_table.c") `
+    (Join-Path $root "shared\protocol\solenoid_profile.c") `
     (Join-Path $root "firmware\clavier\src\diag_log.c") `
     (Join-Path $root "firmware\moteur\src\ipropi_ohm.c") `
     -o $exe

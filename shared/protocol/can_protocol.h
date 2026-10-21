@@ -39,6 +39,11 @@
 #define CAN_ID_IPROPI_OHM 0x601u
 #define CAN_ID_CONFIG_READ 0x500u
 #define CAN_ID_CONFIG_WRITE 0x501u
+// Transfert du profil d'activation des solénoïdes (ADR-0013, ADR-0014).
+#define CAN_ID_PROFILE_BEGIN 0x420u
+#define CAN_ID_PROFILE_CHUNK 0x421u
+#define CAN_ID_PROFILE_COMMIT 0x422u
+#define CAN_ID_PROFILE_STATUS 0x423u
 
 #define CAN_ID_FORBIDDEN_FIRST 0x7F0u
 #define CAN_ID_MAX_STANDARD 0x7FFu
@@ -54,6 +59,23 @@
 #define CAN_DLC_ANNOUNCE_STATUS 8u
 #define CAN_DLC_IPROPI_RAW 8u
 #define CAN_DLC_IPROPI_OHM 8u
+#define CAN_DLC_PROFILE_BEGIN 8u
+#define CAN_DLC_PROFILE_CHUNK 8u
+#define CAN_DLC_PROFILE_COMMIT 8u
+#define CAN_DLC_PROFILE_STATUS 8u
+
+// --- Transfert de profil (ADR-0013, ADR-0014) -------------------------------
+
+// Octets de payload par PROFILE_CHUNK : [transfer_id][seq][data[6]].
+#define CAN_PROFILE_CHUNK_SIZE 6u
+// Longueur maximale admise d'un payload de profil (marge pour les versions futures).
+#define CAN_PROFILE_PAYLOAD_MAX 128u
+// `transfer_id` 0 = annonce de boot (PROFILE_STATUS non sollicitée par un transfert).
+#define CAN_PROFILE_TRANSFER_ID_BOOT 0u
+#define CAN_PROFILE_TRANSFER_ID_MIN 1u
+#define CAN_PROFILE_TRANSFER_ID_MAX 255u
+// `flags` de PROFILE_BEGIN : bit 0 = profil global (une valeur pour tous les canaux).
+#define CAN_PROFILE_FLAG_GLOBAL 0x01u
 
 // --- Requêtes, délais, jitter (ADR-0003 §4) --------------------------------
 
@@ -96,6 +118,26 @@ typedef enum {
     CAN_SOLENOID_COMMAND_ON = 1,
     CAN_SOLENOID_COMMAND_PUSH_ON = 2,
 } can_solenoid_command_kind_t;
+
+// Résultat d'un PROFILE_COMMIT, codé sur les bits 0..2 de l'octet 3 de
+// PROFILE_STATUS (ADR-0013 §3).
+typedef enum {
+    CAN_PROFILE_RESULT_OK = 0,
+    CAN_PROFILE_RESULT_NO_TRANSFER = 1,
+    CAN_PROFILE_RESULT_BAD_SEQUENCE = 2,
+    CAN_PROFILE_RESULT_BAD_CRC = 3,
+    CAN_PROFILE_RESULT_INVALID_FIELD = 4,
+    CAN_PROFILE_RESULT_BUSY = 5,
+    CAN_PROFILE_RESULT_FLASH_ERROR = 6,
+    CAN_PROFILE_RESULT_UNSUPPORTED_VERSION = 7,
+} can_profile_result_t;
+
+// Origine du profil actif d'une carte Moteur, codée sur les bits 3..4 de
+// l'octet 3 de PROFILE_STATUS.
+typedef enum {
+    CAN_PROFILE_SOURCE_DEFAULTS = 0,  // valeurs de repli compilées
+    CAN_PROFILE_SOURCE_NVM = 1,       // enregistrement flash valide
+} can_profile_source_t;
 
 // --- Types -----------------------------------------------------------------
 
@@ -162,6 +204,45 @@ typedef struct {
     can_solenoid_command_kind_t command;
     uint8_t velocity;
 } can_solenoid_command_t;
+
+// PROFILE_BEGIN (ID 0x420, DLC 8) — Clavier vers diffusion.
+typedef struct {
+    uint8_t proto_version;
+    uint8_t format_version;
+    uint8_t transfer_id;
+    uint8_t flags;
+    uint16_t payload_len;
+    uint8_t chunk_size;
+    uint8_t reserved;
+} can_profile_begin_t;
+
+// PROFILE_CHUNK (ID 0x421, DLC 8) — Clavier vers diffusion.
+// `seq` croissant depuis 0, sans trou ; `data` = CAN_PROFILE_CHUNK_SIZE octets.
+typedef struct {
+    uint8_t transfer_id;
+    uint8_t seq;
+    uint8_t data[CAN_PROFILE_CHUNK_SIZE];
+} can_profile_chunk_t;
+
+// PROFILE_COMMIT (ID 0x422, DLC 8) — Clavier vers diffusion.
+typedef struct {
+    uint8_t proto_version;
+    uint8_t format_version;
+    uint8_t transfer_id;
+    uint8_t reserved;
+    uint32_t crc32;
+} can_profile_commit_t;
+
+// PROFILE_STATUS (ID 0x423, DLC 8) — Moteur vers Clavier.
+// `transfer_id` = 0 pour l'annonce de boot, sinon recopie du transfert.
+// `profile_tag32` = CRC32 du payload canonique actif (voir solenoid_profile.h).
+typedef struct {
+    uint16_t uid_tag;
+    uint8_t transfer_id;
+    can_profile_result_t result;
+    can_profile_source_t source;
+    uint32_t profile_tag32;
+} can_profile_status_t;
 
 // --- Helpers purs ----------------------------------------------------------
 
@@ -232,5 +313,30 @@ can_proto_result_t can_encode_ipropi_ohm(uint8_t out[CAN_DLC_IPROPI_OHM],
                                          const can_ipropi_ohm_t *ohm);
 can_proto_result_t can_decode_ipropi_ohm(const uint8_t *data, uint8_t dlc,
                                          can_ipropi_ohm_t *ohm);
+
+// PROFILE_BEGIN (ID 0x420, DLC 8) — ADR-0013 §3.
+can_proto_result_t can_encode_profile_begin(uint8_t out[CAN_DLC_PROFILE_BEGIN],
+                                            const can_profile_begin_t *begin);
+can_proto_result_t can_decode_profile_begin(const uint8_t *data, uint8_t dlc,
+                                            can_profile_begin_t *begin);
+
+// PROFILE_CHUNK (ID 0x421, DLC 8) — ADR-0013 §3.
+can_proto_result_t can_encode_profile_chunk(uint8_t out[CAN_DLC_PROFILE_CHUNK],
+                                            const can_profile_chunk_t *chunk);
+can_proto_result_t can_decode_profile_chunk(const uint8_t *data, uint8_t dlc,
+                                            can_profile_chunk_t *chunk);
+
+// PROFILE_COMMIT (ID 0x422, DLC 8) — ADR-0013 §3.
+can_proto_result_t can_encode_profile_commit(uint8_t out[CAN_DLC_PROFILE_COMMIT],
+                                             const can_profile_commit_t *commit);
+can_proto_result_t can_decode_profile_commit(const uint8_t *data, uint8_t dlc,
+                                             can_profile_commit_t *commit);
+
+// PROFILE_STATUS (ID 0x423, DLC 8) — ADR-0013 §3.
+// Octet 3 = `result` (bits 0..2) | `source` (bits 3..4), bits 5..7 réservés à 0.
+can_proto_result_t can_encode_profile_status(uint8_t out[CAN_DLC_PROFILE_STATUS],
+                                             const can_profile_status_t *status);
+can_proto_result_t can_decode_profile_status(const uint8_t *data, uint8_t dlc,
+                                             can_profile_status_t *status);
 
 #endif  // CLAVICORE_CAN_PROTOCOL_H

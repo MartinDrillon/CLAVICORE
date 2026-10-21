@@ -11,6 +11,8 @@
 
 #include "can_protocol.h"
 #include "commissioning.h"
+#include "solenoid_profile.h"
+#include "solenoid_profile_config.h"
 #include "uid_position.h"
 
 #define CAN_LINK_PIO_NUM 0u
@@ -24,6 +26,9 @@
 #define REASM_SLOTS 8u
 #define CAN_LINK_SELFTEST_TIMEOUT_MS 500u
 #define CAN_LINK_RECENT_PLAY_MS 500u
+#define CAN_LINK_PROFILE_SYNC_TIMEOUT_MS 1000u
+#define CAN_PROFILE_FRAME_SPACING_US 300u
+#define CAN_PROFILE_FRAME_RETRY_US 100u
 #define CARD_LIST_TEXT_MAX 128u
 #define SUMMARY_TEXT_MAX 160u
 #ifndef CLAVIER_SELFTEST_CALIBRATION
@@ -122,6 +127,18 @@ static uint32_t overrun_snapshot;
 static bool note_active;
 static uint32_t last_note_event_ms;
 static bool boot_card_summary_pending;
+// Synchronisation du profil d'activation (ADR-0013 §4) : le profil est diffusé
+// AVANT 0x401, et l'auto-test n'est déclenché que si toutes les cartes présentes
+// l'ont acquitté.
+static bool profile_sync_active;
+static uint8_t profile_sync_transfer_id;
+static uint8_t profile_sync_next_transfer_id;
+static uint8_t profile_sync_expected;
+static uint8_t profile_sync_received;
+static bool profile_sync_failed;
+static uint32_t profile_sync_start_ms;
+static bool profile_sync_received_position[UID_POSITION_COUNT];
+static uint32_t local_profile_tag;
 // Mode diagnostic : défaut de compilation, modifiable à chaud par la console
 // de bring-up (ADR-0009 §7, livraison B).
 static bool calibration_enabled = CLAVIER_SELFTEST_CALIBRATION != 0;
@@ -733,6 +750,150 @@ static bool start_uid_request(uid_request_mode_t mode, bool emit_busy_status) {
         commissioning_state_set_all_boards_offline(&commissioning);
     }
     return true;
+}
+
+static uint8_t profile_position_for_tag(uint16_t uid_tag) {
+    for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
+        if (uid_position_table[position].position == UID_POSITION_EMPTY) {
+            continue;
+        }
+        if (can_uid_tag(uid_position_table[position].uid.id) == uid_tag) {
+            return position;
+        }
+    }
+    return UID_POSITION_UNKNOWN_REPORTED;
+}
+
+// Émission d'une trame de profil en respectant la file TX de can2040 (3 tampons) :
+// on réessaie brièvement si elle est pleine (ADR-0013 IMP-007).
+static bool send_profile_frame(uint32_t id, uint8_t dlc, const uint8_t *data) {
+    for (uint32_t attempt = 0u; attempt < 100u; ++attempt) {
+        if (send_frame(id, dlc, data)) {
+            sleep_us(CAN_PROFILE_FRAME_SPACING_US);
+            return true;
+        }
+        sleep_us(CAN_PROFILE_FRAME_RETRY_US);
+    }
+    return false;
+}
+
+// Diffuse le profil du fichier de réglage (BEGIN + chunks + COMMIT) puis arme
+// l'attente des PROFILE_STATUS. Ne déclenche PAS 0x401 : can_link_poll le fait
+// quand toutes les cartes présentes ont acquitté (ADR-0013 §4).
+static bool begin_profile_sync(void) {
+    uint8_t wire[SOLENOID_PROFILE_WIRE_SIZE];
+    uint8_t frame[CAN_DLC_PROFILE_BEGIN];
+    const size_t length = solenoid_profile_encode(&k_solenoid_profile, wire, sizeof(wire));
+
+    if (length != SOLENOID_PROFILE_WIRE_SIZE ||
+        solenoid_profile_validate(&k_solenoid_profile) != SOLENOID_PROFILE_OK) {
+        emit_status(DIAG_STATUS_PROFILE_SYNC_FAILED);
+        return false;
+    }
+
+    profile_sync_transfer_id = profile_sync_next_transfer_id;
+    profile_sync_next_transfer_id = (uint8_t)(profile_sync_next_transfer_id + 1u);
+    if (profile_sync_next_transfer_id == CAN_PROFILE_TRANSFER_ID_BOOT) {
+        profile_sync_next_transfer_id = CAN_PROFILE_TRANSFER_ID_MIN;
+    }
+
+    const can_profile_begin_t begin = {
+        .proto_version = CAN_PROTO_VERSION,
+        .format_version = SOLENOID_PROFILE_FORMAT_VERSION,
+        .transfer_id = profile_sync_transfer_id,
+        .flags = CAN_PROFILE_FLAG_GLOBAL,
+        .payload_len = (uint16_t)length,
+        .chunk_size = CAN_PROFILE_CHUNK_SIZE,
+        .reserved = 0u,
+    };
+    if (can_encode_profile_begin(frame, &begin) != CAN_PROTO_OK ||
+        !send_profile_frame(CAN_ID_PROFILE_BEGIN, CAN_DLC_PROFILE_BEGIN, frame)) {
+        return false;
+    }
+
+    for (uint8_t seq = 0u; (size_t)seq * CAN_PROFILE_CHUNK_SIZE < length; ++seq) {
+        can_profile_chunk_t chunk = {0};
+        uint8_t chunk_frame[CAN_DLC_PROFILE_CHUNK];
+        const size_t offset = (size_t)seq * CAN_PROFILE_CHUNK_SIZE;
+        const size_t remaining = length - offset;
+        const size_t count =
+            remaining < CAN_PROFILE_CHUNK_SIZE ? remaining : CAN_PROFILE_CHUNK_SIZE;
+
+        chunk.transfer_id = profile_sync_transfer_id;
+        chunk.seq = seq;
+        memcpy(chunk.data, &wire[offset], count);
+        if (can_encode_profile_chunk(chunk_frame, &chunk) != CAN_PROTO_OK ||
+            !send_profile_frame(CAN_ID_PROFILE_CHUNK, CAN_DLC_PROFILE_CHUNK, chunk_frame)) {
+            return false;
+        }
+    }
+
+    const can_profile_commit_t commit = {
+        .proto_version = CAN_PROTO_VERSION,
+        .format_version = SOLENOID_PROFILE_FORMAT_VERSION,
+        .transfer_id = profile_sync_transfer_id,
+        .reserved = 0u,
+        .crc32 = solenoid_profile_crc32(wire, length),
+    };
+    if (can_encode_profile_commit(frame, &commit) != CAN_PROTO_OK ||
+        !send_profile_frame(CAN_ID_PROFILE_COMMIT, CAN_DLC_PROFILE_COMMIT, frame)) {
+        return false;
+    }
+
+    memset(profile_sync_received_position, 0, sizeof(profile_sync_received_position));
+    // Cartes PRÉSENTES uniquement (celles marquées en ligne au dernier scan
+    // UID_REQUEST) : une carte amorcée mais absente ne doit pas bloquer
+    // l'auto-test, conformément au traitement existant des cartes manquantes
+    // (ADR-0009 §2, motif MISSING_BOARD). Sans table valide, on n'attend rien :
+    // l'auto-test de bring-up reste possible.
+    profile_sync_expected = 0u;
+    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        const uint8_t position = uid_position_table[i].position;
+
+        if (position == UID_POSITION_EMPTY) {
+            continue;
+        }
+        if (commissioning.valid && commissioning_state_is_board_online(&commissioning, position)) {
+            ++profile_sync_expected;
+        }
+    }
+    profile_sync_received = 0u;
+    profile_sync_failed = false;
+    profile_sync_active = true;
+    profile_sync_start_ms = now_ms();
+    return true;
+}
+
+static void handle_profile_status(const can_profile_status_t *status) {
+    const uint8_t position = profile_position_for_tag(status->uid_tag);
+
+    if (status->transfer_id == CAN_PROFILE_TRANSFER_ID_BOOT) {
+        // Annonce de boot / réponse à UID_REQUEST (ADR-0013 §6) : signaler une
+        // divergence, jamais corriger en silence (invariant 1).
+        if (status->profile_tag32 != local_profile_tag) {
+            emit_status_position(DIAG_STATUS_PROFILE_DIVERGENT, position);
+            printf("[PROFILE] pos=%u card=0x%08lX local=0x%08lX source=%s\n",
+                   (unsigned)position, (unsigned long)status->profile_tag32,
+                   (unsigned long)local_profile_tag,
+                   status->source == CAN_PROFILE_SOURCE_NVM ? "NVM" : "DEFAULTS");
+            ++stats.profile_divergent;
+        }
+        if (status->source == CAN_PROFILE_SOURCE_DEFAULTS) {
+            emit_status_position(DIAG_STATUS_PROFILE_FALLBACK_IN_USE, position);
+        }
+        return;
+    }
+    if (!profile_sync_active || status->transfer_id != profile_sync_transfer_id) {
+        return;
+    }
+    if (position < UID_POSITION_COUNT && !profile_sync_received_position[position]) {
+        profile_sync_received_position[position] = true;
+        ++profile_sync_received;
+    }
+    if (status->result != CAN_PROFILE_RESULT_OK) {
+        profile_sync_failed = true;
+        printf("[PROFILE] refus pos=%u result=%u\n", (unsigned)position, (unsigned)status->result);
+    }
 }
 
 static bool start_selftest_request(void) {
@@ -1516,7 +1677,7 @@ static void handle_selftest_trigger(uint8_t dlc, const uint8_t *data) {
         emit_trigger_refused_line("auto-test deja en cours");
         return;
     }
-    if (uid_inflight || control_tx_inflight) {
+    if (uid_inflight || control_tx_inflight || profile_sync_active) {
         emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
         emit_trigger_refused_line("requete de controle deja en cours");
         return;
@@ -1526,12 +1687,11 @@ static void handle_selftest_trigger(uint8_t dlc, const uint8_t *data) {
         emit_trigger_refused_line("jeu en cours");
         return;
     }
-    if (!start_selftest_request()) {
+    if (!begin_profile_sync()) {
         emit_status(DIAG_STATUS_CAN_TX_FAIL);
-        emit_trigger_refused_line("echec emission requete CAN");
+        emit_trigger_refused_line("echec emission profil CAN");
         return;
     }
-    emit_trigger_line(selftest_session.request_id);
 }
 
 static void handle_frame(const struct can2040_msg *msg, uint32_t first_ms) {
@@ -1597,9 +1757,21 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t first_ms) {
     case CAN_ID_IPROPI_SELFTEST_TRIGGER:
         handle_selftest_trigger(dlc, msg->data);
         return;
+    case CAN_ID_PROFILE_STATUS: {
+        can_profile_status_t status;
+        result = can_decode_profile_status(msg->data, dlc, &status);
+        if (result == CAN_PROTO_OK) {
+            handle_profile_status(&status);
+            return;
+        }
+        break;
+    }
     case CAN_ID_UID_REQUEST:
     case CAN_ID_IPROPI_SELFTEST_REQUEST:
     case CAN_ID_SOLENOID_COMMAND:
+    case CAN_ID_PROFILE_BEGIN:
+    case CAN_ID_PROFILE_CHUNK:
+    case CAN_ID_PROFILE_COMMIT:
         ++stats.rx_ignored;
         return;
     default:
@@ -1634,6 +1806,15 @@ void can_link_init(void) {
     note_active = false;
     last_note_event_ms = 0u;
     boot_card_summary_pending = false;
+    local_profile_tag = solenoid_profile_tag(&k_solenoid_profile);
+    profile_sync_active = false;
+    profile_sync_transfer_id = 0u;
+    profile_sync_next_transfer_id = CAN_PROFILE_TRANSFER_ID_MIN;
+    profile_sync_expected = 0u;
+    profile_sync_received = 0u;
+    profile_sync_failed = false;
+    profile_sync_start_ms = 0u;
+    memset(profile_sync_received_position, 0, sizeof(profile_sync_received_position));
 
     table_blank = commissioning_flash_table_is_blank();
     load_result = commissioning_state_load(&commissioning);
@@ -1731,6 +1912,28 @@ void can_link_poll(void) {
              CAN_LINK_SELFTEST_TIMEOUT_MS)) {
         finish_selftest_session();
     }
+
+    // Synchronisation du profil (ADR-0013 §4) : 0x401 n'est émis que lorsque
+    // toutes les cartes présentes ont acquitté le profil.
+    if (profile_sync_active) {
+        if (profile_sync_failed) {
+            emit_status(DIAG_STATUS_PROFILE_SYNC_FAILED);
+            ++stats.profile_sync_failed;
+            profile_sync_active = false;
+        } else if (profile_sync_received >= profile_sync_expected) {
+            profile_sync_active = false;
+            if (!start_selftest_request()) {
+                emit_status(DIAG_STATUS_CAN_TX_FAIL);
+            } else {
+                emit_trigger_line(selftest_session.request_id);
+            }
+        } else if ((uint32_t)(first_ms - profile_sync_start_ms) >=
+                   CAN_LINK_PROFILE_SYNC_TIMEOUT_MS) {
+            emit_status(DIAG_STATUS_PROFILE_SYNC_FAILED);
+            ++stats.profile_sync_failed;
+            profile_sync_active = false;
+        }
+    }
 }
 
 can_link_request_result_t can_link_request_uid(void) {
@@ -1759,7 +1962,7 @@ can_link_request_result_t can_link_request_selftest(void) {
         emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
         return CAN_LINK_REQUEST_BUSY;
     }
-    if (uid_inflight || control_tx_inflight) {
+    if (uid_inflight || control_tx_inflight || profile_sync_active) {
         emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
         return CAN_LINK_REQUEST_BUSY;
     }
@@ -1767,7 +1970,7 @@ can_link_request_result_t can_link_request_selftest(void) {
         emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
         return CAN_LINK_REQUEST_BUSY;
     }
-    if (!started || !start_selftest_request()) {
+    if (!started || !begin_profile_sync()) {
         emit_status(DIAG_STATUS_CAN_TX_FAIL);
         return CAN_LINK_REQUEST_TX_FAIL;
     }

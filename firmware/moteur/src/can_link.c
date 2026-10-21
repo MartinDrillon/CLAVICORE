@@ -9,11 +9,15 @@
 
 #include "config.h"
 #include "ipropi_selftest.h"
+#include "solenoid_profile.h"
+#include "solenoid_profile_store.h"
 
 #define RX_RING_SIZE 16u
 #define RX_RING_MASK (RX_RING_SIZE - 1u)
 #define POLL_MAX_RX_ENTRIES 4u
 #define RAW_FRAME_SPACING_US CAN_ANNOUNCE_SLOT_US
+#define PROFILE_STAGING_TIMEOUT_US 500000u
+#define PROFILE_STATUS_SPACING_US CAN_ANNOUNCE_SLOT_US
 
 typedef struct {
     uint32_t notify;
@@ -51,6 +55,21 @@ static uint32_t raw_report_due_us;
 static bool ohm_reports_pending;
 static uint8_t ohm_report_index;
 static uint32_t ohm_report_due_us;
+
+// Réception du profil d'activation (ADR-0013 §3-§4). Le transfert est diffusé :
+// chaque carte le reçoit et l'acquitte par un PROFILE_STATUS.
+static bool profile_staging_active;
+static uint8_t profile_transfer_id;
+static uint8_t profile_format_version;
+static uint8_t profile_next_seq;
+static uint16_t profile_expected_len;
+static uint16_t profile_received;
+static uint8_t profile_staging[SOLENOID_PROFILE_WIRE_MAX];
+static uint32_t profile_staging_start_us;
+
+static bool profile_status_pending;
+static can_profile_status_t profile_status;
+static uint32_t profile_status_due_us;
 
 static void can_rx_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg) {
     (void)cd;
@@ -187,6 +206,23 @@ static void send_announce(uint32_t now_us) {
         ok = false;
     }
 
+    // Annonce de l'identité du profil (ADR-0013 §6) : le Clavier compare ce
+    // `profile_tag32` au sien et signale toute divergence. Émise au boot et en
+    // réponse à UID_REQUEST, jamais en annonce spontanée hors boot.
+    if (announce_kind != ANNOUNCE_KIND_SELFTEST_REPLY) {
+        const can_profile_status_t boot_status = {
+            .uid_tag = board_tag,
+            .transfer_id = CAN_PROFILE_TRANSFER_ID_BOOT,
+            .result = CAN_PROFILE_RESULT_OK,
+            .source = solenoid_profile_active_source(),
+            .profile_tag32 = solenoid_profile_active_tag(),
+        };
+        if (can_encode_profile_status(data, &boot_status) != CAN_PROTO_OK ||
+            !send_frame(CAN_ID_PROFILE_STATUS, CAN_DLC_PROFILE_STATUS, data)) {
+            ok = false;
+        }
+    }
+
     if (announce_kind == ANNOUNCE_KIND_SELFTEST_REPLY) {
         if (!selftest_result.report_ready ||
             can_encode_announce_status(data, &selftest_result.report) != CAN_PROTO_OK ||
@@ -271,6 +307,142 @@ static void send_ohm_report_if_due(uint32_t now_us) {
     }
 }
 
+// --- Profil d'activation (ADR-0013 §3-§4) -----------------------------------
+
+static bool all_channels_idle(void) {
+    if (board_drivers == NULL) {
+        return false;
+    }
+    for (uint8_t i = 0u; i < board_driver_count; ++i) {
+        if (solenoid_driver_state(&board_drivers[i]) != SOLENOID_STATE_IDLE) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static void arm_profile_status(can_profile_result_t result, uint8_t transfer_id, uint32_t now_us) {
+    profile_status.uid_tag = board_tag;
+    profile_status.transfer_id = transfer_id;
+    profile_status.result = result;
+    profile_status.source = solenoid_profile_active_source();
+    profile_status.profile_tag32 = solenoid_profile_active_tag();
+    profile_status_pending = true;
+    profile_status_due_us = now_us + PROFILE_STATUS_SPACING_US;
+}
+
+static void handle_profile_begin(const struct can2040_msg *msg, uint32_t now_us) {
+    can_profile_begin_t begin;
+
+    if (can_decode_profile_begin(msg->data, (uint8_t)msg->dlc, &begin) != CAN_PROTO_OK) {
+        ++stats.rx_bad_value;
+        return;
+    }
+    profile_staging_active = true;
+    profile_transfer_id = begin.transfer_id;
+    profile_format_version = begin.format_version;
+    profile_expected_len = begin.payload_len;
+    profile_next_seq = 0u;
+    profile_received = 0u;
+    memset(profile_staging, 0, sizeof(profile_staging));
+    profile_staging_start_us = now_us;
+    ++stats.profile_begins;
+}
+
+static void handle_profile_chunk(const struct can2040_msg *msg) {
+    can_profile_chunk_t chunk;
+    uint16_t offset;
+    uint16_t remaining;
+    uint16_t length;
+
+    if (can_decode_profile_chunk(msg->data, (uint8_t)msg->dlc, &chunk) != CAN_PROTO_OK) {
+        ++stats.rx_bad_value;
+        return;
+    }
+    if (!profile_staging_active || chunk.transfer_id != profile_transfer_id) {
+        ++stats.rx_ignored;
+        return;
+    }
+    if (chunk.seq != profile_next_seq || profile_expected_len > SOLENOID_PROFILE_WIRE_MAX) {
+        profile_staging_active = false;
+        ++stats.profile_bad_sequence;
+        return;
+    }
+    offset = (uint16_t)((uint16_t)chunk.seq * CAN_PROFILE_CHUNK_SIZE);
+    if (offset >= profile_expected_len) {
+        profile_staging_active = false;
+        ++stats.profile_bad_sequence;
+        return;
+    }
+    remaining = (uint16_t)(profile_expected_len - offset);
+    length = remaining < CAN_PROFILE_CHUNK_SIZE ? remaining : CAN_PROFILE_CHUNK_SIZE;
+    memcpy(&profile_staging[offset], chunk.data, length);
+    profile_received = (uint16_t)(offset + length);
+    ++profile_next_seq;
+    ++stats.profile_chunks;
+}
+
+static void handle_profile_commit(const struct can2040_msg *msg, uint32_t now_us) {
+    can_profile_commit_t commit;
+    solenoid_profile_t decoded;
+    can_profile_result_t result = CAN_PROFILE_RESULT_NO_TRANSFER;
+    uint32_t tag;
+
+    if (can_decode_profile_commit(msg->data, (uint8_t)msg->dlc, &commit) != CAN_PROTO_OK) {
+        ++stats.rx_bad_value;
+        return;
+    }
+    if (profile_staging_active && commit.transfer_id == profile_transfer_id) {
+        if (profile_format_version != SOLENOID_PROFILE_FORMAT_VERSION ||
+            commit.format_version != SOLENOID_PROFILE_FORMAT_VERSION) {
+            result = CAN_PROFILE_RESULT_UNSUPPORTED_VERSION;
+        } else if (profile_received != profile_expected_len ||
+                   profile_expected_len != SOLENOID_PROFILE_WIRE_SIZE) {
+            result = CAN_PROFILE_RESULT_BAD_SEQUENCE;
+        } else if (solenoid_profile_crc32(profile_staging, profile_received) != commit.crc32) {
+            result = CAN_PROFILE_RESULT_BAD_CRC;
+        } else if (!solenoid_profile_decode(profile_staging, profile_received, &decoded) ||
+                   solenoid_profile_validate(&decoded) != SOLENOID_PROFILE_OK ||
+                   !ipropi_selftest_profile_is_compatible(&decoded)) {
+            result = CAN_PROFILE_RESULT_INVALID_FIELD;
+        } else if (!all_channels_idle()) {
+            result = CAN_PROFILE_RESULT_BUSY;
+        } else {
+            tag = solenoid_profile_crc32(profile_staging, profile_received);
+            if (tag == solenoid_profile_active_tag() &&
+                solenoid_profile_active_source() == CAN_PROFILE_SOURCE_NVM) {
+                result = CAN_PROFILE_RESULT_OK;
+            } else if (solenoid_profile_store_write(&decoded, tag)) {
+                result = CAN_PROFILE_RESULT_OK;
+            } else {
+                result = CAN_PROFILE_RESULT_FLASH_ERROR;
+            }
+        }
+    }
+    profile_staging_active = false;
+    if (result == CAN_PROFILE_RESULT_OK) {
+        ++stats.profile_commits_ok;
+    } else {
+        ++stats.profile_commits_rejected;
+    }
+    arm_profile_status(result, commit.transfer_id, now_us);
+}
+
+static void send_profile_status_if_due(uint32_t now_us) {
+    uint8_t data[CAN_DLC_PROFILE_STATUS];
+
+    if (!profile_status_pending || (int32_t)(now_us - profile_status_due_us) < 0) {
+        return;
+    }
+    profile_status_pending = false;
+    if (can_encode_profile_status(data, &profile_status) != CAN_PROTO_OK ||
+        !send_frame(CAN_ID_PROFILE_STATUS, CAN_DLC_PROFILE_STATUS, data)) {
+        ++stats.tx_fail;
+        return;
+    }
+    ++stats.profile_status_sent;
+}
+
 static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {
     if ((msg->id & (CAN2040_ID_EFF | CAN2040_ID_RTR)) != 0u) {
         ++stats.rx_ext_or_rtr;
@@ -323,7 +495,17 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {
     case CAN_ID_BOARD_ANNOUNCE_STATUS:
     case CAN_ID_IPROPI_RAW:
     case CAN_ID_IPROPI_OHM:
+    case CAN_ID_PROFILE_STATUS:
         ++stats.rx_ignored;
+        return;
+    case CAN_ID_PROFILE_BEGIN:
+        handle_profile_begin(msg, now_us);
+        return;
+    case CAN_ID_PROFILE_CHUNK:
+        handle_profile_chunk(msg);
+        return;
+    case CAN_ID_PROFILE_COMMIT:
+        handle_profile_commit(msg, now_us);
         return;
     default:
         ++stats.rx_unknown_id;
@@ -355,6 +537,16 @@ void can_link_init(const uint8_t uid[BOARD_IDENTITY_UID_SIZE], solenoid_driver_t
     ohm_reports_pending = false;
     ohm_report_index = 0u;
     ohm_report_due_us = 0u;
+    profile_staging_active = false;
+    profile_transfer_id = 0u;
+    profile_format_version = 0u;
+    profile_next_seq = 0u;
+    profile_expected_len = 0u;
+    profile_received = 0u;
+    profile_staging_start_us = 0u;
+    profile_status_pending = false;
+    profile_status_due_us = 0u;
+    memset(profile_staging, 0, sizeof(profile_staging));
 
     ipropi_selftest_init(drivers, driver_count, board_tag);
 
@@ -406,6 +598,13 @@ void can_link_poll(uint32_t now_us) {
     }
     send_raw_report_if_due(now_us);
     send_ohm_report_if_due(now_us);
+
+    if (profile_staging_active &&
+        (uint32_t)(now_us - profile_staging_start_us) >= PROFILE_STAGING_TIMEOUT_US) {
+        profile_staging_active = false;
+        ++stats.profile_bad_sequence;
+    }
+    send_profile_status_if_due(now_us);
 }
 
 bool can_link_send_selftest_trigger(void) {

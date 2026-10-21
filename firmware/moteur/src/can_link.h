@@ -30,6 +30,12 @@ typedef struct {
     uint32_t solenoid_unoccupied;
     uint32_t solenoid_rejected;
     uint32_t solenoid_selftest_blocked;
+    uint32_t profile_begins;
+    uint32_t profile_chunks;
+    uint32_t profile_commits_ok;
+    uint32_t profile_commits_rejected;
+    uint32_t profile_status_sent;
+    uint32_t profile_bad_sequence;
 } can_link_stats_t;
 
 void can_link_init(const uint8_t uid[BOARD_IDENTITY_UID_SIZE], solenoid_driver_t *drivers,

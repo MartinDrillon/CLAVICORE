@@ -91,8 +91,8 @@ uint32_t solenoid_driver_probe_duration_us(void);
 uint32_t solenoid_driver_probe_duty_permil(void);
 
 // Poussée maintenance en POLARITÉ INVERSE du jeu normal (REPEL, ADR-0012),
-// bornée par le driver (duty, durée, budget thermique). La sortie repasse par
-// DIR_TO_PULL puis le repos maintenance : dir_channel est rendu au niveau PULL.
+// bornée par les valeurs du profil actif (duty, durée, repos). La sortie repasse
+// par DIR_TO_PULL puis le repos maintenance : dir_channel est rendu au niveau PULL.
 // Refusée si le canal n'est pas IDLE, si le repos maintenance n'est pas écoulé,
 // si global_sleep n'est pas prêt, ou si un défaut est déjà actif.
 solenoid_result_t solenoid_driver_push_start(solenoid_driver_t *drv, uint32_t now_us);

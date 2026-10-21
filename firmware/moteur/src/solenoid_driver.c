@@ -3,66 +3,53 @@
 #include "hardware/gpio.h"
 
 #include "config.h"
-#include "solenoid_profile.h"
+#include "solenoid_profile_store.h"
 
 #define US_PER_MS 1000u
 
-// Limites vérifiées à la compilation : un profil incohérent ne compile pas.
-_Static_assert(SOLENOID_PULL_DUTY_PERCENT <= 100u && SOLENOID_HOLD_DUTY_PERCENT <= 100u &&
-                   SOLENOID_RELEASE_DUTY_PERCENT <= 100u && SOLENOID_PROBE_DUTY_PERCENT <= 100u &&
-                   SOLENOID_MAINT_DUTY_PERCENT <= 100u &&
-                   SOLENOID_DUTY_MAX_PERCENT <= 100u && SOLENOID_PROBE_DUTY_MAX_PERCENT <= 100u &&
-                   SOLENOID_MAINT_DUTY_MAX_PERCENT <= 100u,
-               "duty > 100 %");
-_Static_assert(SOLENOID_HOLD_MAX_MS > 0u && SOLENOID_PULL_DURATION_MS > 0u &&
-                   SOLENOID_PROBE_DURATION_MS > 0u && SOLENOID_MAINT_MAX_MS > 0u,
-               "durées nulles");
-// ADR-0007 : HOLD borné à 20 s et au duty validé thermiquement ; `* US_PER_MS` tient en uint32_t.
-_Static_assert(SOLENOID_HOLD_DUTY_PERCENT <= SOLENOID_HOLD_DUTY_MAX_PERCENT, "duty HOLD > plafond ADR-0007");
-_Static_assert(SOLENOID_HOLD_MAX_MS <= 4000000u, "SOLENOID_HOLD_MAX_MS deborde en us sur 32 bits");
-_Static_assert(SOLENOID_DIR_LEVEL_PULL != SOLENOID_DIR_LEVEL_RELEASE, "polarités PULL/RELEASE identiques");
-// ADR-0012 : l'enveloppe thermique validée (équivalent de 10 s à 100 % de duty)
-// est une borne de compilation : un réglage de banc de durée ou de duty ne peut
-// pas la dépasser sans casser le build.
-_Static_assert(SOLENOID_MAINT_DUTY_PERCENT <= SOLENOID_MAINT_DUTY_MAX_PERCENT,
-               "duty MAINTENANCE > plafond ADR-0012");
-_Static_assert(SOLENOID_MAINT_MAX_MS * SOLENOID_MAINT_DUTY_PERCENT <=
-                   SOLENOID_MAINT_ENERGY_BUDGET_MS_PCT,
-               "profil MAINTENANCE hors enveloppe thermique validee (ADR-0012)");
-_Static_assert(SOLENOID_MAINT_MAX_MS <= 4000000u,
-               "SOLENOID_MAINT_MAX_MS deborde en us sur 32 bits");
+// Le profil actif vient du store (flash ou valeurs de repli), jamais de macros :
+// il est transmis par le Clavier (ADR-0013) et n'est plus borné par le firmware
+// (ADR-0014). Les clamps ci-dessous n'appliquent que les plafonds du profil.
+static const solenoid_profile_t *profile(void) {
+    return solenoid_profile_active();
+}
 
 static uint32_t clamp_duty(uint32_t percent) {
-    return percent > SOLENOID_DUTY_MAX_PERCENT ? SOLENOID_DUTY_MAX_PERCENT : percent;
+    const uint32_t max = (uint32_t)profile()->duty_max_pct;
+
+    return percent > max ? max : percent;
 }
 
 static uint32_t pull_duration_us(void) {
-    const uint32_t ms = SOLENOID_PULL_DURATION_MS > SOLENOID_PULL_MAX_MS ? SOLENOID_PULL_MAX_MS
-                                                                          : SOLENOID_PULL_DURATION_MS;
-    return ms * US_PER_MS;
+    const solenoid_profile_t *p = profile();
+
+    return p->pull_duration_us > p->pull_max_us ? p->pull_max_us : p->pull_duration_us;
 }
 
 static uint32_t clamp_hold_duty(uint32_t percent) {
     const uint32_t duty = clamp_duty(percent);
-    return duty > SOLENOID_HOLD_DUTY_MAX_PERCENT ? SOLENOID_HOLD_DUTY_MAX_PERCENT : duty;
+    const uint32_t max = (uint32_t)profile()->hold_duty_max_pct;
+
+    return duty > max ? max : duty;
 }
 
 static uint32_t probe_duration_us(void) {
-    const uint32_t ms = SOLENOID_PROBE_DURATION_MS > SOLENOID_PROBE_MAX_MS ? SOLENOID_PROBE_MAX_MS
-                                                                            : SOLENOID_PROBE_DURATION_MS;
-    return ms * US_PER_MS;
+    const solenoid_profile_t *p = profile();
+
+    return p->probe_duration_us > p->probe_max_us ? p->probe_max_us : p->probe_duration_us;
 }
 
 static uint32_t probe_duty_percent(void) {
-    const uint32_t capped = SOLENOID_PROBE_DUTY_PERCENT > SOLENOID_PROBE_DUTY_MAX_PERCENT
-                                ? SOLENOID_PROBE_DUTY_MAX_PERCENT
-                                : SOLENOID_PROBE_DUTY_PERCENT;
+    const solenoid_profile_t *p = profile();
+    const uint32_t capped =
+        p->probe_duty_pct > p->probe_duty_max_pct ? p->probe_duty_max_pct : p->probe_duty_pct;
+
     return clamp_duty(capped);
 }
 
-// Paramètres PROBE réellement appliqués (après écrêtage). L'auto-test IPROPI
-// s'en sert pour positionner sa fenêtre de mesure et estimer la résistance
-// (ADR-0009 §5) : il ne doit jamais relire les constantes brutes du profil.
+// Paramètres PROBE réellement appliqués (après écrêtage par le profil). L'auto-test
+// IPROPI s'en sert pour positionner sa fenêtre de mesure et estimer la résistance
+// (ADR-0009 §5) : il ne doit jamais relire les champs bruts du profil.
 uint32_t solenoid_driver_probe_duration_us(void) {
     return probe_duration_us();
 }
@@ -72,13 +59,14 @@ uint32_t solenoid_driver_probe_duty_permil(void) {
 }
 
 static uint32_t maint_duration_us(void) {
-    return SOLENOID_MAINT_MAX_MS * US_PER_MS;
+    return (uint32_t)profile()->maint_max_ms * US_PER_MS;
 }
 
 static uint32_t maint_duty_percent(void) {
-    const uint32_t capped = SOLENOID_MAINT_DUTY_PERCENT > SOLENOID_MAINT_DUTY_MAX_PERCENT
-                                ? SOLENOID_MAINT_DUTY_MAX_PERCENT
-                                : SOLENOID_MAINT_DUTY_PERCENT;
+    const solenoid_profile_t *p = profile();
+    const uint32_t capped =
+        p->maint_duty_pct > p->maint_duty_max_pct ? p->maint_duty_max_pct : p->maint_duty_pct;
+
     return clamp_duty(capped);
 }
 
@@ -96,7 +84,7 @@ void solenoid_global_sleep_init(void) {
 }
 
 void solenoid_global_wake(uint32_t now_us) {
-    g_wake_deadline_us = now_us + SOLENOID_WAKE_DELAY_US;
+    g_wake_deadline_us = now_us + profile()->wake_delay_us;
     gpio_put(MOTEUR_GLOBAL_SLEEP_GPIO, true);
 }
 
@@ -162,17 +150,17 @@ solenoid_result_t solenoid_driver_init(solenoid_driver_t *drv, unsigned int pwm_
     drv->fault = SOLENOID_FAULT_NONE;
     drv->note_off_pending = false;
     drv->hold_timed_out = false;
-    drv->rest_duration_us = SOLENOID_MIN_REST_MS * US_PER_MS;
+    drv->rest_duration_us = (uint32_t)profile()->min_rest_ms * US_PER_MS;
 
     gpio_init(dir_gpio);
-    gpio_put(dir_gpio, SOLENOID_DIR_LEVEL_PULL);
+    gpio_put(dir_gpio, profile()->dir_level_pull);
     gpio_set_dir(dir_gpio, GPIO_OUT);
 
     gpio_init(fault_gpio);
     gpio_set_dir(fault_gpio, GPIO_IN);
     gpio_pull_up(fault_gpio);  // NFAULT open-drain actif bas (ADR-0001 IMP-002)
 
-    if (!pwm_hal_init(&drv->pwm_channel, pwm_gpio, SOLENOID_PWM_FREQ_HZ)) {
+    if (!pwm_hal_init(&drv->pwm_channel, pwm_gpio, profile()->pwm_freq_hz)) {
         drv->state = SOLENOID_STATE_FAULT;  // jamais utilisable : verrouillé
         drv->fault = SOLENOID_FAULT_NFAULT;
         return SOLENOID_ERR_PWM;
@@ -207,7 +195,7 @@ solenoid_result_t solenoid_driver_note_on(solenoid_driver_t *drv, uint8_t veloci
     drv->note_off_pending = false;
     drv->hold_timed_out = false;
     // dir_channel est au niveau PULL en IDLE (garanti par DIR_TO_PULL / init).
-    pwm_hal_set_duty_percent(&drv->pwm_channel, clamp_duty(SOLENOID_PULL_DUTY_PERCENT));
+    pwm_hal_set_duty_percent(&drv->pwm_channel, clamp_duty(profile()->pull_duty_pct));
     pwm_hal_enable(&drv->pwm_channel);
     set_state(drv, SOLENOID_STATE_PULL, now_us);
     return SOLENOID_OK;
@@ -224,7 +212,7 @@ solenoid_result_t solenoid_driver_note_off(solenoid_driver_t *drv, uint32_t now_
     } else if (drv->state == SOLENOID_STATE_MAINTENANCE) {
         // Fin de la poussée inverse (ADR-0012) : retour à la polarité de jeu AVANT
         // le repos, sinon le prochain Note On partirait en sens inverse.
-        begin_dir_to_pull(drv, now_us, SOLENOID_MAINT_MIN_REST_MS);
+        begin_dir_to_pull(drv, now_us, profile()->maint_min_rest_ms);
     }
     return SOLENOID_OK;
 }
@@ -251,7 +239,7 @@ solenoid_result_t solenoid_driver_probe_start(solenoid_driver_t *drv, uint32_t n
     }
     drv->note_off_pending = false;
     drv->hold_timed_out = false;
-    gpio_put(drv->dir_gpio, SOLENOID_DIR_LEVEL_PULL);
+    gpio_put(drv->dir_gpio, profile()->dir_level_pull);
     pwm_hal_set_duty_percent(&drv->pwm_channel, probe_duty_percent());
     pwm_hal_enable(&drv->pwm_channel);
     set_state(drv, SOLENOID_STATE_PROBE, now_us);
@@ -286,7 +274,7 @@ solenoid_result_t solenoid_driver_push_start(solenoid_driver_t *drv, uint32_t no
     // moins SOLENOID_MIN_REST_MS (10 ms) >> SOLENOID_DIR_SAFETY_DELAY_US (200 us).
     // Si un chemin vers IDLE sans REST apparaît, passer par un état transitoire
     // calqué sur DIR_TO_RELEASE (duty 0, attente, puis changement de niveau).
-    gpio_put(drv->dir_gpio, SOLENOID_MAINT_DIR_LEVEL);
+    gpio_put(drv->dir_gpio, profile()->dir_level_maint);
     pwm_hal_set_duty_percent(&drv->pwm_channel, maint_duty_percent());
     pwm_hal_enable(&drv->pwm_channel);
     set_state(drv, SOLENOID_STATE_MAINTENANCE, now_us);
@@ -312,14 +300,14 @@ void solenoid_driver_tick(solenoid_driver_t *drv, uint32_t now_us) {
     switch (drv->state) {
     case SOLENOID_STATE_PROBE:
         if (elapsed(now_us, drv->state_start_us, probe_duration_us())) {
-            begin_rest(drv, now_us, SOLENOID_MIN_REST_MS);
+            begin_rest(drv, now_us, profile()->min_rest_ms);
         }
         break;
     case SOLENOID_STATE_MAINTENANCE:
         if (elapsed(now_us, drv->state_start_us, maint_duration_us())) {
-            // Coupure locale (invariant 4, ADR-0012) : retour à la polarité de jeu
+            // Coupure locale (ADR-0012) : retour à la polarité de jeu
             // avant le repos, comme au relâchement.
-            begin_dir_to_pull(drv, now_us, SOLENOID_MAINT_MIN_REST_MS);
+            begin_dir_to_pull(drv, now_us, profile()->maint_min_rest_ms);
         }
         break;
     case SOLENOID_STATE_PULL:
@@ -327,32 +315,32 @@ void solenoid_driver_tick(solenoid_driver_t *drv, uint32_t now_us) {
             if (drv->note_off_pending) {
                 begin_release(drv, now_us);
             } else {
-                pwm_hal_set_duty_percent(&drv->pwm_channel, clamp_hold_duty(SOLENOID_HOLD_DUTY_PERCENT));
+                pwm_hal_set_duty_percent(&drv->pwm_channel, clamp_hold_duty(profile()->hold_duty_pct));
                 set_state(drv, SOLENOID_STATE_HOLD, now_us);
             }
         }
         break;
     case SOLENOID_STATE_HOLD:
-        if (elapsed(now_us, drv->state_start_us, SOLENOID_HOLD_MAX_MS * US_PER_MS)) {
-            drv->hold_timed_out = true;  // coupure de sécurité (invariant 4)
+        if (elapsed(now_us, drv->state_start_us, (uint32_t)profile()->hold_max_ms * US_PER_MS)) {
+            drv->hold_timed_out = true;  // coupure de sécurité configurée par le profil
             begin_release(drv, now_us);
         }
         break;
     case SOLENOID_STATE_DIR_TO_RELEASE:
-        if (elapsed(now_us, drv->state_start_us, SOLENOID_DIR_SAFETY_DELAY_US)) {
-            gpio_put(drv->dir_gpio, SOLENOID_DIR_LEVEL_RELEASE);  // duty = 0 depuis begin_release
-            pwm_hal_set_duty_percent(&drv->pwm_channel, clamp_duty(SOLENOID_RELEASE_DUTY_PERCENT));
+        if (elapsed(now_us, drv->state_start_us, profile()->dir_safety_delay_us)) {
+            gpio_put(drv->dir_gpio, profile()->dir_level_release);  // duty = 0 depuis begin_release
+            pwm_hal_set_duty_percent(&drv->pwm_channel, clamp_duty(profile()->release_duty_pct));
             set_state(drv, SOLENOID_STATE_RELEASE, now_us);
         }
         break;
     case SOLENOID_STATE_RELEASE:
-        if (elapsed(now_us, drv->state_start_us, SOLENOID_RELEASE_DURATION_MS * US_PER_MS)) {
-            begin_dir_to_pull(drv, now_us, SOLENOID_MIN_REST_MS);
+        if (elapsed(now_us, drv->state_start_us, profile()->release_duration_us)) {
+            begin_dir_to_pull(drv, now_us, profile()->min_rest_ms);
         }
         break;
     case SOLENOID_STATE_DIR_TO_PULL:
-        if (elapsed(now_us, drv->state_start_us, SOLENOID_DIR_SAFETY_DELAY_US)) {
-            gpio_put(drv->dir_gpio, SOLENOID_DIR_LEVEL_PULL);  // duty nul : sûr
+        if (elapsed(now_us, drv->state_start_us, profile()->dir_safety_delay_us)) {
+            gpio_put(drv->dir_gpio, profile()->dir_level_pull);  // duty nul : sûr
             // Restitution du repos mémorisé par begin_dir_to_pull() : repos court
             // du jeu normal, ou repos maintenance (ADR-0012).
             begin_rest(drv, now_us, drv->rest_duration_us / US_PER_MS);
@@ -390,7 +378,7 @@ solenoid_result_t solenoid_driver_reset_fault(solenoid_driver_t *drv, uint32_t n
     drv->note_off_pending = false;
     cut_output(drv);
     // Remet dir_channel au niveau PULL (duty nul depuis cut_output) puis repos.
-    begin_dir_to_pull(drv, now_us, SOLENOID_MIN_REST_MS);
+    begin_dir_to_pull(drv, now_us, profile()->min_rest_ms);
     return SOLENOID_OK;
 }
 

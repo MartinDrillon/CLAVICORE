@@ -199,8 +199,11 @@ pour ce protocole.
 
 - Première mise sous tension : alimentation de labo limitée en courant (≈ 3 A),
   solénoïde canal 0 branché ou remplacé par une charge résistive/inductive de test.
-- Toutes les valeurs de `solenoid_profile.h` sont des valeurs initiales prudentes,
-  à ajuster sur prototype ; noter les valeurs finales retenues dans le dépôt.
+- Toutes les valeurs du **profil actif** (réglé dans
+  `firmware/clavier/src/solenoid_profile_config.h`, transmis et persisté côté
+  Moteur — ADR-0013 ; repli compilé `solenoid_profile_defaults.h`) sont des
+  valeurs initiales prudentes, à ajuster sur prototype ; noter les valeurs
+  finales retenues dans le dépôt.
 
 ## 1. Alimentation et nSLEEP
 
@@ -209,7 +212,7 @@ pour ce protocole.
 2. Mesurer `GLOBAL_SLEEP` (GPIO15, /nSLEEP) : **haut** après le boot (réveil au démarrage
    après init des canaux). Attendu : niveau haut ~3,3 V.
 3. `PWM_CHANNEL[0]` (GPIO35) : bas, `DIR_CHANNEL[0]` (GPIO0) : niveau PULL
-   (`SOLENOID_DIR_LEVEL_PULL`, 0 par défaut).
+   (`dir_level_pull` du profil, 0 par défaut).
 
 ## 2. Mesure PWM et courant (note courte)
 
@@ -220,24 +223,25 @@ pour ce protocole.
    alternance. Attendu sur GPIO35 quand l'appui cible le canal 0 :
    - PULL : 100 % (niveau haut fixe) pendant ~15 ms ;
    - HOLD : 20 kHz (période 50 µs), duty ~25 % tant que le bouton est maintenu ;
-   - au relâchement : duty 0 ; ≥ `SOLENOID_DIR_SAFETY_DELAY_US` (200 µs) plus tard
+   - au relâchement : duty 0 ; ≥ `dir_safety_delay_us` (200 µs) plus tard
      GPIO0 change ; puis ~5 ms de RELEASE à 50 % / 20 kHz ; duty 0 ; ≥ 200 µs plus
      tard GPIO0 revient au niveau PULL ; repos ≥ 10 ms.
 3. **Critère de sécurité** : sur analyseur logique (GPIO35 + GPIO0), GPIO0 ne
    change JAMAIS pendant que GPIO35 n'est pas bas (ADR-0001).
 4. Courant crête PULL et courant HOLD : dans la fenêtre 2–3 A de la bobine ;
-   sinon corriger `solenoid_profile.h` (invariant 4).
+   sinon corriger le profil côté Clavier (ADR-0013) — plus aucune enveloppe
+   firmware ne borne ces valeurs (ADR-0014).
 
 ## 3. Sens du courant
 
 1. Pendant PULL/HOLD, noter le sens du courant dans la bobine (OUT1/OUT2).
 2. Pendant RELEASE, le sens doit être inversé. Si l'inversion n'est pas celle
    attendue ou si la bobine s'attire au lieu de se relâcher, permuter
-   `SOLENOID_DIR_LEVEL_PULL` / `SOLENOID_DIR_LEVEL_RELEASE`.
+   `dir_level_pull` / `dir_level_release` dans le profil Clavier.
 
 ## 4. Fréquence (test fréquence)
 
-1. **Porteuse** : GPIO35 en HOLD → **20 kHz** ± 1 % (`SOLENOID_PWM_FREQ_HZ`).
+1. **Porteuse** : GPIO35 en HOLD → **20 kHz** ± 1 % (`pwm_freq_hz` du profil).
 2. **Horloge (clock-test)** : maintenir le bouton GPIO34 pendant **5,0 s** (± 0,1 s,
    +20 ms d'anti-rebond). GPIO41 (/FREQ OSC) → carré 50 % **1 MHz** (période 1 µs).
    Un écart traduit une clk_sys ≠ 150 MHz (trace série : clk_sys, wrap, div — non visible sans stdio).
@@ -265,7 +269,7 @@ pour ce protocole.
 
 ## 6. HOLD max
 
-1. Maintenir le bouton > 20 s. Attendu : à `SOLENOID_HOLD_MAX_MS` (20000 ms, ADR-0007) le driver
+1. Maintenir le bouton > 20 s. Attendu : à `hold_max_ms` du profil (20 000 ms par défaut, ADR-0007) le driver
    coupe seul (duty 0, séquence RELEASE) ; trace `HOLD max atteint` (non visible sans stdio). Le
    solénoïde ne se réactive pas avant relâchement + nouvel appui.
 2. Durant le maintien, aucune réactivation même bouton toujours enfoncé.

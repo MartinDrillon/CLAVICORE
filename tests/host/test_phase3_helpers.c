@@ -7,6 +7,7 @@
 #include "commissioning_table.h"
 #include "diag_log.h"
 #include "ipropi_ohm.h"
+#include "solenoid_profile.h"
 #include "uid_position_format.h"
 
 static int g_failures = 0;
@@ -612,9 +613,130 @@ static void print_example_case_a(void) {
     puts("EXEMPLE_CASE_A_END");
 }
 
+static solenoid_profile_t make_profile(void) {
+    solenoid_profile_t p = {0};
+
+    p.pwm_freq_hz = 20000u;
+    p.pull_duration_us = 15000u;
+    p.pull_duty_pct = 100u;
+    p.pull_max_us = 50000u;
+    p.hold_duty_pct = 25u;
+    p.hold_duty_max_pct = 25u;
+    p.hold_max_ms = 20000u;
+    p.release_duration_us = 5000u;
+    p.release_duty_pct = 50u;
+    p.probe_duration_us = 5000u;
+    p.probe_duty_pct = 20u;
+    p.probe_max_us = 10000u;
+    p.probe_duty_max_pct = 20u;
+    p.maint_duty_pct = 50u;
+    p.maint_duty_max_pct = 100u;
+    p.maint_max_ms = 20000u;
+    p.maint_min_rest_ms = 2000u;
+    p.min_rest_ms = 10u;
+    p.dir_safety_delay_us = 200u;
+    p.wake_delay_us = 2000u;
+    p.dir_level_pull = 0u;
+    p.dir_level_release = 1u;
+    p.dir_level_maint = 1u;
+    p.duty_max_pct = 100u;
+    return p;
+}
+
+static void test_solenoid_profile_codec(void) {
+    const solenoid_profile_t profile = make_profile();
+    uint8_t wire[SOLENOID_PROFILE_WIRE_SIZE];
+    uint8_t wire2[SOLENOID_PROFILE_WIRE_SIZE];
+    solenoid_profile_t decoded = {0};
+    solenoid_profile_t bad;
+
+    CHECK(SOLENOID_PROFILE_WIRE_SIZE == 57u);
+    CHECK(solenoid_profile_validate(&profile) == SOLENOID_PROFILE_OK);
+    CHECK(solenoid_profile_encode(&profile, wire, sizeof(wire)) == SOLENOID_PROFILE_WIRE_SIZE);
+    CHECK(wire[0] == SOLENOID_PROFILE_FORMAT_VERSION);
+    CHECK(wire[1] == 0x20u && wire[2] == 0x4Eu);  // 20000 = 0x00004E20
+    CHECK(solenoid_profile_decode(wire, sizeof(wire), &decoded));
+    CHECK(solenoid_profile_encode(&decoded, wire2, sizeof(wire2)) == SOLENOID_PROFILE_WIRE_SIZE);
+    CHECK(memcmp(wire, wire2, sizeof(wire)) == 0);
+    CHECK(solenoid_profile_tag(&profile) == solenoid_profile_crc32(wire, sizeof(wire)));
+
+    CHECK(!solenoid_profile_decode(wire, sizeof(wire) - 1u, &decoded));
+    wire[0] = 2u;  // version inconnue
+    CHECK(!solenoid_profile_decode(wire, sizeof(wire), &decoded));
+    wire[0] = SOLENOID_PROFILE_FORMAT_VERSION;
+    CHECK(solenoid_profile_encode(&profile, wire, 4u) == 0u);
+
+    CHECK(solenoid_profile_validate(NULL) == SOLENOID_PROFILE_ERR_NULL);
+    bad = profile;
+    bad.pull_duty_pct = 101u;
+    CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_DUTY);
+    bad = profile;
+    bad.hold_duty_pct = 60u;
+    CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_DUTY);
+    bad = profile;
+    bad.pull_duration_us = bad.pull_max_us + 1u;
+    CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_CONSISTENCY);
+    bad = profile;
+    bad.dir_level_pull = bad.dir_level_release;
+    CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_DIR);
+    bad = profile;
+    bad.pwm_freq_hz = 0u;
+    CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_PWM);
+    bad = profile;
+    bad.hold_max_ms = SOLENOID_PROFILE_DURATION_MS_MAX + 1u;
+    CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_DURATION);
+}
+
+static void test_solenoid_profile_codecs(void) {
+    uint8_t data[8];
+    can_profile_begin_t begin = {CAN_PROTO_VERSION, SOLENOID_PROFILE_FORMAT_VERSION, 3u,
+                                 CAN_PROFILE_FLAG_GLOBAL, 57u, CAN_PROFILE_CHUNK_SIZE, 0u};
+    can_profile_begin_t begin_out = {0};
+    can_profile_chunk_t chunk = {3u, 0u, {1u, 2u, 3u, 4u, 5u, 6u}};
+    can_profile_chunk_t chunk_out = {0};
+    can_profile_commit_t commit = {CAN_PROTO_VERSION, SOLENOID_PROFILE_FORMAT_VERSION, 3u, 0u,
+                                   0xDEADBEEFu};
+    can_profile_commit_t commit_out = {0};
+    can_profile_status_t status = {0x29B1u, 3u, CAN_PROFILE_RESULT_OK, CAN_PROFILE_SOURCE_NVM,
+                                   0x11223344u};
+    can_profile_status_t status_out = {0};
+
+    CHECK(can_encode_profile_begin(data, &begin) == CAN_PROTO_OK);
+    CHECK(data[2] == 3u && data[4] == 57u && data[6] == CAN_PROFILE_CHUNK_SIZE);
+    CHECK(can_decode_profile_begin(data, CAN_DLC_PROFILE_BEGIN, &begin_out) == CAN_PROTO_OK);
+    CHECK(begin_out.payload_len == 57u && begin_out.transfer_id == 3u);
+    CHECK(can_decode_profile_begin(data, 4u, &begin_out) == CAN_PROTO_BAD_DLC);
+    begin.chunk_size = 7u;
+    CHECK(can_encode_profile_begin(data, &begin) == CAN_PROTO_BAD_VALUE);
+
+    CHECK(can_encode_profile_chunk(data, &chunk) == CAN_PROTO_OK);
+    CHECK(can_decode_profile_chunk(data, CAN_DLC_PROFILE_CHUNK, &chunk_out) == CAN_PROTO_OK);
+    CHECK(chunk_out.transfer_id == 3u && chunk_out.seq == 0u && chunk_out.data[5] == 6u);
+
+    CHECK(can_encode_profile_commit(data, &commit) == CAN_PROTO_OK);
+    CHECK(can_decode_profile_commit(data, CAN_DLC_PROFILE_COMMIT, &commit_out) == CAN_PROTO_OK);
+    CHECK(commit_out.crc32 == 0xDEADBEEFu);
+
+    CHECK(can_encode_profile_status(data, &status) == CAN_PROTO_OK);
+    CHECK(data[3] == (uint8_t)((uint8_t)CAN_PROFILE_RESULT_OK |
+                               ((uint8_t)CAN_PROFILE_SOURCE_NVM << 3u)));
+    CHECK(can_decode_profile_status(data, CAN_DLC_PROFILE_STATUS, &status_out) == CAN_PROTO_OK);
+    CHECK(status_out.result == CAN_PROFILE_RESULT_OK);
+    CHECK(status_out.source == CAN_PROFILE_SOURCE_NVM);
+    CHECK(status_out.profile_tag32 == 0x11223344u);
+
+    status.transfer_id = CAN_PROFILE_TRANSFER_ID_BOOT;  // annonce de boot : valide
+    CHECK(can_encode_profile_status(data, &status) == CAN_PROTO_OK);
+    status.transfer_id = 3u;
+    status.result = (can_profile_result_t)9;  // hors énumération
+    CHECK(can_encode_profile_status(data, &status) == CAN_PROTO_BAD_VALUE);
+}
+
 int main(void) {
     test_crc_and_ids();
     test_solenoid_command_codec();
+    test_solenoid_profile_codec();
+    test_solenoid_profile_codecs();
     test_uid_request_and_announce();
     test_uid_position_table();
     test_commissioning_assignment_examples();

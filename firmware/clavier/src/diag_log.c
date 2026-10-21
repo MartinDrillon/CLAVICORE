@@ -71,6 +71,9 @@ const char *diag_status_code_name(diag_status_code_t code) {
     case DIAG_STATUS_MAINTENANCE_BUSY: return "MAINTENANCE_BUSY";
     case DIAG_STATUS_MAINTENANCE_NO_TABLE: return "MAINTENANCE_NO_TABLE";
     case DIAG_STATUS_TABLE_PROVISIONAL: return "TABLE_PROVISIONAL";
+    case DIAG_STATUS_PROFILE_SYNC_FAILED: return "PROFILE_SYNC_FAILED";
+    case DIAG_STATUS_PROFILE_DIVERGENT: return "PROFILE_DIVERGENT";
+    case DIAG_STATUS_PROFILE_FALLBACK_IN_USE: return "PROFILE_FALLBACK_IN_USE";
     default: return NULL;
     }
 }

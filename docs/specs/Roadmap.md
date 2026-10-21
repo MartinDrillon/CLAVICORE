@@ -61,13 +61,16 @@ firmware/                       # deux projets CMake indépendants (pas de CMake
         ├── board_identity.c/h  # lecture UID 64 bits
         ├── solenoid_driver.c/h # machine à états non-bloquante par canal
         ├── pwm_hal.c/h         # abstraction au-dessus de hardware_pwm
-        ├── solenoid_profile.h  # TOUTES les constantes réglables (duty/durées), isolées
+        ├── solenoid_ohm_constants.h    # constantes de mesure IPROPI (carte, ADR-0009)
+        ├── solenoid_profile_defaults.h # valeurs de repli du profil (jamais un point de réglage)
+        ├── solenoid_profile_store.c/h  # persistance flash A/B du profil (ADR-0013)
         ├── clock_test.c/h      # clock-test-mode1 (diagnostic, désactivable par option CMake)
         ├── config.h            # rôles logiques des broches (ADR-0001)
         └── occupancy_test.c/h  # (prévu, Phase 4) auto-test IPROPI, bitmap d'occupation 12 bits
 
 shared/protocol/                # protocole CAN partagé (AGENTS.md, ADR-0003)
 ├── can_protocol.h/.c           # constantes, IDs, encodage/décodage (C pur, sans SDK)
+├── solenoid_profile.h/.c       # profil d'activation : format, sérialisation, CRC32 (ADR-0013)
 └── uid_position_format.h       # format de la table UID -> position
 ```
 
@@ -104,7 +107,7 @@ Forte inspiration de la structure des projets QMK/ZMK, mais adapté à la musiqu
 - [X] Test fréquence 
 - [X] Exemple minimal `hardware_pwm` : canal unique (PWM0) déclenchement de test via bouton de test. Objectifs : validation électrique basique, sens du courant, PWM. 
 - [X] Écrire `solenoid_driver.c/h` + `solenoid_profile.h` (3 états : pull/hold/release). Constantes avec modification aisée pour faciliter les ajustements empiriques qui seront faits pendant les tests.
-Toutes les constantes (durées de pull-in/hold/release, valeurs de duty cycle) vivent dans `solenoid_profile.h`, séparées du code de la machine à états, pour pouvoir les ajuster rapidement après tests sur le prototype.
+Toutes les constantes (durées de pull-in/hold/release, valeurs de duty cycle) vivaient dans `solenoid_profile.h`, séparées du code de la machine à états. **Depuis ADR-0013/ADR-0014, le point de réglage unique est côté Clavier** (`firmware/clavier/src/solenoid_profile_config.h`) ; le Moteur ne garde que des valeurs de repli et la persistance flash.
 ```
 IDLE --(note on)--> PULL (duty haut, très court)
                       --> HOLD (duty bas, jusqu'à note off)
@@ -141,8 +144,8 @@ Décisions figées par [ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assigna
 
 #### Livraison 1 — Auto-test observable et remontée d'état
 
-- [ ] Moteur : ajouter le profil `PROBE` (20 % PWM, durée bornée par le driver)
-      dans `solenoid_profile.h` / `solenoid_driver.c`
+- [ ] Moteur : ajouter le profil `PROBE` (20 % PWM, durée bornée par le profil)
+      dans `solenoid_driver.c`
 - [ ] Moteur : lire les 12 IPROPI via le mux 74HC4067 (`ADC5`, GPIO45) avec la
       table de mapping canal PWM → entrée mux définie par ADR-0004
 - [ ] Moteur : produire `bitmap_occupation` + `fault_bits`, puis émettre
@@ -191,9 +194,13 @@ vérifications, 0 échec) ; la campagne **de banc** reste à faire
 - [x] `shared/protocol` : trame `IPROPI_OHM` (`0x601`, DLC 8) avec `ohm_milliohm`
       et `i100_mA`
 - [x] Moteur : PROBE **5 ms** avec fenêtre d'échantillonnage en fin d'impulsion
-      (plafond pilote `SOLENOID_PROBE_MAX_MS` inchangé à 10 ms)
+      (plafond `probe_max_us` du profil, 10 ms par défaut)
 - [x] Moteur : estimation `ohm` / `i100` à partir de `delta`, du duty appliqué et
-      des constantes de `solenoid_profile.h`
+      des constantes de `solenoid_ohm_constants.h`
+- [x] Profil d'activation centralisé côté Clavier (ADR-0013/ADR-0014) : fichier
+      unique `firmware/clavier/src/solenoid_profile_config.h`, transfert
+      `0x420`–`0x423` à l'auto-test, persistance flash A/B côté Moteur,
+      enveloppe thermique supprimée (dérogation à l'invariant 4)
 - [x] Clavier : écrire la table dès qu'**une** carte complète a répondu, calculer
       les motifs `flags`, émettre `[TABLE]`, `[MAP]`, `[SELFTEST_RAW] ohm_est/i100`
       et `[SELFTEST_OHM]`
@@ -228,7 +235,9 @@ vérifications, 0 échec) ; la campagne **de banc** reste à faire
       chaque association UID, canal et touche
 - [ ] Mesure de latence bout-en-bout (appui touche → activation solénoïde),
       vérifier absence de gigue/rebond audible
-- [ ] Session de réglage empirique des constantes dans `solenoid_profile.h`
+- [ ] Session de réglage empirique des constantes dans
+      `firmware/clavier/src/solenoid_profile_config.h` (puis flash Clavier +
+      auto-test pour propager, ADR-0013)
 
 ### Reporté (hors périmètre actuel)
 - [ ] LEDs RGB d'indication
