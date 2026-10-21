@@ -65,3 +65,14 @@ void usb_log_task(void) {
 usb_log_stats_t usb_log_stats(void) {
     return stats;
 }
+
+// Entrée CDC (ADR-0015). Le pilote stdio du journal n'a pas de `in_chars` et
+// `pico_stdio_usb` n'est pas lié : `getchar_timeout_us()` ne peut donc jamais
+// rien retourner. On lit directement le FIFO de réception de TinyUSB (alimenté
+// par `tud_task()`, exécuté dans `midi_task()`).
+int usb_log_read_char(void) {
+    if (tud_cdc_available() == 0u) {
+        return -1;
+    }
+    return (int)tud_cdc_read_char();
+}

@@ -7,6 +7,7 @@
 #include "commissioning_table.h"
 #include "diag_log.h"
 #include "ipropi_ohm.h"
+#include "profile_tuning.h"
 #include "solenoid_profile.h"
 #include "uid_position_format.h"
 
@@ -732,7 +733,122 @@ static void test_solenoid_profile_codecs(void) {
     CHECK(can_encode_profile_status(data, &status) == CAN_PROTO_BAD_VALUE);
 }
 
+static bool same_profile(const solenoid_profile_t *a, const solenoid_profile_t *b) {
+    return solenoid_profile_tag(a) == solenoid_profile_tag(b);
+}
+
+static void test_profile_tuning(void) {
+    const solenoid_profile_t base = make_profile();
+    solenoid_profile_t p = base;
+    profile_tuning_report_t report;
+    char text[160];
+    size_t index = 0u;
+
+    // Forme `nom valeur` et forme initialiseur C.
+    CHECK(profile_tuning_apply("pull_duration_us 12000", &p, &report) == PROFILE_TUNING_OK);
+    CHECK(p.pull_duration_us == 12000u && report.assigned == 1u);
+    p = base;
+    CHECK(profile_tuning_apply(".pull_duration_us = 10000u,", &p, &report) == PROFILE_TUNING_OK);
+    CHECK(p.pull_duration_us == 10000u);
+    p = base;
+    CHECK(profile_tuning_apply("pull_duration_us=9000", &p, &report) == PROFILE_TUNING_OK);
+    CHECK(p.pull_duration_us == 9000u);
+
+    // Plusieurs affectations, commentaire final ignoré, casse tolérée, hexadécimal.
+    p = base;
+    CHECK(profile_tuning_apply(".hold_duty_max_pct = 40u, .HOLD_DUTY_PCT = 0x1E, "
+                               "min_rest_ms 12 // essai",
+                               &p, &report) == PROFILE_TUNING_OK);
+    CHECK(report.assigned == 3u);
+    CHECK(p.hold_duty_max_pct == 40u && p.hold_duty_pct == 30u && p.min_rest_ms == 12u);
+    CHECK(solenoid_profile_validate(&p) == SOLENOID_PROFILE_OK);
+    CHECK(profile_tuning_diff_count(&base, &p) == 3u);
+    CHECK(profile_tuning_diff_count(&base, &base) == 0u);
+
+    // Atomicité : une affectation refusée laisse le profil intact.
+    p = base;
+    CHECK(profile_tuning_apply("pull_duty_pct 60 hold_duty_pct 99", &p, &report) ==
+          PROFILE_TUNING_ERR_STRUCTURE);
+    CHECK(report.structure == SOLENOID_PROFILE_ERR_DUTY);
+    CHECK(same_profile(&p, &base));
+    CHECK(profile_tuning_apply("pull_duty_pct 60 inconnu 1", &p, &report) ==
+          PROFILE_TUNING_ERR_UNKNOWN_FIELD);
+    CHECK(strcmp(report.field, "inconnu") == 0);
+    CHECK(same_profile(&p, &base));
+
+    // hold_duty_pct > hold_duty_max_pct : refus structurel, jamais écrêté.
+    CHECK(profile_tuning_apply("hold_duty_pct 30", &p, &report) == PROFILE_TUNING_ERR_STRUCTURE);
+    CHECK(p.hold_duty_pct == base.hold_duty_pct);
+    CHECK(profile_tuning_apply("pull_duration_us 60000", &p, &report) ==
+          PROFILE_TUNING_ERR_STRUCTURE);
+    CHECK(report.structure == SOLENOID_PROFILE_ERR_CONSISTENCY);
+    CHECK(profile_tuning_apply("pull_max_us 80000 pull_duration_us 60000", &p, &report) ==
+          PROFILE_TUNING_OK);
+    CHECK(p.pull_max_us == 80000u && p.pull_duration_us == 60000u);
+
+    // Types : u8 refuse 300, nombre invalide, valeur manquante, ligne vide.
+    p = base;
+    CHECK(profile_tuning_apply("pull_duty_pct 300", &p, &report) == PROFILE_TUNING_ERR_RANGE);
+    CHECK(report.range_max == 255u);
+    CHECK(profile_tuning_apply("pull_duty_pct 4294967296", &p, &report) ==
+          PROFILE_TUNING_ERR_NUMBER);
+    CHECK(profile_tuning_apply("pull_duty_pct abc", &p, &report) == PROFILE_TUNING_ERR_NUMBER);
+    CHECK(profile_tuning_apply("pull_duty_pct", &p, &report) == PROFILE_TUNING_ERR_NUMBER);
+    CHECK(profile_tuning_apply("pull_duty_pct 50x", &p, &report) == PROFILE_TUNING_ERR_NUMBER);
+    CHECK(profile_tuning_apply("   ", &p, &report) == PROFILE_TUNING_ERR_EMPTY);
+    CHECK(profile_tuning_apply("// rien", &p, &report) == PROFILE_TUNING_ERR_EMPTY);
+    CHECK(profile_tuning_apply("= 5", &p, &report) == PROFILE_TUNING_ERR_SYNTAX);
+    CHECK(same_profile(&p, &base));
+
+    // Champs verrouillés (raison fournie) et champs demandés par l'utilisateur.
+    CHECK(profile_tuning_apply("pwm_freq_hz 25000", &p, &report) == PROFILE_TUNING_ERR_LOCKED);
+    CHECK(profile_tuning_apply("dir_level_pull 1", &p, &report) == PROFILE_TUNING_ERR_LOCKED);
+    CHECK(profile_tuning_apply("probe_duration_us 100", &p, &report) == PROFILE_TUNING_ERR_LOCKED);
+    (void)profile_tuning_describe(PROFILE_TUNING_ERR_LOCKED, &report, text, sizeof(text));
+    CHECK(strstr(text, "probe_duration_us") != NULL && strstr(text, "auto-test") != NULL);
+    {
+        static const char *const wanted[] = {"pull_duration_us", "pull_duty_pct", "pull_max_us",
+                                              "hold_duty_pct",    "hold_duty_max_pct",
+                                              "hold_max_ms",      "min_rest_ms"};
+
+        for (size_t i = 0u; i < sizeof(wanted) / sizeof(wanted[0]); ++i) {
+            CHECK(profile_tuning_find(wanted[i], &index));
+            CHECK(profile_tuning_field_is_tunable(index));
+            CHECK(profile_tuning_field_lock_reason(index) == NULL);
+        }
+    }
+
+    // Table : un champ par membre de la structure, valeurs lues avec la bonne largeur.
+    CHECK(profile_tuning_field_count() == 24u);
+    CHECK(profile_tuning_find("dir_safety_delay_us", &index));
+    CHECK(profile_tuning_field_value(&base, index) == 200u);
+    CHECK(profile_tuning_find("pull_max_us", &index));
+    CHECK(profile_tuning_field_value(&base, index) == 50000u);
+    CHECK(!profile_tuning_find("nope", &index));
+
+    // Mise en forme prête à recopier dans solenoid_profile_config.h.
+    CHECK(profile_tuning_find("pull_duration_us", &index));
+    CHECK(profile_tuning_format_field(&base, index, text, sizeof(text)) > 0u);
+    CHECK(strcmp(text, ".pull_duration_us = 15000u,") == 0);
+    CHECK(profile_tuning_format_field(&base, index, text, 8u) == 0u);
+
+    // Aller-retour : un profil modifié par la console reste encodable et stable.
+    {
+        uint8_t wire[SOLENOID_PROFILE_WIRE_SIZE];
+        solenoid_profile_t decoded = {0};
+
+        p = base;
+        CHECK(profile_tuning_apply(".pull_duty_pct = 70u, .hold_max_ms = 5000u,", &p, &report) ==
+              PROFILE_TUNING_OK);
+        CHECK(solenoid_profile_encode(&p, wire, sizeof(wire)) == SOLENOID_PROFILE_WIRE_SIZE);
+        CHECK(solenoid_profile_decode(wire, sizeof(wire), &decoded));
+        CHECK(same_profile(&p, &decoded));
+        CHECK(solenoid_profile_tag(&p) != solenoid_profile_tag(&base));
+    }
+}
+
 int main(void) {
+    test_profile_tuning();
     test_crc_and_ids();
     test_solenoid_command_codec();
     test_solenoid_profile_codec();

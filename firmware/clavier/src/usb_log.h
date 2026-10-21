@@ -17,4 +17,8 @@ void usb_log_init(void);
 void usb_log_task(void);
 usb_log_stats_t usb_log_stats(void);
 
+// Lit un octet reçu sur le CDC (saisie PuTTY). Retourne -1 s'il n'y en a pas.
+// Non bloquant. À appeler depuis la boucle principale uniquement.
+int usb_log_read_char(void);
+
 #endif

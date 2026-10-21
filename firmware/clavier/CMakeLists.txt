@@ -42,6 +42,7 @@ add_executable(clavier
     src/matrix_scan.c
     src/midi.c
     src/note_state.c
+    src/profile_tuning.c
     src/diag_log.c
     src/usb_log.c
     src/usb_descriptors.c

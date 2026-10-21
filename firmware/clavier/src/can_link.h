@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "diag_log.h"
+#include "solenoid_profile.h"
 
 typedef enum {
     CAN_LINK_REQUEST_SENT = 0,
@@ -40,6 +41,14 @@ can_link_request_result_t can_link_request_uid(void);
 // Demande explicite d'auto-test (console de bring-up, ADR-0009 §9 livraison B) :
 // mêmes refus et même chemin que la trame TRIGGER d'un bouton Moteur.
 can_link_request_result_t can_link_request_selftest(void);
+// Réglage à chaud du profil d'activation (ADR-0015). `can_link_profile_active()`
+// est le dernier profil acquitté par les cartes (au boot : le fichier compilé) ;
+// `can_link_profile_compiled()` est `k_solenoid_profile`. `can_link_profile_send()`
+// diffuse `profile` aux cartes ; il ne devient actif qu'une fois acquitté, le
+// compte rendu étant journalisé par can_link_poll ([PROFILE] reglage: ...).
+const solenoid_profile_t *can_link_profile_active(void);
+const solenoid_profile_t *can_link_profile_compiled(void);
+can_link_request_result_t can_link_profile_send(const solenoid_profile_t *profile);
 bool can_link_calibration_enabled(void);
 void can_link_set_calibration_enabled(bool enabled);
 // Journalisation à la demande : table + correspondance canal/touche.

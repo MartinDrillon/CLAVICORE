@@ -27,6 +27,9 @@
 #define CAN_LINK_SELFTEST_TIMEOUT_MS 500u
 #define CAN_LINK_RECENT_PLAY_MS 500u
 #define CAN_LINK_PROFILE_SYNC_TIMEOUT_MS 1000u
+// Réglage console : même chemin, délai plus large (écriture flash côté Moteur,
+// jusqu'à plusieurs centaines de ms en pire cas, cartes en parallèle).
+#define CAN_LINK_PROFILE_TUNING_TIMEOUT_MS 2000u
 #define CAN_PROFILE_FRAME_SPACING_US 300u
 #define CAN_PROFILE_FRAME_RETRY_US 100u
 #define CARD_LIST_TEXT_MAX 128u
@@ -139,6 +142,18 @@ static bool profile_sync_failed;
 static uint32_t profile_sync_start_ms;
 static bool profile_sync_received_position[UID_POSITION_COUNT];
 static uint32_t local_profile_tag;
+// Réglage à chaud (ADR-0015) : un transfert de profil a un BUT. L'auto-test
+// enchaîne sur 0x401 ; le réglage console se contente de rendre compte.
+typedef enum {
+    PROFILE_SYNC_GOAL_SELFTEST = 0,
+    PROFILE_SYNC_GOAL_TUNING,
+} profile_sync_goal_t;
+static profile_sync_goal_t profile_sync_goal;
+// Profil ACTIF = dernier profil acquitté par les cartes (au boot : celui du
+// fichier compilé). `profile_sync_pending` = profil en cours de transfert, promu
+// en actif seulement si toutes les cartes attendues l'ont acquitté.
+static solenoid_profile_t profile_active;
+static solenoid_profile_t profile_sync_pending;
 // Mode diagnostic : défaut de compilation, modifiable à chaud par la console
 // de bring-up (ADR-0009 §7, livraison B).
 static bool calibration_enabled = CLAVIER_SELFTEST_CALIBRATION != 0;
@@ -777,16 +792,17 @@ static bool send_profile_frame(uint32_t id, uint8_t dlc, const uint8_t *data) {
     return false;
 }
 
-// Diffuse le profil du fichier de réglage (BEGIN + chunks + COMMIT) puis arme
-// l'attente des PROFILE_STATUS. Ne déclenche PAS 0x401 : can_link_poll le fait
-// quand toutes les cartes présentes ont acquitté (ADR-0013 §4).
-static bool begin_profile_sync(void) {
+// Diffuse `profile` (BEGIN + chunks + COMMIT) puis arme l'attente des
+// PROFILE_STATUS. Ne déclenche PAS 0x401 : can_link_poll le fait, pour le but
+// SELFTEST uniquement, quand toutes les cartes présentes ont acquitté
+// (ADR-0013 §4). Le but TUNING (ADR-0015) s'arrête au compte rendu.
+static bool begin_profile_sync(const solenoid_profile_t *profile, profile_sync_goal_t goal) {
     uint8_t wire[SOLENOID_PROFILE_WIRE_SIZE];
     uint8_t frame[CAN_DLC_PROFILE_BEGIN];
-    const size_t length = solenoid_profile_encode(&k_solenoid_profile, wire, sizeof(wire));
+    const size_t length = solenoid_profile_encode(profile, wire, sizeof(wire));
 
     if (length != SOLENOID_PROFILE_WIRE_SIZE ||
-        solenoid_profile_validate(&k_solenoid_profile) != SOLENOID_PROFILE_OK) {
+        solenoid_profile_validate(profile) != SOLENOID_PROFILE_OK) {
         emit_status(DIAG_STATUS_PROFILE_SYNC_FAILED);
         return false;
     }
@@ -861,7 +877,47 @@ static bool begin_profile_sync(void) {
     profile_sync_failed = false;
     profile_sync_active = true;
     profile_sync_start_ms = now_ms();
+    profile_sync_goal = goal;
+    profile_sync_pending = *profile;
+    printf("[PROFILE] sync debut but=%s tag=0x%08lX attendus=%u\n",
+           goal == PROFILE_SYNC_GOAL_TUNING ? "reglage" : "auto-test",
+           (unsigned long)solenoid_profile_crc32(wire, length),
+           (unsigned)profile_sync_expected);
+    if (goal == PROFILE_SYNC_GOAL_SELFTEST &&
+        solenoid_profile_tag(&profile_active) != solenoid_profile_tag(profile)) {
+        printf("[PROFILE] auto-test: le profil du fichier compile remplace le profil regle a chaud\n");
+    }
     return true;
+}
+
+static const char *profile_result_name(uint8_t result) {
+    switch (result) {
+    case CAN_PROFILE_RESULT_OK: return "OK";
+    case CAN_PROFILE_RESULT_NO_TRANSFER: return "NO_TRANSFER";
+    case CAN_PROFILE_RESULT_BAD_SEQUENCE: return "BAD_SEQUENCE";
+    case CAN_PROFILE_RESULT_BAD_CRC: return "BAD_CRC";
+    case CAN_PROFILE_RESULT_INVALID_FIELD: return "INVALID_FIELD";
+    case CAN_PROFILE_RESULT_BUSY: return "BUSY(voie occupee)";
+    case CAN_PROFILE_RESULT_FLASH_ERROR: return "FLASH_ERROR";
+    case CAN_PROFILE_RESULT_UNSUPPORTED_VERSION: return "UNSUPPORTED_VERSION";
+    default: return "?";
+    }
+}
+
+// Liste, pour chaque carte attendue, si son acquittement est arrivé : sans cela
+// un échec ne dit pas QUELLE carte n'a pas répondu.
+static void print_profile_sync_cards(void) {
+    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        const uint8_t position = uid_position_table[i].position;
+
+        if (position == UID_POSITION_EMPTY || position >= UID_POSITION_COUNT ||
+            !commissioning.valid || !commissioning_state_is_board_online(&commissioning, position)) {
+            continue;
+        }
+        printf("[PROFILE] sync carte pos=%u tag=0x%04X %s\n", (unsigned)position,
+               (unsigned)can_uid_tag(uid_position_table[i].uid.id),
+               profile_sync_received_position[position] ? "acquitte" : "MANQUANT");
+    }
 }
 
 static void handle_profile_status(const can_profile_status_t *status) {
@@ -892,7 +948,8 @@ static void handle_profile_status(const can_profile_status_t *status) {
     }
     if (status->result != CAN_PROFILE_RESULT_OK) {
         profile_sync_failed = true;
-        printf("[PROFILE] refus pos=%u result=%u\n", (unsigned)position, (unsigned)status->result);
+        printf("[PROFILE] refus pos=%u result=%u %s\n", (unsigned)position,
+               (unsigned)status->result, profile_result_name((uint8_t)status->result));
     }
 }
 
@@ -1687,7 +1744,7 @@ static void handle_selftest_trigger(uint8_t dlc, const uint8_t *data) {
         emit_trigger_refused_line("jeu en cours");
         return;
     }
-    if (!begin_profile_sync()) {
+    if (!begin_profile_sync(&k_solenoid_profile, PROFILE_SYNC_GOAL_SELFTEST)) {
         emit_status(DIAG_STATUS_CAN_TX_FAIL);
         emit_trigger_refused_line("echec emission profil CAN");
         return;
@@ -1806,7 +1863,10 @@ void can_link_init(void) {
     note_active = false;
     last_note_event_ms = 0u;
     boot_card_summary_pending = false;
-    local_profile_tag = solenoid_profile_tag(&k_solenoid_profile);
+    profile_active = k_solenoid_profile;
+    profile_sync_pending = k_solenoid_profile;
+    profile_sync_goal = PROFILE_SYNC_GOAL_SELFTEST;
+    local_profile_tag = solenoid_profile_tag(&profile_active);
     profile_sync_active = false;
     profile_sync_transfer_id = 0u;
     profile_sync_next_transfer_id = CAN_PROFILE_TRANSFER_ID_MIN;
@@ -1916,22 +1976,48 @@ void can_link_poll(void) {
     // Synchronisation du profil (ADR-0013 §4) : 0x401 n'est émis que lorsque
     // toutes les cartes présentes ont acquitté le profil.
     if (profile_sync_active) {
+        const bool tuning = profile_sync_goal == PROFILE_SYNC_GOAL_TUNING;
+        const uint32_t timeout_ms = tuning ? CAN_LINK_PROFILE_TUNING_TIMEOUT_MS
+                                           : CAN_LINK_PROFILE_SYNC_TIMEOUT_MS;
+
         if (profile_sync_failed) {
             emit_status(DIAG_STATUS_PROFILE_SYNC_FAILED);
             ++stats.profile_sync_failed;
             profile_sync_active = false;
+            print_profile_sync_cards();
+            if (tuning) {
+                printf("[PROFILE] reglage: ECHEC (refus). Etat des cartes incertain; "
+                       "le profil actif reste celui d'avant (p show). 'p send' resynchronise\n");
+            }
         } else if (profile_sync_received >= profile_sync_expected) {
             profile_sync_active = false;
-            if (!start_selftest_request()) {
+            profile_active = profile_sync_pending;
+            local_profile_tag = solenoid_profile_tag(&profile_active);
+            if (tuning) {
+                printf("[PROFILE] reglage: OK acquittements=%u/%u tag=0x%08lX\n",
+                       (unsigned)profile_sync_received, (unsigned)profile_sync_expected,
+                       (unsigned long)local_profile_tag);
+                if (profile_sync_expected == 0u) {
+                    printf("[PROFILE] reglage: AUCUNE carte attendue (table invalide ou aucune carte "
+                           "en ligne au dernier scan): application NON confirmee\n");
+                }
+            } else if (!start_selftest_request()) {
                 emit_status(DIAG_STATUS_CAN_TX_FAIL);
             } else {
                 emit_trigger_line(selftest_session.request_id);
             }
-        } else if ((uint32_t)(first_ms - profile_sync_start_ms) >=
-                   CAN_LINK_PROFILE_SYNC_TIMEOUT_MS) {
+        } else if ((uint32_t)(first_ms - profile_sync_start_ms) >= timeout_ms) {
             emit_status(DIAG_STATUS_PROFILE_SYNC_FAILED);
             ++stats.profile_sync_failed;
             profile_sync_active = false;
+            printf("[PROFILE] sync echec (delai %lu ms) acquittements=%u/%u\n",
+                   (unsigned long)timeout_ms, (unsigned)profile_sync_received,
+                   (unsigned)profile_sync_expected);
+            print_profile_sync_cards();
+            if (tuning) {
+                printf("[PROFILE] reglage: ECHEC (pas d'acquittement). Les cartes MANQUANT ont pu "
+                       "appliquer sans que l'acquittement ne revienne; 'p send' resynchronise\n");
+            }
         }
     }
 }
@@ -1970,8 +2056,39 @@ can_link_request_result_t can_link_request_selftest(void) {
         emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
         return CAN_LINK_REQUEST_BUSY;
     }
-    if (!started || !begin_profile_sync()) {
+    if (!started || !begin_profile_sync(&k_solenoid_profile, PROFILE_SYNC_GOAL_SELFTEST)) {
         emit_status(DIAG_STATUS_CAN_TX_FAIL);
+        return CAN_LINK_REQUEST_TX_FAIL;
+    }
+    return CAN_LINK_REQUEST_SENT;
+}
+
+const solenoid_profile_t *can_link_profile_active(void) {
+    return &profile_active;
+}
+
+const solenoid_profile_t *can_link_profile_compiled(void) {
+    return &k_solenoid_profile;
+}
+
+// Réglage à chaud (ADR-0015) : mêmes garde-fous que l'auto-test (aucune requête
+// de contrôle en cours, pas de jeu récent), puis diffusion du profil. Le compte
+// rendu ([PROFILE] reglage: OK/ECHEC) est émis plus tard par can_link_poll.
+can_link_request_result_t can_link_profile_send(const solenoid_profile_t *profile) {
+    if (profile == NULL || !started) {
+        printf("[PROFILE] reglage refuse: CAN non demarre\n");
+        return CAN_LINK_REQUEST_TX_FAIL;
+    }
+    if (profile_sync_active || selftest_session.active || uid_inflight || control_tx_inflight) {
+        printf("[PROFILE] reglage refuse: operation CAN en cours (attendre la fin, voir [STATUS])\n");
+        return CAN_LINK_REQUEST_BUSY;
+    }
+    if (recent_playing()) {
+        printf("[PROFILE] reglage refuse: jeu en cours (lacher les touches, attendre 0,5 s)\n");
+        return CAN_LINK_REQUEST_BUSY;
+    }
+    if (!begin_profile_sync(profile, PROFILE_SYNC_GOAL_TUNING)) {
+        printf("[PROFILE] reglage: echec d'emission CAN\n");
         return CAN_LINK_REQUEST_TX_FAIL;
     }
     return CAN_LINK_REQUEST_SENT;

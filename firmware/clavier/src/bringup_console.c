@@ -1,10 +1,11 @@
 #include "bringup_console.h"
 
 #include <stdio.h>
-
-#include "pico/stdlib.h"
+#include <string.h>
 
 #include "can_link.h"
+#include "profile_tuning.h"
+#include "usb_log.h"
 
 #ifndef CLAVIER_CDC_CONSOLE
 #define CLAVIER_CDC_CONSOLE 1
@@ -12,18 +13,183 @@
 
 #if CLAVIER_CDC_CONSOLE
 
-#define CONSOLE_LINE_MAX 8u
+// Une ligne tient une affectation multiple type `.a = 1u, .b = 2u,` (ADR-0015).
+#define CONSOLE_LINE_MAX 128u
 
 static char g_line[CONSOLE_LINE_MAX];
 static uint8_t g_length;
+static bool g_overflow;  // ligne trop longue : tout ignorer jusqu'à la fin de ligne
 
 static void print_help(void) {
-    printf("[CONSOLE] t=auto-test c=mode_diagnostic d=table m=etat ?=aide\n");
+    printf("[CONSOLE] t=auto-test c=mode_diagnostic d=table m=etat ?=aide p=profil (p ?)\n");
     printf("[CONSOLE] aucune commande n'ecrit ni n'efface la table\n");
 }
 
-static void execute(char command) {
-    switch (command) {
+static void print_profile_help(void) {
+    printf("[PROFILE] p set <champ> <valeur> [<champ> <valeur> ...]  regle et diffuse aux cartes\n");
+    printf("[PROFILE] .<champ> = <valeur>u, ...                       idem (copier-coller du .h)\n");
+    printf("[PROFILE] p get <champ> | p show | p diff | p fields\n");
+    printf("[PROFILE] p send   re-diffuse le profil actif    p reset   diffuse le profil du fichier\n");
+    printf("[PROFILE] reglage = RAM Clavier (perdu au reboot Clavier), cartes: voir ADR-0015\n");
+}
+
+static const char *skip_ws(const char *s) {
+    while (*s == ' ' || *s == '\t') {
+        ++s;
+    }
+    return s;
+}
+
+// Vrai si `s` commence par le mot `word` suivi d'un blanc ou de la fin ; `*rest`
+// pointe alors après le mot (blancs sautés).
+static bool take_word(const char *s, const char *word, const char **rest) {
+    const size_t length = strlen(word);
+
+    if (strncmp(s, word, length) != 0 || (s[length] != '\0' && s[length] != ' ' && s[length] != '\t')) {
+        return false;
+    }
+    *rest = skip_ws(s + length);
+    return true;
+}
+
+static void print_field_line(const solenoid_profile_t *profile, size_t index) {
+    char text[64];
+
+    if (profile_tuning_format_field(profile, index, text, sizeof(text)) > 0u) {
+        printf("[PROFILE]   %s\n", text);
+    }
+}
+
+static void profile_show(void) {
+    const solenoid_profile_t *active = can_link_profile_active();
+    const size_t changed = profile_tuning_diff_count(active, can_link_profile_compiled());
+
+    printf("[PROFILE] actif tag=0x%08lX (%u champ(s) differe(nt) du fichier compile)\n",
+           (unsigned long)solenoid_profile_tag(active), (unsigned)changed);
+    for (size_t i = 0u; i < profile_tuning_field_count(); ++i) {
+        print_field_line(active, i);
+    }
+}
+
+static void profile_diff(void) {
+    const solenoid_profile_t *active = can_link_profile_active();
+    const solenoid_profile_t *compiled = can_link_profile_compiled();
+    size_t shown = 0u;
+
+    for (size_t i = 0u; i < profile_tuning_field_count(); ++i) {
+        if (profile_tuning_field_value(active, i) != profile_tuning_field_value(compiled, i)) {
+            if (shown == 0u) {
+                printf("[PROFILE] a recopier dans solenoid_profile_config.h :\n");
+            }
+            print_field_line(active, i);
+            ++shown;
+        }
+    }
+    if (shown == 0u) {
+        printf("[PROFILE] aucune difference avec le fichier compile\n");
+    }
+}
+
+static void profile_fields(void) {
+    for (size_t i = 0u; i < profile_tuning_field_count(); ++i) {
+        const char *reason = profile_tuning_field_lock_reason(i);
+
+        if (reason == NULL) {
+            printf("[PROFILE]   %-22s reglable\n", profile_tuning_field_name(i));
+        } else {
+            printf("[PROFILE]   %-22s verrouille: %s\n", profile_tuning_field_name(i), reason);
+        }
+    }
+}
+
+static void profile_get(const char *name) {
+    size_t index;
+    char token[PROFILE_TUNING_NAME_MAX];
+    size_t n = 0u;
+
+    if (*name == '.') {
+        ++name;
+    }
+    while (*name != '\0' && *name != ' ' && *name != '\t' && n + 1u < sizeof(token)) {
+        token[n++] = *name++;
+    }
+    token[n] = '\0';
+    if (!profile_tuning_find(token, &index)) {
+        printf("[PROFILE] champ inconnu '%s' (p fields pour la liste)\n", token);
+        return;
+    }
+    print_field_line(can_link_profile_active(), index);
+}
+
+static void profile_set(const char *text) {
+    solenoid_profile_t candidate = *can_link_profile_active();
+    profile_tuning_report_t report;
+    char message[160];
+    const profile_tuning_result_t result = profile_tuning_apply(text, &candidate, &report);
+
+    if (result != PROFILE_TUNING_OK) {
+        printf("[PROFILE] reglage refuse (rien n'est envoye): %s\n",
+               profile_tuning_describe(result, &report, message, sizeof(message)));
+        return;
+    }
+    if (profile_tuning_diff_count(can_link_profile_active(), &candidate) == 0u) {
+        printf("[PROFILE] reglage: aucune valeur ne change (p send pour re-diffuser)\n");
+        return;
+    }
+    for (size_t i = 0u; i < profile_tuning_field_count(); ++i) {
+        const uint32_t before = profile_tuning_field_value(can_link_profile_active(), i);
+        const uint32_t after = profile_tuning_field_value(&candidate, i);
+
+        if (before != after) {
+            printf("[PROFILE]   %s %lu -> %lu\n", profile_tuning_field_name(i),
+                   (unsigned long)before, (unsigned long)after);
+        }
+    }
+    (void)can_link_profile_send(&candidate);
+}
+
+static void profile_command(const char *args) {
+    const char *rest;
+
+    args = skip_ws(args);
+    if (*args == '\0' || *args == '?' || take_word(args, "help", &rest)) {
+        print_profile_help();
+    } else if (take_word(args, "set", &rest)) {
+        profile_set(rest);
+    } else if (take_word(args, "get", &rest)) {
+        profile_get(rest);
+    } else if (take_word(args, "show", &rest)) {
+        profile_show();
+    } else if (take_word(args, "diff", &rest)) {
+        profile_diff();
+    } else if (take_word(args, "fields", &rest)) {
+        profile_fields();
+    } else if (take_word(args, "send", &rest)) {
+        printf("[PROFILE] send: re-diffusion du profil actif\n");
+        (void)can_link_profile_send(can_link_profile_active());
+    } else if (take_word(args, "reset", &rest)) {
+        printf("[PROFILE] reset: diffusion du profil du fichier compile\n");
+        (void)can_link_profile_send(can_link_profile_compiled());
+    } else {
+        printf("[PROFILE] sous-commande inconnue (p ? pour l'aide)\n");
+    }
+}
+
+static void execute_line(const char *line) {
+    const char *text = skip_ws(line);
+
+    if (*text == '\0') {
+        return;
+    }
+    if (*text == '.') {
+        profile_set(text);  // raccourci : `.champ = valeur,`
+        return;
+    }
+    if ((*text == 'p' || *text == 'P') && (text[1] == '\0' || text[1] == ' ' || text[1] == '\t')) {
+        profile_command(text + 1);
+        return;
+    }
+    switch (text[0]) {
     case 't':
     case 'T':
         switch (can_link_request_selftest()) {
@@ -67,6 +233,7 @@ static void execute(char command) {
 
 void bringup_console_init(void) {
     g_length = 0u;
+    g_overflow = false;
     for (uint8_t i = 0u; i < CONSOLE_LINE_MAX; ++i) {
         g_line[i] = '\0';
     }
@@ -75,18 +242,34 @@ void bringup_console_init(void) {
 void bringup_console_poll(void) {
     int c;
 
-    while ((c = getchar_timeout_us(0)) != PICO_ERROR_TIMEOUT) {
+    // Lecture directe du FIFO CDC : getchar_timeout_us() ne recevrait rien (le
+    // pilote stdio du journal n'a pas d'entrée, voir usb_log_read_char()).
+    while ((c = usb_log_read_char()) >= 0) {
         if (c == '\r' || c == '\n') {
-            if (g_length > 0u) {
-                execute(g_line[0]);
+            if (g_overflow) {
+                g_overflow = false;
+            } else if (g_length > 0u) {
+                execute_line(g_line);
                 g_length = 0u;
                 g_line[0] = '\0';
             }
             continue;
         }
+        if (c == 0x08 || c == 0x7F) {  // retour arrière
+            if (g_length > 0u) {
+                --g_length;
+                g_line[g_length] = '\0';
+            }
+            continue;
+        }
+        if (g_overflow) {
+            continue;
+        }
         if (g_length >= (CONSOLE_LINE_MAX - 1u)) {
-            g_length = 0u;  // ligne trop longue : ignorée
+            g_overflow = true;  // ligne trop longue : ignorée en entier
+            g_length = 0u;
             g_line[0] = '\0';
+            printf("[CONSOLE] ligne trop longue (>%u), ignoree\n", (unsigned)(CONSOLE_LINE_MAX - 1u));
             continue;
         }
         g_line[g_length] = (char)c;
