@@ -85,4 +85,8 @@ target_include_directories(moteur PRIVATE src ${CMAKE_CURRENT_LIST_DIR}/../../sh
 target_link_libraries(moteur PRIVATE pico_stdlib hardware_gpio hardware_pwm hardware_irq hardware_sync hardware_clocks hardware_adc pico_unique_id can2040)
 
 pico_enable_stdio_uart(moteur 0)
-pico_add_extra_outputs(moteur)
+
+# Pas de pico_add_extra_outputs() : la carte Moteur n'a ni port USB ni mode
+# BOOTSEL, le firmware est flashé par SWD (OpenOCD) à partir de moteur.elf.
+# Aucun .uf2/.bin/.hex n'est produit, ni utilisé par la procédure de flash
+# (tests/build_clavier_windows.md §6, tests/moteur_phase2a.md §F).

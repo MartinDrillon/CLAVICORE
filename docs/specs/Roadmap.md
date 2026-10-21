@@ -160,8 +160,12 @@ Décisions figées par [ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assigna
 
 - [x] Clavier : stocker en flash la table de commissioning
       (`uid_position_entry_t` en préfixe + bitmap 12 bits + CRC32)
-- [x] Clavier : n'écrire la table qu'après un auto-test réussi et complet de
-      toutes les cartes attendues ; conserver l'ancienne table sinon
+- [x] Clavier : écrire la table après **tout** auto-test demandé dès qu'**une**
+      carte a fourni un jeu complet (A+B+C), même partiel, avec état
+      `FINAL`/`PROVISIONAL` et motifs
+      ([ADR-0009](../adr/adr-0009-commissioning-provisoire-bring-up-et-estimation-resistance-bobine.md) §2 :
+      remplace la règle « toutes les cartes attendues ont répondu » ;
+      aucune écriture au boot)
 - [x] Clavier : au boot, charger la table flash puis comparer seulement les UID
       présents ; **ne jamais lancer d'auto-test au boot**
 - [ ] Clavier : appliquer la règle d'assignation **ascendante** depuis la
@@ -178,24 +182,33 @@ Décisions figées par [ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assigna
 
 #### Bring-up — commissioning provisoire et tri des bobines (ADR-0009)
 
-- [ ] `shared/protocol` : format de table **v2** (en-tête 16 o, `state`,
+Implémenté et **validé en compilation + tests hôte le 2026-10-21** (221
+vérifications, 0 échec) ; la campagne **de banc** reste à faire
+([`tests/bringup_commissioning_provisoire.md`](../tests/bringup_commissioning_provisoire.md)).
+
+- [x] `shared/protocol` : format de table **v2** (en-tête 16 o, `state`,
       `flags`) + lecture d'une v1 interprétée `FINAL`
-- [ ] `shared/protocol` : trame `IPROPI_OHM` (`0x601`, DLC 8) avec `ohm_milliohm`
+- [x] `shared/protocol` : trame `IPROPI_OHM` (`0x601`, DLC 8) avec `ohm_milliohm`
       et `i100_mA`
-- [ ] Moteur : PROBE **5 ms** avec fenêtre d'échantillonnage en fin d'impulsion
+- [x] Moteur : PROBE **5 ms** avec fenêtre d'échantillonnage en fin d'impulsion
       (plafond pilote `SOLENOID_PROBE_MAX_MS` inchangé à 10 ms)
-- [ ] Moteur : estimation `ohm` / `i100` à partir de `delta`, du duty appliqué et
+- [x] Moteur : estimation `ohm` / `i100` à partir de `delta`, du duty appliqué et
       des constantes de `solenoid_profile.h`
-- [ ] Clavier : écrire la table dès qu'**une** carte complète a répondu, calculer
+- [x] Clavier : écrire la table dès qu'**une** carte complète a répondu, calculer
       les motifs `flags`, émettre `[TABLE]`, `[MAP]`, `[SELFTEST_RAW] ohm_est/i100`
       et `[SELFTEST_OHM]`
-- [ ] Clavier : motif `0x40 ANCHOR_SHIFT` quand les positions présentes ne sont
+- [x] Clavier : motif `0x40 ANCHOR_SHIFT` quand les positions présentes ne sont
       pas contiguës depuis 0 (ADR-0010) ; vecteurs de test hôte à suivre
       (`docs/specs/impact-adr-0010.md`)
-- [ ] Clavier : `CLAVIER_SELFTEST_CALIBRATION` à `ON` pendant le bring-up
+- [x] Clavier : `CLAVIER_SELFTEST_CALIBRATION` à `ON` pendant le bring-up
       (retour à `OFF` en configuration finale)
-- [ ] Clavier : console CDC de bring-up (`t`, `c`, `d`, `m`, `?`)
+- [x] Clavier : console CDC de bring-up (`t`, `c`, `d`, `m`, `?`)
 - [ ] Validation manuelle : `tests/bringup_commissioning_provisoire.md`
+- [ ] Recoupement d'`ohm_est` avec un multimètre sur une bobine de référence, et
+      tri des bobines (dispersion, fenêtre 2–3 A à 100 % de duty)
+- [ ] Vérification que l'impulsion PROBE 5 ms / 20 % n'attire pas le sautereau
+- [ ] Non-régression du motif `ANCHOR_SHIFT` et des lignes `[MAP]` sur banc
+      partiel (calcul non couvert par les tests hôte, il vit dans `can_link.c`)
 
 
 ### Phase 4 — Chainage 

@@ -3,8 +3,9 @@
 Ce document synthétise les décisions actées dans
 [ADR-0002](../adr/adr-0002-integration-can2040.md),
 ADR-0005,
-[ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assignation-solenoide-command.md) et
-[ADR-0009](../adr/adr-0009-commissioning-provisoire-bring-up-et-estimation-resistance-bobine.md).
+[ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assignation-solenoide-command.md),
+[ADR-0009](../adr/adr-0009-commissioning-provisoire-bring-up-et-estimation-resistance-bobine.md) et
+[ADR-0010](../adr/adr-0010-ancrage-grave-mapping-commissioning.md).
 
 **État réel** :
 - **Phase 3a validée sur bus réel** : premier UID relevé de bout en bout
@@ -12,12 +13,23 @@ ADR-0005,
 - **Phase 3b / Livraison 2** : protocole, table flash, résolution
   note→(UID, canal) et `SOLENOID_COMMAND` implémentés ; les validations
   strictement matérielles restantes sont listées en fin de document.
-- **Bring-up / ADR-0009 (spécifié, non encore implémenté)** : table persistée à
-  chaque auto-test demandé avec état `FINAL`/`PROVISIONAL`, trame de diagnostic
-  `IPROPI_OHM` (`0x601`), PROBE **5 ms** avec fenêtre d'échantillonnage en fin
-  d'impulsion, lignes `[MAP]`. Les sections concernées ci-dessous décrivent la
-  cible ; le tableau de correspondance des fichiers à revoir est dans
-  [`impact-adr-0009.md`](impact-adr-0009.md).
+- **Bring-up / ADR-0009 (implémenté, validé par les tests hôte)** : table
+  persistée à chaque auto-test demandé avec état `FINAL`/`PROVISIONAL`, trame de
+  diagnostic `IPROPI_OHM` (`0x601`), PROBE **5 ms** avec fenêtre
+  d'échantillonnage en fin d'impulsion, lignes `[TABLE]`/`[MAP]`/`[SELFTEST_OHM]`,
+  console CDC de bring-up. Les sections concernées ci-dessous décrivent donc le
+  comportement **réel** ; le tableau de correspondance des fichiers revus est dans
+  [`impact-adr-0009.md`](impact-adr-0009.md). Les validations strictement
+  matérielles (PROBE, estimation ohmique, tri des bobines) restent à faire
+  (`tests/bringup_commissioning_provisoire.md`).
+- **Assignation des touches (ADR-0010, implémenté)** : règle **ascendante**
+  ancrée sur la touche 1 = `DO2`, motif `0x40 ANCHOR_SHIFT` ; voir la section
+  « Règle d'assignation des touches » plus bas.
+
+**Historique** : avant ADR-0010, l'assignation était **descendante** (bloc aigu
+ancré sur la touche 49, ADR-0004 §6, remplacé) ; une table persistée avant cette
+mise à jour est relue puis rejouée avec le nouveau sens — la correspondance
+réelle se lit dans les lignes `[MAP]` au boot (conséquence NEG-002 d'ADR-0010).
 
 ## GPIO CAN par carte
 
@@ -213,13 +225,22 @@ Règles :
 - trame **purement informative** : sa perte ou son invalidité ne modifient ni
   `occupation_bits`, ni `fault_bits`, ni l'écriture de la table ;
 
-Formules (constantes de `firmware/moteur/src/solenoid_profile.h`) :
+Formules (constantes de `firmware/moteur/src/solenoid_profile.h`), telles
+qu'**implémentées et testées** (`firmware/moteur/src/ipropi_ohm.c`,
+`tests/host/test_phase3_helpers.c`) :
 
 ```text
 K (V/A)   = SOLENOID_IPROPI_UA_PER_A (450) x SOLENOID_IPROPI_RESISTOR_OHM (2400) / 1e6
-R (mOhm)  = (duty_permil x VM_mV x 4095 x K) / (1000 x delta x VREF_mV) - Rds_mOhm
+R (mOhm)  = (duty_permil x VM_mV x 4095 x K) / (delta x VREF_mV) - Rds_mOhm
 I100 (mA) = VM_mV x 1000 / (R_mOhm + Rds_mOhm)
 ```
+
+> Écart documentaire connu : la forme générale de l'ADR-0009 §5c écrit ce même
+> dénominateur avec un facteur `1000` en trop (`/ (1000 x delta x VREF_mV)`), ce
+> qui donne des ohms et non des milliohms. Le code, les vecteurs de test et la
+> forme numérique ci-dessous suivent la version correcte ; **erratum demandé à
+> l'Architecte** sur ADR-0009 §5c (voir « Questions ouvertes » du compte-rendu
+> Documentaliste du 2026-10-21).
 
 Avec les valeurs nominales (`VM = 24.000 V`, `VREF = 3.300 V`, `K = 1.08 V/A`,
 `Rds = 240 mΩ`, duty `200 ‰`) :
@@ -229,8 +250,18 @@ R (mOhm) = 32164 x duty_permil / delta - 240
 I100 (mA) = 24 000 000 / (R_mOhm + 240)
 ```
 
-Repères : `delta = 1030` → `6.00 Ω` / `3.85 A` ; `delta = 800` → `7.80 Ω` /
-`2.99 A` ; `delta = 400` (seuil) → `15.84 Ω` / `1.49 A`.
+Repères **exacts** (ce sont les vecteurs des tests hôte, `delta = probe - idle`) :
+
+| `delta` (ADC) | `ohm_milliohm` | affiché `ohm_est` | `i100_mA` | affiché `i100` |
+|---|---|---|---|---|
+| 1200 | 5120 | `5.12` | 4477 | `4.47` |
+| 1030 | 6005 | `6.00` | 3843 | `3.84` |
+| 800 | 7801 | `7.80` | 2984 | `2.98` |
+| 400 (seuil) | 15842 | `15.84` | 1492 | `1.49` |
+| < 400 ou `delta == 0` | — | `--` | — | `--` |
+
+L'affichage journal tronque à 2 décimales : `delta = 1030` donne `6.00` et
+`3.84`, pas `3.85` (l'ancien repère supposait `R` arrondie à 6000 mΩ).
 
 #### `SOLENOID_COMMAND` — ID `0x100`, DLC 5
 
@@ -514,17 +545,22 @@ cartes plus aiguës. Pour que ce décalage ne soit jamais tacite :
 
 - **Livraisons 1 et 2 implémentées** dans le dépôt : auto-test IPROPI, table
   flash, assignation persistante et `SOLENOID_COMMAND`.
-- **Éléments ADR-0009 non encore implémentés** (au 2026-10-20) : format de table
-  v2 (état/motifs), trame `IPROPI_OHM` `0x601`, PROBE 5 ms avec fenêtre
-  d'échantillonnage en fin d'impulsion, lignes `[MAP]` et `[SELFTEST_OHM]`,
-  console CDC de bring-up. Les sections correspondantes de ce document les
-  décrivent comme **cible** ; le suivi fichier par fichier est dans
-  [`impact-adr-0009.md`](impact-adr-0009.md).
-- **Règle d'assignation ascendante (ADR-0010, 2026-10-20)** : décidée et
-  documentée ici comme **cible**. Tant que l'implémentation n'est pas faite, le
-  comportement réel de `commissioning_build_runtime` reste **descendant** (blocs
-  ancrés sur la touche 49) ; suivi fichier par fichier dans
-  [`impact-adr-0010.md`](impact-adr-0010.md).
+- **ADR-0009 implémentée et couverte par les tests hôte** (état au 2026-10-21) :
+  format de table v2 (état/motifs), trame `IPROPI_OHM` `0x601`, PROBE 5 ms avec
+  fenêtre d'échantillonnage en fin d'impulsion, lignes
+  `[TABLE]`/`[MAP]`/`[SELFTEST_OHM]`, console CDC de bring-up. Les options
+  `CLAVIER_SELFTEST_CALIBRATION` et `CLAVIER_CDC_CONSOLE` sont à **`ON` par
+  défaut** pendant le bring-up (`firmware/clavier/CMakeLists.txt:17,19`) ; à
+  repasser à `OFF` en configuration finale. Le suivi fichier par fichier reste
+  [`impact-adr-0009.md`](impact-adr-0009.md) ; la **validation au banc** (PROBE,
+  estimation ohmique, tri des bobines) reste à faire :
+  `tests/bringup_commissioning_provisoire.md`.
+- **Règle d'assignation ascendante (ADR-0010, 2026-10-20) implémentée et
+  validée** (2026-10-21) : le comportement réel de `commissioning_build_runtime`
+  est ascendant (ancrage sur la touche 1 = `DO2`, positions `0 → 4`) et le Clavier
+  pose le motif `ANCHOR_SHIFT` (`0x40`) quand les positions retenues ne forment
+  pas `0..K−1`. Tests hôte : 221 vérifications, 0 échec ; suivi fichier par
+  fichier dans [`impact-adr-0010.md`](impact-adr-0010.md).
 
 ## Tests manuels
 
@@ -543,4 +579,18 @@ cartes plus aiguës. Pour que ce décalage ne soit jamais tacite :
   logicielle de `flash_safe_execute` a été vérifiée dans le SDK 2.3.1, mais
   pas encore chronométrée au banc) ;
 * comportement électrique d'un canal physiquement vide commandé **avant le
-  premier auto-test** si la table Clavier était erronée.
+  premier auto-test** si la table Clavier était erronée ;
+* **PROBE 5 ms / 20 %** (ADR-0009 §5a) : attraction mécanique du sautereau (la
+  validation empirique d'ADR-0004 portait sur 3 ms) et régularité de la fenêtre
+  d'échantillonnage en fin d'impulsion ;
+* **`ohm_est` / `i100`** (§5c, §5d) : recoupement avec un multimètre sur une
+  bobine de référence, dispersion entre bobines, cohérence de `i100` avec la
+  fenêtre 2–3 A — les valeurs affichées sont des **estimations**, jamais des
+  limites ;
+* **motif `ANCHOR_SHIFT` et table `PROVISIONAL` sur banc partiel** : le calcul
+  du motif vit dans `firmware/clavier/src/can_link.c`, **non testable sur PC** ;
+  il n'est couvert que par les procédures manuelles
+  (`tests/phase3b_bout_en_bout.md`, `tests/bringup_commissioning_provisoire.md`) ;
+* **intégrité du bus et comportement électrique** des 6 cartes en chaîne, puis
+  d'une carte seule sous 10–12 solénoïdes en activations répétées
+  (`tests/bringup_commissioning_provisoire.md` §5 et §6).

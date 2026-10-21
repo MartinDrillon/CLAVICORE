@@ -11,7 +11,8 @@ confirmer avant de s'y fier.
 La carte moteur n'a **ni USB ni UART accessible** (USB_DM/USB_DP du RP2354B non
 connectés dans `docs/specs/pinmap.generated_drive.yaml` **[V]**). Il n'y a donc ni
 BOOTSEL/UF2 ni console série : on flashe le `.elf` par **SWD** avec un probe
-CMSIS-DAP. Le `moteur.uf2` est généré par le CMake mais **ignoré** (inutilisable ici).
+CMSIS-DAP. Le CMake Moteur ne produit **aucun `.uf2`** (pas d'appel à
+`pico_add_extra_outputs()`) : seul `moteur.elf` est généré.
 Les `printf` ne sont **pas visibles** (pas de stdio) : se fier aux mesures
 électriques décrites aux sections 1 à 7.
 
@@ -131,7 +132,8 @@ Test-Path build\moteur\moteur.elf                # True attendu [V : fichier pr�
 ```
 
 ELF à flasher : `D:\Documents\MUSIQUE\EPINETTE\Kit Heugel_Bedard\build\moteur\moteur.elf`.
-Le `.uf2` généré à côté est ignoré.
+Aucun `.uf2` n'est produit pour le Moteur (carte sans USB) : l'ELF est le seul
+artefact de flash.
 
 ### F. Flash avec OpenOCD
 

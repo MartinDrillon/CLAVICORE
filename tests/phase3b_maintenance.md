@@ -9,7 +9,8 @@ Références :
 ## Préparation
 
 1. Flasher `build\clavier\clavier.uf2`.
-2. Flasher `build\moteur\moteur.uf2` sur chaque carte Moteur.
+2. Flasher `build\moteur\moteur.elf` par **SWD** (OpenOCD,
+   `tests/moteur_phase2a.md` §E–F) : aucun `.uf2` Moteur n'existe (carte sans USB).
 3. Ouvrir **PuTTY** sur le port **CDC** du Clavier.
 4. Vérifier qu'une table de commissioning valide est déjà présente.
 

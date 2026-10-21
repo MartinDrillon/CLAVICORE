@@ -9,7 +9,19 @@ table de commissioning et ajoute **un motif d'état**.
 Les chemins de ligne cités sont ceux **avant** modification (état du 2026-10-21) :
 ils servent de point d'entrée, pas de référence stable.
 
-## 0. Règle à implémenter (rappel normatif)
+> **État : implémenté et validé le 2026-10-21.** Tests hôte : 221 vérifications,
+> 0 échec ; builds Clavier et Moteur sans warning (Clavier `text 68 440`,
+> `bss 11 060`). Procédure conservée dans
+> [`../../tests/build_clavier_windows.md`](../../tests/build_clavier_windows.md)
+> §5. Le tableau du §0 et les points d'entrée restent utiles comme référence de
+> revue, mais **le travail est fait** : ne pas relire cette note comme une liste
+> de tâches à exécuter.
+>
+> Configuration actuelle du seed : `firmware/clavier/src/uid_position.h`
+> position 0 **vide** → table jouable mais `PROVISIONAL flags=0x40` tant que la
+> carte grave n'y est pas déclarée (voir §5).
+
+## 0. Règle implémentée (rappel normatif)
 
 `commissioning_build_runtime` (`shared/protocol/commissioning_table.c`) doit
 devenir le **miroir** de la version actuelle :

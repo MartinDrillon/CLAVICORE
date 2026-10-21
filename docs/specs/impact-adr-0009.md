@@ -13,6 +13,32 @@ modifie deux interfaces partagées (invariant 5) :
 Les chemins de ligne cités sont ceux **avant** modification (état du
 2026-10-20) : ils servent de point d'entrée, pas de référence stable.
 
+> **État : implémenté et validé en compilation + tests hôte le 2026-10-21.**
+> Format v2 (état/motifs, rétro-lecture d'une v1), trame `IPROPI_OHM` `0x601`,
+> PROBE 5 ms et fenêtre d'échantillonnage en fin d'impulsion, lignes
+> `[TABLE]`/`[MAP]`/`[SELFTEST_OHM]`, console CDC de bring-up (options
+> `CLAVIER_SELFTEST_CALIBRATION` et `CLAVIER_CDC_CONSOLE` à `ON` par défaut :
+> `firmware/clavier/CMakeLists.txt:17,19`).
+>
+> Tests hôte : **221 vérifications, 0 échec** (`tests/host/run_host_tests.ps1`) ;
+> builds Clavier et Moteur verts (Clavier `text 68 440` / `bss 11 060`, Moteur
+> `text 32 704` / `bss 1 988`) ; contrôle `-Wall -Wextra` supplémentaire sur les
+> fichiers modifiés : 0 avertissement. Procédure conservée dans
+> [`../../tests/build_clavier_windows.md`](../../tests/build_clavier_windows.md) §5
+> et [`../../tests/build_moteur_windows.md`](../../tests/build_moteur_windows.md).
+> Les tableaux ci-dessous restent utiles comme **référence de revue**, pas comme
+> une liste de tâches à exécuter.
+>
+> **Restent à valider au banc** (aucune validation matérielle acquise) : PROBE
+> 5 ms, estimation ohmique et tri des bobines, table
+> `PROVISIONAL`/`ANCHOR_SHIFT` sur banc partiel, intégrité du bus — voir
+> [`../../tests/bringup_commissioning_provisoire.md`](../../tests/bringup_commissioning_provisoire.md)
+> et « Points non démontrés sans matériel » dans [`CAN.md`](CAN.md).
+>
+> **Erratum à demander à l'Architecte** : la forme générale d'ADR-0009 §5c porte
+> un facteur `1000` en trop dans le dénominateur de `R` ; le code et les vecteurs
+> de test suivent la forme correcte (voir [`CAN.md`](CAN.md) §`IPROPI_OHM`).
+
 ## 1. `commissioning_table.[ch]` — format flash v2
 
 | Fichier | Point d'entrée | Revue requise |
