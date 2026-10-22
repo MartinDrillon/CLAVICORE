@@ -1,4 +1,4 @@
-// Profil d'activation des solénoïdes — SOURCE UNIQUE du format (ADR-0013, ADR-0014).
+// Profil d'activation des solénoïdes — SOURCE UNIQUE du format (ADR-0013, ADR-0014, ADR-0019).
 //
 // Rôle : décrire le profil réglé dans `firmware/clavier/src/solenoid_profile_config.h`,
 // transmis aux cartes Moteur par les trames `PROFILE_*` (`0x420`–`0x423`,
@@ -15,6 +15,9 @@
 //  - sérialisation explicite little-endian, champ par champ, sans `memcpy` de
 //    structure : le format est stable et testable sur PC (`tests/host/`).
 //
+// ADR-0019 (v2) : ajoute la phase IMPACT (impulsion courte à duty élevé avant
+// PULL) avec trois champs `impact_*` insérés après `pwm_freq_hz`.
+//
 // Le Clavier et le Moteur partagent ce fichier. Toute évolution du format passe
 // par une nouvelle `SOLENOID_PROFILE_FORMAT_VERSION` et une ADR (invariant 5).
 #ifndef CLAVICORE_SOLENOID_PROFILE_H
@@ -26,11 +29,11 @@
 
 // --- Format du payload ------------------------------------------------------
 
-// Version du format canonique. `v1` = 57 octets, décrit ci-dessous.
-#define SOLENOID_PROFILE_FORMAT_VERSION 1u
+// Version du format canonique. `v2` = 66 octets, décrit ci-dessous (v1 = 57 octets).
+#define SOLENOID_PROFILE_FORMAT_VERSION 2u
 
-// Taille canonique du payload v1, en octets.
-#define SOLENOID_PROFILE_WIRE_SIZE 57u
+// Taille canonique du payload v2, en octets.
+#define SOLENOID_PROFILE_WIRE_SIZE 66u
 
 // Taille maximale admise par le récepteur (marge pour les versions futures).
 #define SOLENOID_PROFILE_WIRE_MAX 128u
@@ -46,7 +49,9 @@
 
 // `magic` little-endian des octets 'C','V','P','F'.
 #define SOLENOID_PROFILE_FLASH_MAGIC 0x46505643u
-#define SOLENOID_PROFILE_FLASH_VERSION 1u
+// Version de l'enregistrement flash : 2 depuis ADR-0019 (payload v2). Un
+// enregistrement v1 n'est jamais relu par un firmware v2.
+#define SOLENOID_PROFILE_FLASH_VERSION 2u
 // En-tête du slot : magic u32, version u16, header_size u16, payload_len u16,
 // reserved u16, seq u32, crc32 u32, reserved[12].
 #define SOLENOID_PROFILE_FLASH_HEADER_SIZE 32u
@@ -56,37 +61,43 @@
 // --- Structure en RAM -------------------------------------------------------
 
 // L'ordre des champs suit l'ordre du payload canonique (hors l'octet
-// `format_version` en tête). Unités : µs pour PULL/RELEASE/PROBE et les délais,
-// ms pour HOLD/MAINTENANCE et les repos, % pour les duties, Hz pour la PWM.
+// `format_version` en tête). Unités : µs pour IMPACT/PULL/RELEASE/PROBE et les
+// délais, ms pour HOLD/MAINTENANCE et les repos, % pour les duties, Hz pour la PWM.
 //
-// Layout du payload v1 (57 octets, little-endian) :
+// Layout du payload v2 (66 octets, little-endian) :
 //   [0]     format_version      u8
 //   [1..4]  pwm_freq_hz         u32
-//   [5..8]  pull_duration_us    u32
-//   [9]     pull_duty_pct       u8
-//   [10..13] pull_max_us        u32
-//   [14]    hold_duty_pct       u8
-//   [15]    hold_duty_max_pct   u8
-//   [16..19] hold_max_ms        u32
-//   [20..23] release_duration_us u32
-//   [24]    release_duty_pct    u8
-//   [25..28] probe_duration_us  u32
-//   [29]    probe_duty_pct      u8
-//   [30..33] probe_max_us       u32
-//   [34]    probe_duty_max_pct  u8
-//   [35]    maint_duty_pct      u8
-//   [36]    maint_duty_max_pct  u8
-//   [37..40] maint_max_ms       u32
-//   [41..44] maint_min_rest_ms  u32
-//   [45..48] min_rest_ms        u32
-//   [49..50] dir_safety_delay_us u16
-//   [51..52] wake_delay_us      u16
-//   [53]    dir_level_pull      u8
-//   [54]    dir_level_release   u8
-//   [55]    dir_level_maint     u8
-//   [56]    duty_max_pct        u8
+//   [5..8]  impact_duration_us  u32
+//   [9]     impact_duty_pct     u8
+//   [10..13] impact_max_us      u32
+//   [14..17] pull_duration_us   u32
+//   [18]    pull_duty_pct       u8
+//   [19..22] pull_max_us        u32
+//   [23]    hold_duty_pct       u8
+//   [24]    hold_duty_max_pct   u8
+//   [25..28] hold_max_ms        u32
+//   [29..32] release_duration_us u32
+//   [33]    release_duty_pct    u8
+//   [34..37] probe_duration_us  u32
+//   [38]    probe_duty_pct      u8
+//   [39..42] probe_max_us       u32
+//   [43]    probe_duty_max_pct  u8
+//   [44]    maint_duty_pct      u8
+//   [45]    maint_duty_max_pct  u8
+//   [46..49] maint_max_ms       u32
+//   [50..53] maint_min_rest_ms  u32
+//   [54..57] min_rest_ms        u32
+//   [58..59] dir_safety_delay_us u16
+//   [60..61] wake_delay_us      u16
+//   [62]    dir_level_pull      u8
+//   [63]    dir_level_release   u8
+//   [64]    dir_level_maint     u8
+//   [65]    duty_max_pct        u8
 typedef struct {
     uint32_t pwm_freq_hz;
+    uint32_t impact_duration_us;
+    uint8_t impact_duty_pct;
+    uint32_t impact_max_us;
     uint32_t pull_duration_us;
     uint8_t pull_duty_pct;
     uint32_t pull_max_us;

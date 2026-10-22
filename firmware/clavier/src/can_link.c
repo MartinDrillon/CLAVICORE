@@ -1129,6 +1129,12 @@ static void handle_profile_status(const can_profile_status_t *status) {
         diag_out_printf("[PROFILE] refus pos=%u result=%u %s\n", (unsigned)position,
                         (unsigned)status->result,
                         profile_result_name((uint8_t)status->result));
+        if (status->result == CAN_PROFILE_RESULT_UNSUPPORTED_VERSION) {
+            // ADR-0019 : carte restée en v1 face à un profil v2 (result = 7).
+            diag_out_printf("[PROFILE] pos=%u version de profil non supportee: reflasher la "
+                            "carte Moteur (profil v2 requis)\n",
+                            (unsigned)position);
+        }
     }
 }
 

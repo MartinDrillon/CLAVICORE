@@ -15,6 +15,12 @@
 
 static const solenoid_profile_t k_solenoid_profile_defaults = {
     .pwm_freq_hz = 20000u,
+    // ADR-0019 : phase IMPACT désactivée par défaut côté repli ; elle ne s'active
+    // qu'après le premier profil v2 reçu du Clavier. Une carte jamais synchronisée
+    // joue donc le jeu normal d'avant l'ajout de la phase.
+    .impact_duration_us = 0u,
+    .impact_duty_pct = 100u,
+    .impact_max_us = 2000u,
     .pull_duration_us = 15000u,
     .pull_duty_pct = 100u,
     .pull_max_us = 50000u,

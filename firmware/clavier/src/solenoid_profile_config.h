@@ -1,5 +1,5 @@
 // ============================================================================
-//  SEUL FICHIER À MODIFIER POUR RÉGLER L'ACTIVATION DES SOLÉNOÏDES (ADR-0013).
+//  SEUL FICHIER À MODIFIER POUR RÉGLER L'ACTIVATION DES SOLÉNOÏDES (ADR-0013, ADR-0019).
 // ============================================================================
 //
 // Après modification :
@@ -15,7 +15,8 @@
 //
 // Contrôles structurels appliqués (rejet en bloc, jamais d'écrêtage) :
 //   - duties 0..100 %, plafonds >= valeurs opératoires ;
-//   - pull_duration_us <= pull_max_us, probe_duration_us <= probe_max_us ;
+//   - pull_duration_us <= pull_max_us, probe_duration_us <= probe_max_us,
+//     impact_duration_us <= impact_max_us ;
 //   - dir_level_pull != dir_level_release, niveaux 0/1 ;
 //   - pwm_freq_hz dans 1..100000 Hz ;
 //   - durées en ms <= 4 000 000 (représentation µs sur 32 bits) ;
@@ -31,13 +32,16 @@
 
 static const solenoid_profile_t k_solenoid_profile = {
     .pwm_freq_hz = 20000u,          // porteuse PWM, au-dessus du domaine audible
-    .pull_duration_us = 15000u,     // PULL : attraction, très court
+    .impact_duration_us = 800u,     // IMPACT : impulsion 100 % très courte (ADR-0019)
+    .impact_duty_pct = 100u,
+    .impact_max_us = 2000u,         // plafond de cohérence de l'impulsion
+    .pull_duration_us = 10000u,     // PULL : attraction, très court
     .pull_duty_pct = 50u,
     .pull_max_us = 50000u,          // plafond opératoire du PULL
     .hold_duty_pct = 25u,           // HOLD : maintien jusqu'au note off
     .hold_duty_max_pct = 25u,
     .hold_max_ms = 20000u,          // coupure de sécurité du HOLD
-    .release_duration_us = 5000u,   // RELEASE : polarité inversée, court
+    .release_duration_us = 1000u,   // RELEASE : polarité inversée, court
     .release_duty_pct = 50u,
     .probe_duration_us = 5000u,     // PROBE : impulsion de l'auto-test IPROPI
     .probe_duty_pct = 20u,

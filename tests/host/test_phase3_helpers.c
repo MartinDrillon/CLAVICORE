@@ -635,6 +635,9 @@ static solenoid_profile_t make_profile(void) {
     solenoid_profile_t p = {0};
 
     p.pwm_freq_hz = 20000u;
+    p.impact_duration_us = 800u;
+    p.impact_duty_pct = 100u;
+    p.impact_max_us = 2000u;
     p.pull_duration_us = 15000u;
     p.pull_duty_pct = 100u;
     p.pull_max_us = 50000u;
@@ -668,7 +671,7 @@ static void test_solenoid_profile_codec(void) {
     solenoid_profile_t decoded = {0};
     solenoid_profile_t bad;
 
-    CHECK(SOLENOID_PROFILE_WIRE_SIZE == 57u);
+    CHECK(SOLENOID_PROFILE_WIRE_SIZE == 66u);
     CHECK(solenoid_profile_validate(&profile) == SOLENOID_PROFILE_OK);
     CHECK(solenoid_profile_encode(&profile, wire, sizeof(wire)) == SOLENOID_PROFILE_WIRE_SIZE);
     CHECK(wire[0] == SOLENOID_PROFILE_FORMAT_VERSION);
@@ -679,7 +682,7 @@ static void test_solenoid_profile_codec(void) {
     CHECK(solenoid_profile_tag(&profile) == solenoid_profile_crc32(wire, sizeof(wire)));
 
     CHECK(!solenoid_profile_decode(wire, sizeof(wire) - 1u, &decoded));
-    wire[0] = 2u;  // version inconnue
+    wire[0] = 99u;  // version inconnue
     CHECK(!solenoid_profile_decode(wire, sizeof(wire), &decoded));
     wire[0] = SOLENOID_PROFILE_FORMAT_VERSION;
     CHECK(solenoid_profile_encode(&profile, wire, 4u) == 0u);
@@ -703,12 +706,20 @@ static void test_solenoid_profile_codec(void) {
     bad = profile;
     bad.hold_max_ms = SOLENOID_PROFILE_DURATION_MS_MAX + 1u;
     CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_DURATION);
+
+    // ADR-0019 : contrôles structurels de la phase IMPACT.
+    bad = profile;
+    bad.impact_duty_pct = 101u;
+    CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_DUTY);
+    bad = profile;
+    bad.impact_duration_us = bad.impact_max_us + 1u;
+    CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_CONSISTENCY);
 }
 
 static void test_solenoid_profile_codecs(void) {
     uint8_t data[8];
     can_profile_begin_t begin = {CAN_PROTO_VERSION, SOLENOID_PROFILE_FORMAT_VERSION, 3u,
-                                 CAN_PROFILE_FLAG_GLOBAL, 57u, CAN_PROFILE_CHUNK_SIZE, 0u};
+                                 CAN_PROFILE_FLAG_GLOBAL, 66u, CAN_PROFILE_CHUNK_SIZE, 0u};
     can_profile_begin_t begin_out = {0};
     can_profile_chunk_t chunk = {3u, 0u, {1u, 2u, 3u, 4u, 5u, 6u}};
     can_profile_chunk_t chunk_out = {0};
@@ -720,9 +731,9 @@ static void test_solenoid_profile_codecs(void) {
     can_profile_status_t status_out = {0};
 
     CHECK(can_encode_profile_begin(data, &begin) == CAN_PROTO_OK);
-    CHECK(data[2] == 3u && data[4] == 57u && data[6] == CAN_PROFILE_CHUNK_SIZE);
+    CHECK(data[2] == 3u && data[4] == 66u && data[6] == CAN_PROFILE_CHUNK_SIZE);
     CHECK(can_decode_profile_begin(data, CAN_DLC_PROFILE_BEGIN, &begin_out) == CAN_PROTO_OK);
-    CHECK(begin_out.payload_len == 57u && begin_out.transfer_id == 3u);
+    CHECK(begin_out.payload_len == 66u && begin_out.transfer_id == 3u);
     CHECK(can_decode_profile_begin(data, 4u, &begin_out) == CAN_PROTO_BAD_DLC);
     begin.chunk_size = 7u;
     CHECK(can_encode_profile_begin(data, &begin) == CAN_PROTO_BAD_VALUE);
@@ -803,6 +814,19 @@ static void test_profile_tuning(void) {
           PROFILE_TUNING_OK);
     CHECK(p.pull_max_us == 80000u && p.pull_duration_us == 60000u);
 
+    // ADR-0019 : phase IMPACT réglable à chaud, cohérence impact_duration <= impact_max.
+    p = base;
+    CHECK(profile_tuning_apply("impact_duration_us 1200", &p, &report) == PROFILE_TUNING_OK);
+    CHECK(p.impact_duration_us == 1200u && p.impact_max_us == 2000u);
+    CHECK(profile_tuning_apply("impact_duration_us 2500", &p, &report) ==
+          PROFILE_TUNING_ERR_STRUCTURE);
+    CHECK(profile_tuning_apply("impact_max_us 4000 impact_duration_us 3000", &p, &report) ==
+          PROFILE_TUNING_OK);
+    CHECK(p.impact_duration_us == 3000u && p.impact_max_us == 4000u);
+    CHECK(profile_tuning_apply("impact_duration_us 0", &p, &report) == PROFILE_TUNING_OK);
+    CHECK(p.impact_duration_us == 0u);
+    p = base;
+
     // Types : u8 refuse 300, nombre invalide, valeur manquante, ligne vide.
     p = base;
     CHECK(profile_tuning_apply("pull_duty_pct 300", &p, &report) == PROFILE_TUNING_ERR_RANGE);
@@ -826,7 +850,9 @@ static void test_profile_tuning(void) {
     {
         static const char *const wanted[] = {"pull_duration_us", "pull_duty_pct", "pull_max_us",
                                               "hold_duty_pct",    "hold_duty_max_pct",
-                                              "hold_max_ms",      "min_rest_ms"};
+                                              "hold_max_ms",      "min_rest_ms",
+                                              "impact_duration_us", "impact_duty_pct",
+                                              "impact_max_us"};
 
         for (size_t i = 0u; i < sizeof(wanted) / sizeof(wanted[0]); ++i) {
             CHECK(profile_tuning_find(wanted[i], &index));
@@ -836,7 +862,7 @@ static void test_profile_tuning(void) {
     }
 
     // Table : un champ par membre de la structure, valeurs lues avec la bonne largeur.
-    CHECK(profile_tuning_field_count() == 24u);
+    CHECK(profile_tuning_field_count() == 27u);
     CHECK(profile_tuning_find("dir_safety_delay_us", &index));
     CHECK(profile_tuning_field_value(&base, index) == 200u);
     CHECK(profile_tuning_find("pull_max_us", &index));

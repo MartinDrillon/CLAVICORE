@@ -77,6 +77,9 @@ static solenoid_profile_t make_profile(void) {
     solenoid_profile_t p = {0};
 
     p.pwm_freq_hz = 20000u;
+    p.impact_duration_us = 800u;
+    p.impact_duty_pct = 100u;
+    p.impact_max_us = 2000u;
     p.pull_duration_us = 15000u;
     p.pull_duty_pct = 50u;
     p.pull_max_us = 50000u;
@@ -183,6 +186,20 @@ int main(void) {
         type("p set pull_duty_pct 60\n");
         CHECK(g_send_count == 1 && g_last_sent.pull_duty_pct == 60u);
     }
+
+    puts("--- IMPACT (ADR-0019) : reglable, coherence impact_duration <= impact_max");
+    reset();
+    type("p set impact_duration_us 1200\n");
+    CHECK(g_send_count == 1 && g_last_sent.impact_duration_us == 1200u);
+    reset();
+    type("p set impact_duration_us 2500\n");  // > impact_max_us par defaut (2000)
+    CHECK(g_send_count == 0);
+    reset();
+    type("p set impact_max_us 4000 impact_duration_us 3000\n");
+    CHECK(g_send_count == 1 && g_last_sent.impact_duration_us == 3000u);
+    reset();
+    type("p set impact_duration_us 0\n");  // desactive la phase
+    CHECK(g_send_count == 1 && g_last_sent.impact_duration_us == 0u);
 
     puts("--- retour arriere");
     reset();

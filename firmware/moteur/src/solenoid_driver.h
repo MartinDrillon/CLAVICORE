@@ -2,7 +2,7 @@
 // Contrat HAL : docs/adr/adr-0001-hal-solenoide-drv8874-phen.md (rôles logiques
 // pwm_channel / dir_channel / fault_channel / global_sleep).
 //
-//   IDLE -note_on-> PULL -> HOLD -note_off-> DIR_TO_RELEASE -> RELEASE
+//   IDLE -note_on-> IMPACT -> PULL -> HOLD -note_off-> DIR_TO_RELEASE -> RELEASE
 //        -> DIR_TO_PULL -> REST -> IDLE
 //   IDLE -push_start-> MAINTENANCE -note_off/timeout-> DIR_TO_PULL -> REST -> IDLE
 //   (tout état actif) -NFAULT bas-> FAULT (verrouillé, reset explicite)
@@ -21,6 +21,7 @@
 
 typedef enum {
     SOLENOID_STATE_IDLE = 0,
+    SOLENOID_STATE_IMPACT,
     SOLENOID_STATE_PULL,
     SOLENOID_STATE_HOLD,
     SOLENOID_STATE_DIR_TO_RELEASE,
@@ -57,7 +58,7 @@ typedef struct {
     solenoid_fault_t fault;
     uint32_t state_start_us;
     uint32_t rest_duration_us;
-    bool note_off_pending;    // note_off reçu pendant PULL
+    bool note_off_pending;    // note_off reçu pendant IMPACT ou PULL
     bool hold_timed_out;      // dernière phase HOLD coupée par la limite HOLD_MAX
 } solenoid_driver_t;
 
@@ -77,7 +78,8 @@ solenoid_result_t solenoid_driver_init(solenoid_driver_t *drv, unsigned int pwm_
 // velocity : réservé (ignoré en Phase 2a).
 solenoid_result_t solenoid_driver_note_on(solenoid_driver_t *drv, uint8_t velocity, uint32_t now_us);
 
-// Idempotent : sans effet hors PULL/HOLD. Pendant PULL, la fin de PULL est respectée.
+// Idempotent : sans effet hors IMPACT/PULL/HOLD. Pendant IMPACT ou PULL, la fin
+// de la phase est respectée avant le relâchement.
 solenoid_result_t solenoid_driver_note_off(solenoid_driver_t *drv, uint32_t now_us);
 
 // Impulsion de test PULL seule, bornée par le driver. Refusée si le canal n'est

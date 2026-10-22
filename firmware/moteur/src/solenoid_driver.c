@@ -20,6 +20,12 @@ static uint32_t clamp_duty(uint32_t percent) {
     return percent > max ? max : percent;
 }
 
+static uint32_t impact_duration_us(void) {
+    const solenoid_profile_t *p = profile();
+
+    return p->impact_duration_us > p->impact_max_us ? p->impact_max_us : p->impact_duration_us;
+}
+
 static uint32_t pull_duration_us(void) {
     const solenoid_profile_t *p = profile();
 
@@ -195,9 +201,16 @@ solenoid_result_t solenoid_driver_note_on(solenoid_driver_t *drv, uint8_t veloci
     drv->note_off_pending = false;
     drv->hold_timed_out = false;
     // dir_channel est au niveau PULL en IDLE (garanti par DIR_TO_PULL / init).
-    pwm_hal_set_duty_percent(&drv->pwm_channel, clamp_duty(profile()->pull_duty_pct));
+    // ADR-0019 : l'impulsion IMPACT (duty élevé, très courte) précède PULL. Une
+    // durée d'impulsion nulle (ou écrêtée à 0) va directement en PULL.
+    const uint32_t impact_us = impact_duration_us();
+    const uint32_t first_duty = impact_us > 0u ? clamp_duty(profile()->impact_duty_pct)
+                                               : clamp_duty(profile()->pull_duty_pct);
+    const solenoid_state_t first_state =
+        impact_us > 0u ? SOLENOID_STATE_IMPACT : SOLENOID_STATE_PULL;
+    pwm_hal_set_duty_percent(&drv->pwm_channel, first_duty);
     pwm_hal_enable(&drv->pwm_channel);
-    set_state(drv, SOLENOID_STATE_PULL, now_us);
+    set_state(drv, first_state, now_us);
     return SOLENOID_OK;
 }
 
@@ -205,8 +218,8 @@ solenoid_result_t solenoid_driver_note_off(solenoid_driver_t *drv, uint32_t now_
     if (drv == NULL) {
         return SOLENOID_ERR_PARAM;
     }
-    if (drv->state == SOLENOID_STATE_PULL) {
-        drv->note_off_pending = true;  // PULL va à son terme puis relâche
+    if (drv->state == SOLENOID_STATE_PULL || drv->state == SOLENOID_STATE_IMPACT) {
+        drv->note_off_pending = true;  // IMPACT/PULL va à son terme puis relâche
     } else if (drv->state == SOLENOID_STATE_HOLD) {
         begin_release(drv, now_us);
     } else if (drv->state == SOLENOID_STATE_MAINTENANCE) {
@@ -310,6 +323,16 @@ void solenoid_driver_tick(solenoid_driver_t *drv, uint32_t now_us) {
             begin_dir_to_pull(drv, now_us, profile()->maint_min_rest_ms);
         }
         break;
+    case SOLENOID_STATE_IMPACT:
+        if (elapsed(now_us, drv->state_start_us, impact_duration_us())) {
+            if (drv->note_off_pending) {
+                begin_release(drv, now_us);
+            } else {
+                pwm_hal_set_duty_percent(&drv->pwm_channel, clamp_duty(profile()->pull_duty_pct));
+                set_state(drv, SOLENOID_STATE_PULL, now_us);
+            }
+        }
+        break;
     case SOLENOID_STATE_PULL:
         if (elapsed(now_us, drv->state_start_us, pull_duration_us())) {
             if (drv->note_off_pending) {
@@ -397,6 +420,7 @@ bool solenoid_driver_hold_timed_out(const solenoid_driver_t *drv) {
 const char *solenoid_state_name(solenoid_state_t state) {
     switch (state) {
     case SOLENOID_STATE_IDLE: return "IDLE";
+    case SOLENOID_STATE_IMPACT: return "IMPACT";
     case SOLENOID_STATE_PULL: return "PULL";
     case SOLENOID_STATE_HOLD: return "HOLD";
     case SOLENOID_STATE_DIR_TO_RELEASE: return "DIR_TO_RELEASE";

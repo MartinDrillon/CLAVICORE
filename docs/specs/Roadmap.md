@@ -106,10 +106,10 @@ Forte inspiration de la structure des projets QMK/ZMK, mais adapté à la musiqu
 - [X] Implémenter "clock-test-mode1". La fonction ne servira que lors des tests: elle doit pouvoir être désactivé facilement
 - [X] Test fréquence 
 - [X] Exemple minimal `hardware_pwm` : canal unique (PWM0) déclenchement de test via bouton de test. Objectifs : validation électrique basique, sens du courant, PWM. 
-- [X] Écrire `solenoid_driver.c/h` + `solenoid_profile.h` (3 états : pull/hold/release). Constantes avec modification aisée pour faciliter les ajustements empiriques qui seront faits pendant les tests.
+- [X] Écrire `solenoid_driver.c/h` + `solenoid_profile.h` (3 états : pull/hold/release ; phase IMPACT ajoutée par ADR-0019). Constantes avec modification aisée pour faciliter les ajustements empiriques qui seront faits pendant les tests.
 Toutes les constantes (durées de pull-in/hold/release, valeurs de duty cycle) vivaient dans `solenoid_profile.h`, séparées du code de la machine à états. **Depuis ADR-0013/ADR-0014, le point de réglage unique est côté Clavier** (`firmware/clavier/src/solenoid_profile_config.h`) ; le Moteur ne garde que des valeurs de repli et la persistance flash.
 ```
-IDLE --(note on)--> PULL (duty haut, très court)
+IDLE --(note on)--> IMPACT (duty 100 %, très court ; ADR-0019) --> PULL (duty réduit)
                       --> HOLD (duty bas, jusqu'à note off)
 IDLE <--(fin timer)-- RELEASE (polarité inversée, duty moyen, court) <--(note off)-- HOLD
 ```
@@ -201,6 +201,11 @@ vérifications, 0 échec) ; la campagne **de banc** reste à faire
       unique `firmware/clavier/src/solenoid_profile_config.h`, transfert
       `0x420`–`0x423` à l'auto-test, persistance flash A/B côté Moteur,
       enveloppe thermique supprimée (dérogation à l'invariant 4)
+- [x] Phase **IMPACT** avant PULL (ADR-0019) : format profil **v2** (66 o,
+      11 chunks, version flash 2), 3 champs `impact_*` réglables à la console
+      (ADR-0015) ; **implémenté et validé compilation + tests hôte le
+      2026-10-22** (356 + 19 vérifications, 0 échec) — validation **matérielle**
+      à faire (`tests/phase3b_profil_tuning.md` §2.4)
 - [x] Clavier : écrire la table dès qu'**une** carte complète a répondu, calculer
       les motifs `flags`, émettre `[TABLE]`, `[MAP]`, `[SELFTEST_RAW] ohm_est/i100`
       et `[SELFTEST_OHM]`

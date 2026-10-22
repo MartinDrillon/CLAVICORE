@@ -26,6 +26,9 @@ typedef struct {
 // Même ordre que `solenoid_profile_t` / solenoid_profile_config.h.
 static const field_t g_fields[] = {
     FIELD(pwm_freq_hz, LOCK_PWM),
+    FIELD(impact_duration_us, NULL),
+    FIELD(impact_duty_pct, NULL),
+    FIELD(impact_max_us, NULL),
     FIELD(pull_duration_us, NULL),
     FIELD(pull_duty_pct, NULL),
     FIELD(pull_max_us, NULL),

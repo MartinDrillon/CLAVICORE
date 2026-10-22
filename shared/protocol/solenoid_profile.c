@@ -1,4 +1,4 @@
-// Implémentation du format de profil d'activation des solénoïdes (ADR-0013/0014).
+// Implémentation du format de profil d'activation des solénoïdes (ADR-0013/0014/0019).
 // Voir solenoid_profile.h : aucune dépendance SDK, testable sur hôte.
 #include "solenoid_profile.h"
 
@@ -47,6 +47,11 @@ size_t solenoid_profile_encode(const solenoid_profile_t *profile, uint8_t *out, 
 
     out[offset++] = (uint8_t)SOLENOID_PROFILE_FORMAT_VERSION;
     put_u32_le(&out[offset], profile->pwm_freq_hz);
+    offset += 4u;
+    put_u32_le(&out[offset], profile->impact_duration_us);
+    offset += 4u;
+    out[offset++] = profile->impact_duty_pct;
+    put_u32_le(&out[offset], profile->impact_max_us);
     offset += 4u;
     put_u32_le(&out[offset], profile->pull_duration_us);
     offset += 4u;
@@ -98,6 +103,11 @@ bool solenoid_profile_decode(const uint8_t *data, size_t length, solenoid_profil
     ++offset;  // format_version déjà vérifiée
     out->pwm_freq_hz = get_u32_le(&data[offset]);
     offset += 4u;
+    out->impact_duration_us = get_u32_le(&data[offset]);
+    offset += 4u;
+    out->impact_duty_pct = data[offset++];
+    out->impact_max_us = get_u32_le(&data[offset]);
+    offset += 4u;
     out->pull_duration_us = get_u32_le(&data[offset]);
     offset += 4u;
     out->pull_duty_pct = data[offset++];
@@ -140,7 +150,8 @@ solenoid_profile_result_t solenoid_profile_validate(const solenoid_profile_t *pr
         return SOLENOID_PROFILE_ERR_NULL;
     }
     // Duties : représentables et cohérents entre eux (aucune limite thermique).
-    if (profile->pull_duty_pct > 100u || profile->hold_duty_pct > 100u ||
+    if (profile->impact_duty_pct > 100u ||
+        profile->pull_duty_pct > 100u || profile->hold_duty_pct > 100u ||
         profile->hold_duty_max_pct > 100u || profile->release_duty_pct > 100u ||
         profile->probe_duty_pct > 100u || profile->probe_duty_max_pct > 100u ||
         profile->maint_duty_pct > 100u || profile->maint_duty_max_pct > 100u ||
@@ -154,11 +165,13 @@ solenoid_profile_result_t solenoid_profile_validate(const solenoid_profile_t *pr
         profile->hold_duty_pct > profile->duty_max_pct ||
         profile->release_duty_pct > profile->duty_max_pct ||
         profile->probe_duty_pct > profile->duty_max_pct ||
-        profile->maint_duty_pct > profile->duty_max_pct) {
+        profile->maint_duty_pct > profile->duty_max_pct ||
+        profile->impact_duty_pct > profile->duty_max_pct) {
         return SOLENOID_PROFILE_ERR_DUTY;
     }
     if (profile->pull_duration_us > profile->pull_max_us ||
-        profile->probe_duration_us > profile->probe_max_us) {
+        profile->probe_duration_us > profile->probe_max_us ||
+        profile->impact_duration_us > profile->impact_max_us) {
         return SOLENOID_PROFILE_ERR_CONSISTENCY;
     }
     if (profile->dir_level_pull > 1u || profile->dir_level_release > 1u ||
