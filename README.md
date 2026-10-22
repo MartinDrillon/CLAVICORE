@@ -14,7 +14,7 @@ Le système électronique sera intégré au corps de l’instrument.
 ## L’automatisation
 
 ## Moitié « Moteur »
-*PCB en cours de fabrication*
+*testé et fonctionnel - photo à venir*
 
 La carte de contrôle est basée sur un RP2354B avec un DRV8874 par solénoïde pour un contrôle bidirectionnel. Cinq cartes permettent de gérer les 49 touches du clavier. Les cartes communiquent en CAN.
 
@@ -22,7 +22,7 @@ La carte de contrôle est basée sur un RP2354B avec un DRV8874 par solénoïde 
 
 
 ### Moitié « Clavier »
-*PCB en cours de fabrication*
+*testé et fonctionnel - photo à venir*
 
 Simple matrice de touches gérée par un Pico 2. Les événements « touches pressées » sont communiqués en CAN avec la partie « moteur » du système. Ils pourront également être transmis en MIDI à un ordinateur.
 
@@ -55,22 +55,26 @@ Les solénoïdes sont les éléments centraux du montage. Ils doivent être réa
 ![bobine de côté](Images/bob1.jpg)
 ![bobine plan](Images/bob2.jpg)
 
-Le mandrin est imprimé en 3D avec une résine industrielle résistante à de hautes températures. Sa section est ovoïde pour permettre le mouvement de l’aimant (qui n’est pas parfaitement vertical, la touche s’enfonçant avec un angle) tout en minimisant l’écart avec les spires. La paroi intérieure ne fait que 0,8mm d’épaisseur. Ce prototype tire environ 2,9 ampères pour 14 couches et un fil de 0,35mm. 
+Le mandrin est imprimé en 3D avec une résine industrielle résistante à de hautes températures. Sa section est ovoïde pour permettre le mouvement de l’aimant (qui n’est pas parfaitement vertical, la touche s’enfonçant avec un angle) tout en minimisant l’écart avec les spires. La paroi intérieure ne fait que 0,8mm d’épaisseur. Ce prototype tire environ 3,1 ampères pour 12 couches et un fil de 0,35mm. 
 
-La force max estimée est de 3N, soit environ le double de ce qui est nécessaire au pincement d’une corde. Cette marge devra permettre de garantir la réactivité du système et de compenser la perte de puissance causée par l’échauffement. La force exacte appliquée sera de toute façon controllé en PWM (par exemple 100% pour le pincement, puis très limité pour le maintien de la corde). Ces éléments devront être validés avec un premier prototype fonctionnel.
+La force max estimée est de 3N, soit environ le double de ce qui est nécessaire au pincement d’une corde. Cette marge permet de garantir la réactivité du système et de compenser la perte de puissance causée par l’échauffement. La force exacte appliquée est controllé en PWM (par exemple 100% pour le pincement, puis très limité pour le maintien de la corde). Ces éléments sont en cours de calibration.
 
 ![Évaluation de la force](Images/Graph_bobine.png)
 
 
 ## L’état d’avancement 
+
+Les cartes sont fonctionnelles. Les derniers ajustements firmware et de calibration des solénoïdes sont en cours avant l’assemblage de l’ensemble de l’instrument. Les résultats obtenus sur les premières touches assemblées sont très satisfaisants. 
+
 - [X] Génération d’un script Magpylib pour réaliser un premier dimensionnement des solénoïdes 
 - [X] Modélisation 3D de l’instrument
 - [X] Conception et impression 3D du corps de la bobine intégré sous les touches
 - [X] Premier test concluant avec un fil de 0,4 mm - 2 ampères - 24 volts
-- [X] Conception des cartes de pilotage pour l’ensemble du clavecin *pcb en cours de fabrication*
-- [X] Conception du clavier ergonomique *pcb en cours de fabrication*
+- [X] Conception et assemblage des cartes de pilotage pour l’ensemble du clavecin 
+- [X] Conception et assemblage du clavier ergonomique 
 - [ ] Programmation de l’ensemble *en cours*
-- [ ] Réalisation artisanale de 50 bobines homogènes et installation du système ! 
+- [ ] Calibration du profil d’activation des solénoïdes *en cours*
+- [ ] Réalisation artisanale de 50 bobines homogènes et installation du système ! *en cours*
 
 
 ![3D Bobine Clavecin](Images/3DBobineClavecin.png)
