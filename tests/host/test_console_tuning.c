@@ -57,6 +57,22 @@ can_link_request_result_t can_link_profile_send(const solenoid_profile_t *profil
     return g_send_result;
 }
 
+// Doublure du journal du Clavier (ADR-0017) : diag_out.c dépend du SDK Pico, il
+// n'est pas compilé ici. La console est testée sur ce qu'elle demande, pas sur
+// l'horodatage de ses lignes.
+void diag_out_printf(const char *format, ...) {
+    (void)format;
+}
+void diag_out_line(const char *line) {
+    (void)line;
+}
+uint32_t diag_out_now_ms(void) {
+    return 0u;
+}
+const char *diag_out_build_id(void) {
+    return "test";
+}
+
 static solenoid_profile_t make_profile(void) {
     solenoid_profile_t p = {0};
 

@@ -128,10 +128,73 @@ Règles pratiques :
 
 ## 4. Échec d'acquittement (diagnostic)
 
+### 4.1 Cas attendu : une carte réellement muette
+
 Couper une carte **après** le scan UID, puis `p set min_rest_ms 12` :
 `[STATUS] PROFILE_SYNC_FAILED`, `[PROFILE] sync echec ... acquittements=k/N`,
 une ligne `sync carte pos=… MANQUANT` par carte muette, et
 `reglage: ECHEC`. Le profil actif ne change pas ; `p send` resynchronise.
+
+### 4.2 Cas « carte présente, acquittement manquant »
+
+Observé le **2026-10-21** (chemin `COMMIT` + `PROFILE_STATUS` du Moteur,
+ADR-0015 NEG-002). Depuis ADR-0016 et ADR-0017, la même panne se lit ainsi
+(préfixe d'horodatage `[T+… ms]` omis) :
+
+```text
+[PROFILE] sync debut but=reglage tag=0xF1514600 attendus=2 source=console
+[STATUS] code=PROFILE_SYNC_FAILED
+[PROFILE] sync echec duree=2001 ms delai=2000 ms acquittements=1/2
+[PROFILE] sync carte pos=0 tag=0x456B motif=ACK_TIMEOUT
+[PROFILE] sync carte pos=2 tag=0x9D5C motif=PROFILE_STATUS_SENT_OK
+[PROFILE] pos=0 detient tag=0x4A0B4C69 source=NVM
+[PROFILE] pos=2 detient tag=0xF1514600 source=NVM
+```
+
+Lecture, champ par champ :
+
+- `duree=2001 ms` : le délai a **réellement couru** (à comparer au Test 6 de
+  `phase3b_bout_en_bout.md`, où la régression donnait `duree=0 ms`) ;
+- `motif=ACK_TIMEOUT` : la carte pos=0 n'a rien acquitté **alors qu'elle émet un
+  `PROFILE_STATUS` de boot** — elle parle donc le protocole de profil ;
+- `motif=PROFILE_STATUS_SENT_OK` pour pos=2 : elle a acquitté normalement ;
+- les lignes `detient` sont produites automatiquement après l'échec (ADR-0017
+  décision 6) : pos=0 a **appliqué** le réglage (elle porte `0xF1514600`) — seul
+  son acquittement s'est perdu. La question « S1 ou S2 » ci-dessous est donc
+  tranchée **sans aucune manipulation**.
+
+Un mot-clé `motif=NO_PROFILE_STATUS` (au lieu d'`ACK_TIMEOUT`) désigne l'autre
+cause : la carte n'a jamais annoncé de `PROFILE_STATUS` de boot depuis le dernier
+scan, donc son firmware Moteur est antérieur à ADR-0013 — la seule action utile
+est de reflasher la carte (`[STATUS] code=PROFILE_UNSUPPORTED` est alors émis).
+
+Une ligne `[STATUS] code=PROFILE_ACK_UNATTRIBUTED` (avec
+`[PROFILE] ack inattendu tag=0x…`) signale un acquittement reçu mais non
+attribuable à une carte de `uid_position.h` : il n'est plus jamais jeté en
+silence (ADR-0016 décision 4).
+
+### 4.3 Vérifier au besoin que la carte a bien appliqué
+
+Le Clavier le fait désormais **automatiquement** après un échec : les lignes
+`[PROFILE] pos=N detient tag=0x… source=…` (ADR-0017 décision 6) donnent, pour
+chaque carte, le profil qu'elle détient réellement et sa provenance (`NVM` =
+écrit en flash, `DEFAULTS` = valeurs de repli).
+
+À lire **avant** toute resynchronisation (`p send`, `p reset`, auto-test) : une
+fois les deux côtés d'accord, la trace disparaît.
+
+- `detient tag=0xF1514600` pour la position en échec → la carte **a appliqué** le
+  réglage, seul l'acquittement s'est perdu ;
+- absence de ligne pour cette position, ou `tag` différent du réglage échoué → la
+  carte **n'a pas appliqué** le réglage ; si elle annonce `source=DEFAULTS`,
+  `[STATUS] code=PROFILE_FALLBACK_IN_USE` est aussi émis.
+
+Si la ligne `detient` manque alors que des cartes sont présentes, la re-requête
+n'a pas pu être émise (une requête de contrôle était déjà en cours) : dans ce
+cas seulement, appuyer une fois sur la touche `GET_UID` (ADR-0003) et lire les
+lignes `[PROFILE] pos=… card=… local=… source=…`.
+2. Resynchroniser ensuite : `p send`, `p reset`, ou un auto-test — `p send`
+   réussissait déjà après l'échec observé le 2026-10-21.
 
 ## 5. Persistance côté Moteur (limite D1)
 
@@ -151,6 +214,28 @@ une ligne `sync carte pos=… MANQUANT` par carte muette, et
 ## 7. À relever si un échec persiste
 
 Sortie complète de `p set ...` jusqu'à `reglage: ...`, lignes `[PROFILE] refus` et
-`sync carte`, plus `m`. Un `acquittements=0/N` avec carte « MANQUANT » alors que la
-force a changé au banc = acquittement perdu côté Moteur (voir ADR-0015 NEG-002) ;
-D2 (transfert volatil) supprimerait l'écriture flash de ce chemin.
+`sync carte`, plus `m`. Distinguer avec les champs du journal (ADR-0017) :
+
+- `duree=0 ms` avec `delai=2000 ms` : l'échec a été prononcé **sans qu'aucun délai
+  ne coure** → défaut d'armement d'échéance (Test 6 de `phase3b_bout_en_bout.md`) ;
+- `duree` proche de `delai` avec des cartes en `motif=ACK_TIMEOUT` : chemin
+  `COMMIT`/`PROFILE_STATUS` du Moteur (ADR-0015 NEG-002). Lire les lignes
+  `detient` (§4.3) pour savoir si la carte a appliqué le réglage ou non ;
+- `motif=NO_PROFILE_STATUS` : firmware Moteur antérieur à ADR-0013, reflasher la
+  carte ;
+- `[STATUS] code=PROFILE_ACK_UNATTRIBUTED` : acquittement reçu mais non
+  attribuable (ADR-0016 décision 4).
+
+Points non tranchés à ce jour (décision Architecte, pas de correctif ici) :
+
+- l'acquittement `PROFILE_STATUS` est émis **une seule fois**, sans répétition
+  (`send_profile_status_if_due` libère le drapeau avant l'unique tentative) : une
+  file TX momentanément pleine perd l'acquittement définitivement ;
+- la fenêtre de 2000 ms (réglage) / 1000 ms (auto-test) n'est pas comparée au pire
+  cas d'écriture flash (effacement + programmation + vérification) ;
+- un débordement de la file RX du Clavier pendant une **synchronisation de profil**
+  n'est pas signalé (le rapport `RX_OVERRUN` est conditionné à une requête UID ou
+  un auto-test actif) : S1 et S3 restent indistinguables ;
+- D2 (transfert volatil, ADR-0015, **non implémentée — validation humaine
+  requise**) retirerait l'écriture flash de ce chemin de réglage, mais pas la
+  possibilité de perdre un acquittement.

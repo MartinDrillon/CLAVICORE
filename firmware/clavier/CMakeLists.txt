@@ -44,6 +44,7 @@ add_executable(clavier
     src/note_state.c
     src/profile_tuning.c
     src/diag_log.c
+    src/diag_out.c
     src/usb_log.c
     src/usb_descriptors.c
     ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol/can_protocol.c

@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "can_link.h"
+#include "diag_out.h"
 #include "profile_tuning.h"
 #include "usb_log.h"
 
@@ -21,16 +22,16 @@ static uint8_t g_length;
 static bool g_overflow;  // ligne trop longue : tout ignorer jusqu'à la fin de ligne
 
 static void print_help(void) {
-    printf("[CONSOLE] t=auto-test c=mode_diagnostic d=table m=etat ?=aide p=profil (p ?)\n");
-    printf("[CONSOLE] aucune commande n'ecrit ni n'efface la table\n");
+    diag_out_printf("[CONSOLE] t=auto-test c=mode_diagnostic d=table m=etat ?=aide p=profil (p ?)\n");
+    diag_out_printf("[CONSOLE] aucune commande n'ecrit ni n'efface la table\n");
 }
 
 static void print_profile_help(void) {
-    printf("[PROFILE] p set <champ> <valeur> [<champ> <valeur> ...]  regle et diffuse aux cartes\n");
-    printf("[PROFILE] .<champ> = <valeur>u, ...                       idem (copier-coller du .h)\n");
-    printf("[PROFILE] p get <champ> | p show | p diff | p fields\n");
-    printf("[PROFILE] p send   re-diffuse le profil actif    p reset   diffuse le profil du fichier\n");
-    printf("[PROFILE] reglage = RAM Clavier (perdu au reboot Clavier), cartes: voir ADR-0015\n");
+    diag_out_printf("[PROFILE] p set <champ> <valeur> [<champ> <valeur> ...]  regle et diffuse aux cartes\n");
+    diag_out_printf("[PROFILE] .<champ> = <valeur>u, ...                       idem (copier-coller du .h)\n");
+    diag_out_printf("[PROFILE] p get <champ> | p show | p diff | p fields\n");
+    diag_out_printf("[PROFILE] p send   re-diffuse le profil actif    p reset   diffuse le profil du fichier\n");
+    diag_out_printf("[PROFILE] reglage = RAM Clavier (perdu au reboot Clavier), cartes: voir ADR-0015\n");
 }
 
 static const char *skip_ws(const char *s) {
@@ -56,7 +57,7 @@ static void print_field_line(const solenoid_profile_t *profile, size_t index) {
     char text[64];
 
     if (profile_tuning_format_field(profile, index, text, sizeof(text)) > 0u) {
-        printf("[PROFILE]   %s\n", text);
+        diag_out_printf("[PROFILE]   %s\n", text);
     }
 }
 
@@ -64,7 +65,7 @@ static void profile_show(void) {
     const solenoid_profile_t *active = can_link_profile_active();
     const size_t changed = profile_tuning_diff_count(active, can_link_profile_compiled());
 
-    printf("[PROFILE] actif tag=0x%08lX (%u champ(s) differe(nt) du fichier compile)\n",
+    diag_out_printf("[PROFILE] actif tag=0x%08lX (%u champ(s) differe(nt) du fichier compile)\n",
            (unsigned long)solenoid_profile_tag(active), (unsigned)changed);
     for (size_t i = 0u; i < profile_tuning_field_count(); ++i) {
         print_field_line(active, i);
@@ -79,14 +80,14 @@ static void profile_diff(void) {
     for (size_t i = 0u; i < profile_tuning_field_count(); ++i) {
         if (profile_tuning_field_value(active, i) != profile_tuning_field_value(compiled, i)) {
             if (shown == 0u) {
-                printf("[PROFILE] a recopier dans solenoid_profile_config.h :\n");
+                diag_out_printf("[PROFILE] a recopier dans solenoid_profile_config.h :\n");
             }
             print_field_line(active, i);
             ++shown;
         }
     }
     if (shown == 0u) {
-        printf("[PROFILE] aucune difference avec le fichier compile\n");
+        diag_out_printf("[PROFILE] aucune difference avec le fichier compile\n");
     }
 }
 
@@ -95,9 +96,9 @@ static void profile_fields(void) {
         const char *reason = profile_tuning_field_lock_reason(i);
 
         if (reason == NULL) {
-            printf("[PROFILE]   %-22s reglable\n", profile_tuning_field_name(i));
+            diag_out_printf("[PROFILE]   %-22s reglable\n", profile_tuning_field_name(i));
         } else {
-            printf("[PROFILE]   %-22s verrouille: %s\n", profile_tuning_field_name(i), reason);
+            diag_out_printf("[PROFILE]   %-22s verrouille: %s\n", profile_tuning_field_name(i), reason);
         }
     }
 }
@@ -115,7 +116,7 @@ static void profile_get(const char *name) {
     }
     token[n] = '\0';
     if (!profile_tuning_find(token, &index)) {
-        printf("[PROFILE] champ inconnu '%s' (p fields pour la liste)\n", token);
+        diag_out_printf("[PROFILE] champ inconnu '%s' (p fields pour la liste)\n", token);
         return;
     }
     print_field_line(can_link_profile_active(), index);
@@ -128,12 +129,12 @@ static void profile_set(const char *text) {
     const profile_tuning_result_t result = profile_tuning_apply(text, &candidate, &report);
 
     if (result != PROFILE_TUNING_OK) {
-        printf("[PROFILE] reglage refuse (rien n'est envoye): %s\n",
+        diag_out_printf("[PROFILE] reglage refuse (rien n'est envoye): %s\n",
                profile_tuning_describe(result, &report, message, sizeof(message)));
         return;
     }
     if (profile_tuning_diff_count(can_link_profile_active(), &candidate) == 0u) {
-        printf("[PROFILE] reglage: aucune valeur ne change (p send pour re-diffuser)\n");
+        diag_out_printf("[PROFILE] reglage: aucune valeur ne change (p send pour re-diffuser)\n");
         return;
     }
     for (size_t i = 0u; i < profile_tuning_field_count(); ++i) {
@@ -141,7 +142,7 @@ static void profile_set(const char *text) {
         const uint32_t after = profile_tuning_field_value(&candidate, i);
 
         if (before != after) {
-            printf("[PROFILE]   %s %lu -> %lu\n", profile_tuning_field_name(i),
+            diag_out_printf("[PROFILE]   %s %lu -> %lu\n", profile_tuning_field_name(i),
                    (unsigned long)before, (unsigned long)after);
         }
     }
@@ -165,13 +166,13 @@ static void profile_command(const char *args) {
     } else if (take_word(args, "fields", &rest)) {
         profile_fields();
     } else if (take_word(args, "send", &rest)) {
-        printf("[PROFILE] send: re-diffusion du profil actif\n");
+        diag_out_printf("[PROFILE] send: re-diffusion du profil actif\n");
         (void)can_link_profile_send(can_link_profile_active());
     } else if (take_word(args, "reset", &rest)) {
-        printf("[PROFILE] reset: diffusion du profil du fichier compile\n");
+        diag_out_printf("[PROFILE] reset: diffusion du profil du fichier compile\n");
         (void)can_link_profile_send(can_link_profile_compiled());
     } else {
-        printf("[PROFILE] sous-commande inconnue (p ? pour l'aide)\n");
+        diag_out_printf("[PROFILE] sous-commande inconnue (p ? pour l'aide)\n");
     }
 }
 
@@ -194,13 +195,13 @@ static void execute_line(const char *line) {
     case 'T':
         switch (can_link_request_selftest()) {
         case CAN_LINK_REQUEST_SENT:
-            printf("[CONSOLE] t -> auto-test demande (voir [TRIGGER])\n");
+            diag_out_printf("[CONSOLE] t -> auto-test demande (voir [TRIGGER])\n");
             break;
         case CAN_LINK_REQUEST_BUSY:
-            printf("[CONSOLE] t -> refuse (occupé, voir [STATUS])\n");
+            diag_out_printf("[CONSOLE] t -> refuse (occupé, voir [STATUS])\n");
             break;
         default:
-            printf("[CONSOLE] t -> echec d'emission CAN\n");
+            diag_out_printf("[CONSOLE] t -> echec d'emission CAN\n");
             break;
         }
         break;
@@ -209,24 +210,24 @@ static void execute_line(const char *line) {
         const bool enabled = !can_link_calibration_enabled();
 
         can_link_set_calibration_enabled(enabled);
-        printf("[CONSOLE] c -> mode diagnostic %s\n", enabled ? "ON" : "OFF");
+        diag_out_printf("[CONSOLE] c -> mode diagnostic %s\n", enabled ? "ON" : "OFF");
         break;
     }
     case 'd':
     case 'D':
-        printf("[CONSOLE] d -> table persistée et correspondance\n");
+        diag_out_printf("[CONSOLE] d -> table persistée et correspondance\n");
         can_link_dump_table();
         break;
     case 'm':
     case 'M':
-        printf("[CONSOLE] m -> etat\n");
+        diag_out_printf("[CONSOLE] m -> etat\n");
         can_link_dump_status();
         break;
     case '?':
         print_help();
         break;
     default:
-        printf("[CONSOLE] commande inconnue (?=aide)\n");
+        diag_out_printf("[CONSOLE] commande inconnue (?=aide)\n");
         break;
     }
 }
@@ -269,7 +270,7 @@ void bringup_console_poll(void) {
             g_overflow = true;  // ligne trop longue : ignorée en entier
             g_length = 0u;
             g_line[0] = '\0';
-            printf("[CONSOLE] ligne trop longue (>%u), ignoree\n", (unsigned)(CONSOLE_LINE_MAX - 1u));
+            diag_out_printf("[CONSOLE] ligne trop longue (>%u), ignoree\n", (unsigned)(CONSOLE_LINE_MAX - 1u));
             continue;
         }
         g_line[g_length] = (char)c;

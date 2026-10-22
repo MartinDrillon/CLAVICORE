@@ -101,6 +101,63 @@ Attendu :
 * `[SUMMARY] ... table=NOT_WRITTEN(...)`
 * l'ancienne table reste en vigueur
 
+## Test 6 — Non-régression : synchronisation du profil déclenchée par une trame CAN
+
+Régression corrigée le **2026-10-21** (incident « auto-test impossible par le
+bouton Moteur »). Cause : l'échéance de synchronisation du profil était armée
+depuis le drainage de la file RX, donc avec un horodatage **postérieur** à celui
+de la passe en cours (`first_ms`), et comparée en `uint32_t` non signé : le délai
+paraissait déjà dépassé (`0xFFFFFFFC` ms) et l'échec était prononcé dans la même
+passe, avant toute lecture d'acquittement. Seul le chemin « trame `0x402` reçue
+pendant la passe » était touché ; le chemin console (`t`) ne l'était pas.
+
+### Procédure
+
+1. Système sous tension, table valide chargée (`[TABLE] loaded ...`), au moins
+   une carte présente et en ligne.
+2. **Maintenir le bouton d'une carte Moteur 3 s** (déclenchement par `0x402`).
+3. Relever la séquence complète.
+
+### Attendu
+
+Chaque ligne du journal est précédée de son horodatage (ADR-0017 décision 1) :
+le préfixe `[T+… ms]` est omis ici pour la lisibilité.
+
+```text
+[PROFILE] sync debut but=auto-test tag=0x... attendus=N source=bouton
+[PROFILE] sync ok duree=<ms> acquittements=N/N tag=0x...
+[STATUS] code=SELFTEST_STARTED
+[TRIGGER] source=bouton req=R -> auto-test lance
+```
+
+* aucun `[STATUS] code=PROFILE_SYNC_FAILED` lorsque toutes les cartes attendues
+  sont présentes ;
+* la durée mesurée `duree=` est du même ordre que le délai de 1 000 ms si l'échec
+  survient, et faible (quelques ms) en cas de succès : c'est elle, et non le
+  `delai=` configuré, qui fait foi sur le temps réellement écoulé.
+
+### Contre-épreuve (même résultat par les deux chemins)
+
+Répéter le test avec la commande console `t` puis Entrée : la séquence observée
+doit être **identique** à celle du bouton (mêmes `[PROFILE]`, mêmes `[SELFTEST]`),
+`source=console` au lieu de `source=bouton`. Une différence entre les deux chemins
+signale une régression de l'armement des échéances.
+
+### Signature d'une réapparition de la régression
+
+```text
+[PROFILE] sync debut but=auto-test tag=0x... attendus=N source=bouton
+[STATUS] code=PROFILE_SYNC_FAILED
+[PROFILE] sync echec duree=0 ms delai=1000 ms acquittements=0/N
+[PROFILE] sync carte pos=... tag=0x... motif=ACK_TIMEOUT
+```
+
+Le critère décisif est **`duree=0 ms`** : l'échec a été prononcé sans qu'aucun
+délai ne coure, alors que le délai configuré (`delai=1000 ms`) n'a pas été
+attendu. Un `duree` proche de `delai` désigne au contraire un vrai timeout, donc
+une autre cause (`motif=` le dira : `ACK_TIMEOUT` carte qui ne répond pas,
+`NO_PROFILE_STATUS` carte qui ne parle pas le protocole de profil).
+
 ## Addendum — exemples de session PuTTY
 
 Les exemples ci-dessous **s'ajoutent** aux lignes existantes `[STATUS]`,

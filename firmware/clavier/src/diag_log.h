@@ -44,6 +44,14 @@ typedef enum {
     DIAG_STATUS_PROFILE_SYNC_FAILED = 0x32,
     DIAG_STATUS_PROFILE_DIVERGENT = 0x33,
     DIAG_STATUS_PROFILE_FALLBACK_IN_USE = 0x34,
+    // ADR-0016 : un PROFILE_STATUS reçu ne peut être attribué à aucune carte de
+    // `uid_position.h` (jamais jeté en silence).
+    DIAG_STATUS_PROFILE_ACK_UNATTRIBUTED = 0x35,
+    // ADR-0016 : carte présente dont aucun PROFILE_STATUS de boot n'a été vu
+    // depuis le dernier scan — firmware Moteur antérieur à ADR-0013.
+    DIAG_STATUS_PROFILE_UNSUPPORTED = 0x36,
+    // ADR-0017 : annonce de boot spontanée hors scan de boot = redémarrage.
+    DIAG_STATUS_CARD_REBOOTED = 0x37,
 } diag_status_code_t;
 
 typedef enum {
@@ -116,6 +124,8 @@ typedef enum {
     DIAG_CARD_STATE_OK = 0,
     DIAG_CARD_STATE_MISSING,
     DIAG_CARD_STATE_NOT_OK,
+    // ADR-0017 décision 4 : annonce de boot spontanée hors scan de boot.
+    DIAG_CARD_STATE_REBOOT,
 } diag_card_state_t;
 
 typedef struct {
@@ -137,6 +147,18 @@ typedef struct {
     const char *missing_keys_text;
     const char *table_text;
 } diag_summary_report_t;
+
+// Identité du firmware pour la ligne de boot (ADR-0017 décision 2). `build_id`
+// peut être NULL (affiché comme « inconnu »).
+typedef struct {
+    uint8_t fw_major;
+    uint8_t fw_minor;
+    uint8_t fw_patch;
+    uint8_t proto_version;
+    const char *build_id;
+    const char *table_state;
+    uint8_t cards;
+} diag_boot_report_t;
 
 typedef enum {
     DIAG_NOTE_DROPPED_OUT_OF_RANGE = 0,
@@ -166,10 +188,12 @@ size_t diag_format_selftest_raw_delta_line(char *out, size_t capacity,
                                            const diag_selftest_raw_report_t *report);
 size_t diag_format_selftest_ohm_line(char *out, size_t capacity,
                                      const diag_ohm_summary_t *summary);
-size_t diag_format_boot_line(char *out, size_t capacity, const char *table_state, uint8_t cards);
+size_t diag_format_boot_line(char *out, size_t capacity, const diag_boot_report_t *report);
 size_t diag_format_help_line(char *out, size_t capacity);
-size_t diag_format_trigger_line(char *out, size_t capacity, uint8_t request_id);
-size_t diag_format_trigger_refused_line(char *out, size_t capacity, const char *reason);
+// `source` : « console » ou « bouton » (ADR-0017 décision 5). Jamais NULL.
+size_t diag_format_trigger_line(char *out, size_t capacity, const char *source, uint8_t request_id);
+size_t diag_format_trigger_refused_line(char *out, size_t capacity, const char *source,
+                                        const char *reason);
 size_t diag_format_table_loaded_line(char *out, size_t capacity, bool loaded,
                                      const char *detail);
 size_t diag_format_table_state_line(char *out, size_t capacity, const diag_table_state_t *state);

@@ -8,6 +8,7 @@
 #include "can_link.h"
 #include "bringup_console.h"
 #include "diag_log.h"
+#include "diag_out.h"
 #include "keycode.h"
 #include "keymap.h"
 #include "matrix_scan.h"
@@ -38,7 +39,7 @@ static void emit_diag_line(size_t (*formatter)(char *, size_t, bool), bool value
     char line[DIAG_LOG_LINE_MAX];
 
     if (formatter(line, sizeof(line), value) != 0u) {
-        printf("%s\n", line);
+        diag_out_printf("%s\n", line);
     }
 }
 
@@ -46,7 +47,7 @@ static void emit_status(diag_status_code_t code) {
     char line[DIAG_LOG_LINE_MAX];
 
     if (diag_format_status_line(line, sizeof(line), code) != 0u) {
-        printf("%s\n", line);
+        diag_out_printf("%s\n", line);
     }
 }
 
@@ -162,7 +163,7 @@ static void handle_maintenance_transition(clavier_state_t *state, uint8_t positi
             return;
         }
         if (!note_state_press(&state->notes, &state->keycode, position, keycode.value, &midi_note)) {
-            printf("position %u maintenance resolution failed\n", position);
+            diag_out_printf("position %u maintenance resolution failed\n", position);
             return;
         }
         if (!can_link_maintenance_push_start(midi_note)) {
@@ -201,7 +202,7 @@ static void handle_matrix_transition(uint8_t position, bool pressed, void *conte
     const keycode_t keycode = keymap_keycode_for_position(position);
 
     if (keycode.kind == KEYCODE_NONE) {
-        printf("position %u unused %s\n", position, pressed ? "pressed" : "released");
+        diag_out_printf("position %u unused %s\n", position, pressed ? "pressed" : "released");
         return;
     }
 
@@ -216,20 +217,20 @@ static void handle_matrix_transition(uint8_t position, bool pressed, void *conte
         if (pressed) {
             if (!note_state_press(&state->notes, &state->keycode, position,
                                   keycode.value, &midi_note)) {
-                printf("position %u note resolution failed\n", position);
+                diag_out_printf("position %u note resolution failed\n", position);
                 return;
             }
             state->last_note_event_ms = to_ms_since_boot(get_absolute_time());
             (void)can_link_note_on(midi_note, MIDI_NOTE_VELOCITY);
             if (!midi_note_on(midi_note, MIDI_NOTE_VELOCITY)) {
-                printf("position %u note %u pressed, USB MIDI unavailable\n",
+                diag_out_printf("position %u note %u pressed, USB MIDI unavailable\n",
                        position, midi_note);
             }
         } else if (note_state_release(&state->notes, position, &midi_note)) {
             state->last_note_event_ms = to_ms_since_boot(get_absolute_time());
             (void)can_link_note_off(midi_note);
             if (!midi_note_off(midi_note)) {
-                printf("position %u note %u released, USB MIDI unavailable\n",
+                diag_out_printf("position %u note %u released, USB MIDI unavailable\n",
                        position, midi_note);
             }
         }
@@ -240,7 +241,7 @@ static void handle_matrix_transition(uint8_t position, bool pressed, void *conte
         // ADR-0003 : demande d'UID Moteur, à l'appui seulement (pas d'état dans keycode_state_t).
         if (pressed) {
             const can_link_request_result_t result = can_link_request_uid();
-            printf("position %u GET_UID result %d (0=sent 1=busy 2=tx_fail)\n", position,
+            diag_out_printf("position %u GET_UID result %d (0=sent 1=busy 2=tx_fail)\n", position,
                    (int)result);
         }
         return;
@@ -260,12 +261,12 @@ static void handle_matrix_transition(uint8_t position, bool pressed, void *conte
         keycode_press(&state->keycode, keycode);
     }
     if (keycode.kind == KEYCODE_ALTERATION) {
-        printf("position %u behavior %s state %u %s\n", position, keycode_name(keycode),
+        diag_out_printf("position %u behavior %s state %u %s\n", position, keycode_name(keycode),
                keycode_alteration_state(&state->keycode, keycode),
                pressed ? "pressed" : "released");
         return;
     }
-    printf("position %u behavior %s %s\n", position, keycode_name(keycode),
+    diag_out_printf("position %u behavior %s %s\n", position, keycode_name(keycode),
            pressed ? "pressed" : "released");
 }
 

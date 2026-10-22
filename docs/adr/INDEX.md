@@ -4,7 +4,7 @@ Table de recherche rapide : lis cet index avant d'ouvrir une ADR, et n'ouvre que
 celles dont le titre, les tags ou le résumé concernent ta tâche. Une ligne par
 ADR, triées par numéro.
 
-**Dernière vérification complète : 2026-10-21**
+**Dernière vérification complète : 2026-10-22**
 
 > Tant que cette date est « jamais », l'index peut être incomplet : liste aussi
 > `docs/adr/` (noms de fichiers) avant de conclure qu'une ADR n'existe pas.
@@ -36,6 +36,10 @@ ADR, triées par numéro.
 | [0013](./adr-0013-profil-activation-solenoides-centralise-clavier.md) | Profil d'activation des solénoïdes centralisé sur le Clavier, transféré à l'auto-test IPROPI et persisté côté Moteur | Accepted | architecture, firmware, protocol, hardware | Amende 0004 (§1 et §4) ; amendée par 0014 (§2–§3) | Profil unique côté Clavier, transféré en 0x420–0x423, validé structurellement et persisté en flash A/B. |
 | [0014](./adr-0014-limites-activation-pilotees-profil-clavier-derogation-invariant-4.md) | Limites d'activation des solénoïdes entièrement pilotées par le profil Clavier — dérogation à l'invariant 4 | Accepted | architecture, firmware, hardware, protocol | Amende 0013 (§2–§3) ; amende 0007 et 0012 (valeurs devenues des défauts) ; déroge à l'invariant 4 | Toutes les limites d'activation deviennent des données du profil Clavier, sans borne fixe ; dérogation à l'invariant 4, validation humaine requise. |
 | [0015](./adr-0015-reglage-chaud-profil-console-cdc.md) | Réglage à chaud du profil d'activation par la console CDC (PuTTY) | Proposed | architecture, firmware, protocol, diagnostic | Étend 0013 ; D2 amenderait can_protocol (flag VOLATILE, non implémentée) | Réglage console du profil (D1 implémentée, Clavier seul) ; D2 : transfert volatil sans flash Moteur, validation humaine requise (shared/protocol). |
+| [0016](./adr-0016-attribution-diagnostic-synchronisation-profil.md) | Attribution et diagnostic de la synchronisation du profil — correspondance UID→position unique et motifs d'échec distincts | Accepted | architecture, firmware, diagnostic | Amende partiellement 0013 (§4) ; IMP-010 reformulé par 0017 (décision 6) | Attendus/acquittements du profil attribués par UID sur `uid_position.h` ; motifs d'échec nommés ; échéances comparées en signé. |
+| [0017](./adr-0017-journal-diagnostic-auto-suffisant-horodatage-identite-redemarrages.md) | Journal de diagnostic auto-suffisant — horodatage, identité du firmware, redémarrages de carte et durée mesurée | Accepted | architecture, diagnostic, firmware | Amende 0016 (IMP-010) ; étend le format de 0005 | Horodatage `[T+… ms]`, identité du firmware au boot, `CARD_REBOOTED`, durée mesurée ; redémarrage jamais silencieux. |
+| [0018](./adr-0018-retour-etat-bouton-canaux-moteur-vers-clavier.md) | Retour d'état du bouton et des canaux Moteur vers le Clavier — trame CARD_EVENT (0x424) | Proposed | architecture, firmware, protocol, diagnostic | Étend 0004/0009 (diagnostic du déclenchement) ; réutilise l'attribution UID de 0016 | Trame `0x424` : appui court, déclenchement en attente/émis/bloqué, défauts de canal ; plus d'action Moteur silencieuse. Modifie `shared/protocol`. |
+| [0019](./adr-0019-phase-impact-impulsion-courte-avant-pull.md) | Phase IMPACT — impulsion courte à pleine puissance avant PULL dans le profil d'activation | Accepted | architecture, firmware, protocol, hardware | Amende 0013 (§1 tableau des champs et payload v1) ; étend 0015 (champs réglables) | Phase IMPACT avant PULL : impulsion 100 % bornée, trois champs profil v2, réglable console ; reflash Moteur requis. Modifie `shared/protocol`. |
 <!-- Exemple de ligne :
 | [0000](./adr-0000-exemple.md) | Titre de la décision | Accepted | firmware | — | Résumé en une ligne. |
 -->

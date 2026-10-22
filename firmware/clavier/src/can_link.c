@@ -11,6 +11,7 @@
 
 #include "can_protocol.h"
 #include "commissioning.h"
+#include "diag_out.h"
 #include "solenoid_profile.h"
 #include "solenoid_profile_config.h"
 #include "uid_position.h"
@@ -140,8 +141,29 @@ static uint8_t profile_sync_expected;
 static uint8_t profile_sync_received;
 static bool profile_sync_failed;
 static uint32_t profile_sync_start_ms;
-static bool profile_sync_received_position[UID_POSITION_COUNT];
 static uint32_t local_profile_tag;
+
+// Attente et attribution des acquittements (ADR-0016 décisions 1 à 5) : tout est
+// indexé par INDEX d'entrée de `uid_position_table`, jamais par numéro de
+// position. La position restituée au journal est toujours la position STOCKÉE de
+// l'entrée (`uid_position_table[i].position`).
+typedef enum {
+    PROFILE_CARD_WAITING = 0,   // attendue, aucun acquittement attribuable
+    PROFILE_CARD_ACK_OK,        // PROFILE_STATUS reçu, result = OK
+    PROFILE_CARD_ACK_REJECTED,  // PROFILE_STATUS reçu, result != OK
+} profile_card_ack_t;
+// UID de l'entrée vu en ligne depuis le dernier scan de boot : c'est ce qui
+// définit « attendue » (ADR-0016 décision 2), pas le numéro de position.
+static bool profile_seed_online[UID_POSITION_COUNT];
+// PROFILE_STATUS de boot (transfer_id = 0) reçu de cette entrée : distingue
+// ACK_TIMEOUT de NO_PROFILE_STATUS (ADR-0016 décision 5).
+static bool profile_boot_seen[UID_POSITION_COUNT];
+static profile_card_ack_t profile_card_ack[UID_POSITION_COUNT];
+// Source réelle du déclenchement en cours (ADR-0017 décision 5).
+static const char *profile_sync_source = "bouton";
+// Re-requête d'UID émise après un échec, pour rendre compte de ce que chaque
+// carte détient réellement (ADR-0017 décision 6).
+static bool profile_probe_pending;
 // Réglage à chaud (ADR-0015) : un transfert de profil a un BUT. L'auto-test
 // enchaîne sur 0x401 ; le réglage console se contente de rendre compte.
 typedef enum {
@@ -165,6 +187,15 @@ static uint32_t now_ms(void) {
     return to_ms_since_boot(get_absolute_time());
 }
 
+// Échéance atteinte ? Comparaison SIGNÉE obligatoire : une échéance peut être
+// armée depuis le drainage de la file RX, donc après l'horodatage `first_ms` de
+// la passe en cours (déclenchement 0x402 reçu pendant la passe). Une soustraction
+// `uint32_t` nue la ferait alors passer pour « déjà dépassée » et l'échec serait
+// prononcé avant même que le délai ait couru. ADR-0016 décision 7.
+static bool deadline_reached(uint32_t first_ms, uint32_t start_ms, uint32_t timeout_ms) {
+    return (int32_t)(first_ms - start_ms) >= (int32_t)timeout_ms;
+}
+
 static void format_uid_hex(char out[17], const uint8_t uid[CAN_UID_SIZE]) {
     static const char hex[] = "0123456789ABCDEF";
 
@@ -176,9 +207,7 @@ static void format_uid_hex(char out[17], const uint8_t uid[CAN_UID_SIZE]) {
 }
 
 static void emit_line(const char *line) {
-    if (line != NULL && line[0] != '\0') {
-        printf("%s\n", line);
-    }
+    diag_out_line(line);
 }
 
 static void emit_status(diag_status_code_t code) {
@@ -320,9 +349,17 @@ static void emit_all_table_entries(void) {
 }
 
 static void emit_boot_line(const char *table_state, uint8_t cards) {
+    diag_boot_report_t report = {0};
     char line[DIAG_LOG_LINE_MAX];
 
-    if (diag_format_boot_line(line, sizeof(line), table_state, cards) == 0u) {
+    report.fw_major = CLAVIER_FW_MAJOR;
+    report.fw_minor = CLAVIER_FW_MINOR;
+    report.fw_patch = CLAVIER_FW_PATCH;
+    report.proto_version = CAN_PROTO_VERSION;
+    report.build_id = diag_out_build_id();
+    report.table_state = table_state;
+    report.cards = cards;
+    if (diag_format_boot_line(line, sizeof(line), &report) == 0u) {
         ++stats.events_dropped;
         return;
     }
@@ -342,7 +379,7 @@ static void emit_help_line(void) {
 static void emit_trigger_line(uint8_t request_id) {
     char line[DIAG_LOG_LINE_MAX];
 
-    if (diag_format_trigger_line(line, sizeof(line), request_id) == 0u) {
+    if (diag_format_trigger_line(line, sizeof(line), profile_sync_source, request_id) == 0u) {
         ++stats.events_dropped;
         return;
     }
@@ -352,7 +389,7 @@ static void emit_trigger_line(uint8_t request_id) {
 static void emit_trigger_refused_line(const char *reason) {
     char line[DIAG_LOG_LINE_MAX];
 
-    if (diag_format_trigger_refused_line(line, sizeof(line), reason) == 0u) {
+    if (diag_format_trigger_refused_line(line, sizeof(line), profile_sync_source, reason) == 0u) {
         ++stats.events_dropped;
         return;
     }
@@ -627,6 +664,66 @@ static uint8_t position_for_uid_any(const uint8_t uid[CAN_UID_SIZE]) {
     return UID_POSITION_UNKNOWN_REPORTED;
 }
 
+// ADR-0016 décision 1 : la table d'amorçage `uid_position.h` est l'UNIQUE
+// référence pour nommer les cartes pendant la synchronisation du profil,
+// interrogée par UID COMPLET. La position rendue est toujours la position
+// STOCKÉE de l'entrée, jamais l'index de boucle (IMP-001).
+static int profile_seed_index_for_uid(const uint8_t uid[CAN_UID_SIZE]) {
+    clavicore_uid64_t uid64;
+    uint8_t position;
+    uid_position_lookup_t lookup;
+
+    memcpy(uid64.id, uid, CAN_UID_SIZE);
+    lookup = uid_position_lookup(uid_position_table, UID_POSITION_COUNT, &uid64, &position);
+    if (lookup != UID_POSITION_FOUND) {
+        return -1;
+    }
+    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        if (uid_position_table[i].position == position) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
+// Même correspondance, depuis le `uid_tag` (CRC16) porté par une trame : c'est
+// l'attribution des acquittements (ADR-0016 décisions 3 et 4).
+static int profile_seed_index_for_tag(uint16_t uid_tag) {
+    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        if (uid_position_table[i].position == UID_POSITION_EMPTY) {
+            continue;
+        }
+        if (can_uid_tag(uid_position_table[i].uid.id) == uid_tag) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
+static bool boot_scan_in_progress(void) {
+    return uid_inflight && uid_request_mode == UID_REQUEST_MODE_BOOT_SCAN;
+}
+
+// ADR-0017 décision 4 : une annonce de boot spontanée reçue hors scan de boot
+// est un redémarrage de carte — état des solénoïdes et profil non garantis —
+// donc signalé, daté et compté, jamais toléré en silence (invariant 1).
+static void emit_card_reboot(uint8_t position, const uint8_t uid[CAN_UID_SIZE]) {
+    diag_card_report_t card = {0};
+    char line[DIAG_LOG_LINE_MAX];
+
+    card.position = position;
+    card.node = position < UID_POSITION_COUNT ? (uint8_t)(position + 2u) : 0u;
+    memcpy(card.uid, uid, CAN_UID_SIZE);
+    card.state = DIAG_CARD_STATE_REBOOT;
+    if (diag_format_card_line(line, sizeof(line), &card) == 0u) {
+        ++stats.events_dropped;
+        return;
+    }
+    emit_line(line);
+    emit_status_position(DIAG_STATUS_CARD_REBOOTED, position);
+    ++stats.card_rebooted;
+}
+
 static void emit_uid_report(const uint8_t uid[CAN_UID_SIZE], const can_announce_info_t *info) {
     diag_uid_report_t report = {0};
     char line[DIAG_LOG_LINE_MAX];
@@ -657,6 +754,18 @@ static void emit_uid_report(const uint8_t uid[CAN_UID_SIZE], const can_announce_
     if (commissioning.valid && !commissioning_state_mark_uid_online(&commissioning, uid, NULL)) {
         emit_status_position(DIAG_STATUS_UID_NOT_IN_TABLE, UID_POSITION_UNKNOWN_REPORTED);
         ++stats.boot_unknown;
+    }
+    // « Attendue » se compte sur l'UID vu en ligne depuis le dernier scan de boot
+    // (ADR-0016 décision 2), jamais sur un numéro de position.
+    {
+        const int seed_index = profile_seed_index_for_uid(uid);
+
+        if (seed_index >= 0) {
+            profile_seed_online[(size_t)seed_index] = true;
+        }
+    }
+    if (info != NULL && info->reply_to == CAN_REPLY_TO_BOOT && !boot_scan_in_progress()) {
+        emit_card_reboot(report.position, uid);
     }
     if (uid_inflight && info != NULL && info->reply_to == uid_inflight_id) {
         ++uid_inflight_responses;
@@ -763,20 +872,13 @@ static bool start_uid_request(uid_request_mode_t mode, bool emit_busy_status) {
     control_tx_inflight = true;
     if (mode == UID_REQUEST_MODE_BOOT_SCAN) {
         commissioning_state_set_all_boards_offline(&commissioning);
+        // ADR-0016 décisions 2 et 5 : « attendue » et « parle le protocole de
+        // profil » se réévaluent à chaque scan de boot, en même temps que la
+        // présence des cartes.
+        memset(profile_seed_online, 0, sizeof(profile_seed_online));
+        memset(profile_boot_seen, 0, sizeof(profile_boot_seen));
     }
     return true;
-}
-
-static uint8_t profile_position_for_tag(uint16_t uid_tag) {
-    for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
-        if (uid_position_table[position].position == UID_POSITION_EMPTY) {
-            continue;
-        }
-        if (can_uid_tag(uid_position_table[position].uid.id) == uid_tag) {
-            return position;
-        }
-    }
-    return UID_POSITION_UNKNOWN_REPORTED;
 }
 
 // Émission d'une trame de profil en respectant la file TX de can2040 (3 tampons) :
@@ -796,7 +898,8 @@ static bool send_profile_frame(uint32_t id, uint8_t dlc, const uint8_t *data) {
 // PROFILE_STATUS. Ne déclenche PAS 0x401 : can_link_poll le fait, pour le but
 // SELFTEST uniquement, quand toutes les cartes présentes ont acquitté
 // (ADR-0013 §4). Le but TUNING (ADR-0015) s'arrête au compte rendu.
-static bool begin_profile_sync(const solenoid_profile_t *profile, profile_sync_goal_t goal) {
+static bool begin_profile_sync(const solenoid_profile_t *profile, profile_sync_goal_t goal,
+                               const char *source) {
     uint8_t wire[SOLENOID_PROFILE_WIRE_SIZE];
     uint8_t frame[CAN_DLC_PROFILE_BEGIN];
     const size_t length = solenoid_profile_encode(profile, wire, sizeof(wire));
@@ -856,20 +959,22 @@ static bool begin_profile_sync(const solenoid_profile_t *profile, profile_sync_g
         return false;
     }
 
-    memset(profile_sync_received_position, 0, sizeof(profile_sync_received_position));
-    // Cartes PRÉSENTES uniquement (celles marquées en ligne au dernier scan
-    // UID_REQUEST) : une carte amorcée mais absente ne doit pas bloquer
-    // l'auto-test, conformément au traitement existant des cartes manquantes
-    // (ADR-0009 §2, motif MISSING_BOARD). Sans table valide, on n'attend rien :
-    // l'auto-test de bring-up reste possible.
+    memset(profile_card_ack, 0, sizeof(profile_card_ack));
+    profile_probe_pending = false;
+    profile_sync_source = (source != NULL) ? source : "inconnu";
+    // Cartes ATTENDUES (ADR-0016 décision 2) : les entrées de `uid_position.h`
+    // dont l'UID a été vu en ligne depuis le dernier scan de boot — c'est-à-dire
+    // une carte qui a annoncé son UID. Aucune table persistée n'est requise :
+    // l'auto-test de bring-up reste possible sans table valide. Une entrée
+    // d'amorçage dont l'UID réel ne correspond pas à la carte présente n'est donc
+    // jamais attendue, et ne peut plus bloquer la procédure par un simple effet
+    // de numéro de position.
     profile_sync_expected = 0u;
     for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
-        const uint8_t position = uid_position_table[i].position;
-
-        if (position == UID_POSITION_EMPTY) {
+        if (uid_position_table[i].position == UID_POSITION_EMPTY) {
             continue;
         }
-        if (commissioning.valid && commissioning_state_is_board_online(&commissioning, position)) {
+        if (profile_seed_online[i]) {
             ++profile_sync_expected;
         }
     }
@@ -879,15 +984,25 @@ static bool begin_profile_sync(const solenoid_profile_t *profile, profile_sync_g
     profile_sync_start_ms = now_ms();
     profile_sync_goal = goal;
     profile_sync_pending = *profile;
-    printf("[PROFILE] sync debut but=%s tag=0x%08lX attendus=%u\n",
-           goal == PROFILE_SYNC_GOAL_TUNING ? "reglage" : "auto-test",
-           (unsigned long)solenoid_profile_crc32(wire, length),
-           (unsigned)profile_sync_expected);
+    diag_out_printf("[PROFILE] sync debut but=%s tag=0x%08lX attendus=%u source=%s\n",
+                    goal == PROFILE_SYNC_GOAL_TUNING ? "reglage" : "auto-test",
+                    (unsigned long)solenoid_profile_crc32(wire, length),
+                    (unsigned)profile_sync_expected, profile_sync_source);
     if (goal == PROFILE_SYNC_GOAL_SELFTEST &&
         solenoid_profile_tag(&profile_active) != solenoid_profile_tag(profile)) {
-        printf("[PROFILE] auto-test: le profil du fichier compile remplace le profil regle a chaud\n");
+        diag_out_printf(
+            "[PROFILE] auto-test: le profil du fichier compile remplace le profil regle a chaud\n");
     }
     return true;
+}
+
+// Durée réellement écoulée depuis l'armement (ADR-0017 décision 3). Comparaison
+// SIGNÉE : l'échéance peut avoir été armée après l'horodatage de la passe
+// (ADR-0016 décision 7), et une durée ne peut pas être négative.
+static uint32_t profile_sync_elapsed_ms(uint32_t first_ms) {
+    const int32_t elapsed = (int32_t)(first_ms - profile_sync_start_ms);
+
+    return elapsed > 0 ? (uint32_t)elapsed : 0u;
 }
 
 static const char *profile_result_name(uint8_t result) {
@@ -904,34 +1019,85 @@ static const char *profile_result_name(uint8_t result) {
     }
 }
 
-// Liste, pour chaque carte attendue, si son acquittement est arrivé : sans cela
-// un échec ne dit pas QUELLE carte n'a pas répondu.
-static void print_profile_sync_cards(void) {
-    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
-        const uint8_t position = uid_position_table[i].position;
+// Motif lisible par carte (ADR-0016 décision 5). Un simple « MANQUANT » ne
+// distinguait pas une carte qui ne parle pas le protocole de profil d'une carte
+// qui a reçu mais dont l'acquittement s'est perdu.
+static const char *profile_card_motive_name(size_t index) {
+    switch (profile_card_ack[index]) {
+    case PROFILE_CARD_ACK_OK: return "PROFILE_STATUS_SENT_OK";
+    case PROFILE_CARD_ACK_REJECTED: return "ACK_REJECTED";
+    case PROFILE_CARD_WAITING:
+    default:
+        return profile_boot_seen[index] ? "ACK_TIMEOUT" : "NO_PROFILE_STATUS";
+    }
+}
 
-        if (position == UID_POSITION_EMPTY || position >= UID_POSITION_COUNT ||
-            !commissioning.valid || !commissioning_state_is_board_online(&commissioning, position)) {
+// Au moins une carte attendue n'a rien acquitté ET n'a jamais annoncé de
+// PROFILE_STATUS de boot : son firmware est antérieur à ADR-0013 (IMP-011).
+static bool profile_sync_any_no_boot_status(void) {
+    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        if (uid_position_table[i].position == UID_POSITION_EMPTY || !profile_seed_online[i]) {
             continue;
         }
-        printf("[PROFILE] sync carte pos=%u tag=0x%04X %s\n", (unsigned)position,
-               (unsigned)can_uid_tag(uid_position_table[i].uid.id),
-               profile_sync_received_position[position] ? "acquitte" : "MANQUANT");
+        if (profile_card_ack[i] != PROFILE_CARD_ACK_OK && !profile_boot_seen[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// ADR-0017 décision 6 : après un échec, une seule requête d'UID pour rendre
+// compte de ce que chaque carte détient réellement. N'ouvre aucune fenêtre
+// d'acquittement et ne compte rien.
+static void profile_request_probe(void) {
+    if (start_uid_request(UID_REQUEST_MODE_MANUAL, false)) {
+        profile_probe_pending = true;
+    }
+}
+
+// Liste, pour chaque carte attendue, l'état de son acquittement : sans cela un
+// échec ne dit pas QUELLE carte n'a pas répondu, ni pourquoi (ADR-0016 §5).
+static void print_profile_sync_cards(void) {
+    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        if (uid_position_table[i].position == UID_POSITION_EMPTY || !profile_seed_online[i]) {
+            continue;
+        }
+        diag_out_printf("[PROFILE] sync carte pos=%u tag=0x%04X motif=%s\n",
+                        (unsigned)uid_position_table[i].position,
+                        (unsigned)can_uid_tag(uid_position_table[i].uid.id),
+                        profile_card_motive_name(i));
     }
 }
 
 static void handle_profile_status(const can_profile_status_t *status) {
-    const uint8_t position = profile_position_for_tag(status->uid_tag);
+    // Attribution par UID sur la table d'amorçage, position STOCKÉE restituée
+    // (ADR-0016 décisions 1 et 3).
+    const int seed_index = profile_seed_index_for_tag(status->uid_tag);
+    const uint8_t position = seed_index >= 0 ? uid_position_table[(size_t)seed_index].position
+                                             : UID_POSITION_UNKNOWN_REPORTED;
 
     if (status->transfer_id == CAN_PROFILE_TRANSFER_ID_BOOT) {
+        if (seed_index >= 0) {
+            // La carte parle le protocole de profil : c'est ce qui distingue
+            // ACK_TIMEOUT de NO_PROFILE_STATUS (ADR-0016 décision 5).
+            profile_boot_seen[(size_t)seed_index] = true;
+        }
+        if (profile_probe_pending) {
+            // ADR-0017 décision 6 : compte rendu après échec. Une réponse de boot
+            // n'est JAMAIS un acquittement du transfert qui vient d'échouer.
+            diag_out_printf("[PROFILE] pos=%u detient tag=0x%08lX source=%s\n",
+                            (unsigned)position, (unsigned long)status->profile_tag32,
+                            status->source == CAN_PROFILE_SOURCE_NVM ? "NVM" : "DEFAULTS");
+            return;
+        }
         // Annonce de boot / réponse à UID_REQUEST (ADR-0013 §6) : signaler une
         // divergence, jamais corriger en silence (invariant 1).
         if (status->profile_tag32 != local_profile_tag) {
             emit_status_position(DIAG_STATUS_PROFILE_DIVERGENT, position);
-            printf("[PROFILE] pos=%u card=0x%08lX local=0x%08lX source=%s\n",
-                   (unsigned)position, (unsigned long)status->profile_tag32,
-                   (unsigned long)local_profile_tag,
-                   status->source == CAN_PROFILE_SOURCE_NVM ? "NVM" : "DEFAULTS");
+            diag_out_printf("[PROFILE] pos=%u card=0x%08lX local=0x%08lX source=%s\n",
+                            (unsigned)position, (unsigned long)status->profile_tag32,
+                            (unsigned long)local_profile_tag,
+                            status->source == CAN_PROFILE_SOURCE_NVM ? "NVM" : "DEFAULTS");
             ++stats.profile_divergent;
         }
         if (status->source == CAN_PROFILE_SOURCE_DEFAULTS) {
@@ -942,14 +1108,27 @@ static void handle_profile_status(const can_profile_status_t *status) {
     if (!profile_sync_active || status->transfer_id != profile_sync_transfer_id) {
         return;
     }
-    if (position < UID_POSITION_COUNT && !profile_sync_received_position[position]) {
-        profile_sync_received_position[position] = true;
-        ++profile_sync_received;
+    if (seed_index < 0 || !profile_seed_online[(size_t)seed_index]) {
+        // ADR-0016 décision 4 : un acquittement non attribuable n'est jamais
+        // jeté en silence. Produit dès réception, sans attendre le délai.
+        diag_out_printf("[PROFILE] ack inattendu tag=0x%04X transfer=%u result=%u\n",
+                        (unsigned)status->uid_tag, (unsigned)status->transfer_id,
+                        (unsigned)status->result);
+        emit_status(DIAG_STATUS_PROFILE_ACK_UNATTRIBUTED);
+        ++stats.profile_ack_unattributed;
+        return;
     }
-    if (status->result != CAN_PROFILE_RESULT_OK) {
+    if (status->result == CAN_PROFILE_RESULT_OK) {
+        if (profile_card_ack[(size_t)seed_index] != PROFILE_CARD_ACK_OK) {
+            profile_card_ack[(size_t)seed_index] = PROFILE_CARD_ACK_OK;
+            ++profile_sync_received;
+        }
+    } else {
+        profile_card_ack[(size_t)seed_index] = PROFILE_CARD_ACK_REJECTED;
         profile_sync_failed = true;
-        printf("[PROFILE] refus pos=%u result=%u %s\n", (unsigned)position,
-               (unsigned)status->result, profile_result_name((uint8_t)status->result));
+        diag_out_printf("[PROFILE] refus pos=%u result=%u %s\n", (unsigned)position,
+                        (unsigned)status->result,
+                        profile_result_name((uint8_t)status->result));
     }
 }
 
@@ -1415,7 +1594,7 @@ static void log_table_diff(const commissioning_entry_t *old_entry,
     if (new_entry != NULL) {
         format_uid_hex(new_uid, new_entry->identity.uid.id);
     }
-    printf("[TABLE] diff pos=%u old_uid=%s new_uid=%s old=0x%03X new=0x%03X\n",
+    diag_out_printf("[TABLE] diff pos=%u old_uid=%s new_uid=%s old=0x%03X new=0x%03X\n",
            (unsigned)position, old_uid, new_uid,
            (unsigned)(old_entry != NULL ? old_entry->occupation_bitmap : 0u),
            (unsigned)(new_entry != NULL ? new_entry->occupation_bitmap : 0u));
@@ -1719,6 +1898,10 @@ static void handle_selftest_trigger(uint8_t dlc, const uint8_t *data) {
     const can_proto_result_t result =
         can_decode_ipropi_selftest_trigger(data, dlc, &trigger);
 
+    // Provient d'une trame CAN (bouton Moteur) : posé AVANT tout refus, pour que
+    // même une ligne de refus nomme la bonne source (ADR-0017 décision 5).
+    profile_sync_source = "bouton";
+
     if (result == CAN_PROTO_BAD_DLC) {
         ++stats.rx_bad_dlc;
         note_bad_frame();
@@ -1744,7 +1927,9 @@ static void handle_selftest_trigger(uint8_t dlc, const uint8_t *data) {
         emit_trigger_refused_line("jeu en cours");
         return;
     }
-    if (!begin_profile_sync(&k_solenoid_profile, PROFILE_SYNC_GOAL_SELFTEST)) {
+    // Déclenchement reçu en CAN : « bouton » est un fait, pas une supposition
+    // (ADR-0017 décision 5).
+    if (!begin_profile_sync(&k_solenoid_profile, PROFILE_SYNC_GOAL_SELFTEST, "bouton")) {
         emit_status(DIAG_STATUS_CAN_TX_FAIL);
         emit_trigger_refused_line("echec emission profil CAN");
         return;
@@ -1874,7 +2059,10 @@ void can_link_init(void) {
     profile_sync_received = 0u;
     profile_sync_failed = false;
     profile_sync_start_ms = 0u;
-    memset(profile_sync_received_position, 0, sizeof(profile_sync_received_position));
+    memset(profile_seed_online, 0, sizeof(profile_seed_online));
+    memset(profile_boot_seen, 0, sizeof(profile_boot_seen));
+    memset(profile_card_ack, 0, sizeof(profile_card_ack));
+    profile_probe_pending = false;
 
     table_blank = commissioning_flash_table_is_blank();
     load_result = commissioning_state_load(&commissioning);
@@ -1943,7 +2131,7 @@ void can_link_poll(void) {
     }
 
     if (uid_inflight &&
-        (uint32_t)(first_ms - uid_inflight_start_ms) >= CAN_UID_REQUEST_TIMEOUT_MS) {
+        deadline_reached(first_ms, uid_inflight_start_ms, CAN_UID_REQUEST_TIMEOUT_MS)) {
         if (uid_request_mode == UID_REQUEST_MODE_BOOT_SCAN && commissioning.valid) {
             for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
                 if (commissioning.runtime.position_present[position] &&
@@ -1961,6 +2149,9 @@ void can_link_poll(void) {
         }
         uid_inflight = false;
         uid_request_mode = UID_REQUEST_MODE_NONE;
+        // Fin de la re-requête post-échec (ADR-0017 décision 6) : les annonces
+        // suivantes retrouvent le compte rendu de divergence habituel.
+        profile_probe_pending = false;
     }
 
     if (selftest_session.active &&
@@ -1968,8 +2159,8 @@ void can_link_poll(void) {
           (!selftest_session.calibration_mode ||
            (selftest_session.raw_received_count >= selftest_session.raw_expected_count &&
             selftest_session.ohm_received_count >= selftest_session.raw_expected_count))) ||
-         (uint32_t)(first_ms - selftest_session.start_ms) >=
-             CAN_LINK_SELFTEST_TIMEOUT_MS)) {
+         deadline_reached(first_ms, selftest_session.start_ms,
+                          CAN_LINK_SELFTEST_TIMEOUT_MS))) {
         finish_selftest_session();
     }
 
@@ -1986,37 +2177,47 @@ void can_link_poll(void) {
             profile_sync_active = false;
             print_profile_sync_cards();
             if (tuning) {
-                printf("[PROFILE] reglage: ECHEC (refus). Etat des cartes incertain; "
-                       "le profil actif reste celui d'avant (p show). 'p send' resynchronise\n");
+                diag_out_printf("[PROFILE] reglage: ECHEC (refus). Etat des cartes incertain; "
+                                "le profil actif reste celui d'avant (p show). 'p send' "
+                                "resynchronise\n");
             }
         } else if (profile_sync_received >= profile_sync_expected) {
             profile_sync_active = false;
             profile_active = profile_sync_pending;
             local_profile_tag = solenoid_profile_tag(&profile_active);
+            diag_out_printf("[PROFILE] sync ok duree=%lu ms acquittements=%u/%u tag=0x%08lX\n",
+                            (unsigned long)profile_sync_elapsed_ms(first_ms),
+                            (unsigned)profile_sync_received, (unsigned)profile_sync_expected,
+                            (unsigned long)local_profile_tag);
             if (tuning) {
-                printf("[PROFILE] reglage: OK acquittements=%u/%u tag=0x%08lX\n",
-                       (unsigned)profile_sync_received, (unsigned)profile_sync_expected,
-                       (unsigned long)local_profile_tag);
                 if (profile_sync_expected == 0u) {
-                    printf("[PROFILE] reglage: AUCUNE carte attendue (table invalide ou aucune carte "
-                           "en ligne au dernier scan): application NON confirmee\n");
+                    diag_out_printf("[PROFILE] reglage: AUCUNE carte attendue (table invalide ou "
+                                    "aucune carte en ligne au dernier scan): application NON "
+                                    "confirmee\n");
                 }
             } else if (!start_selftest_request()) {
                 emit_status(DIAG_STATUS_CAN_TX_FAIL);
             } else {
                 emit_trigger_line(selftest_session.request_id);
             }
-        } else if ((uint32_t)(first_ms - profile_sync_start_ms) >= timeout_ms) {
+        } else if (deadline_reached(first_ms, profile_sync_start_ms, timeout_ms)) {
             emit_status(DIAG_STATUS_PROFILE_SYNC_FAILED);
             ++stats.profile_sync_failed;
             profile_sync_active = false;
-            printf("[PROFILE] sync echec (delai %lu ms) acquittements=%u/%u\n",
-                   (unsigned long)timeout_ms, (unsigned)profile_sync_received,
-                   (unsigned)profile_sync_expected);
+            diag_out_printf("[PROFILE] sync echec duree=%lu ms delai=%lu ms acquittements=%u/%u\n",
+                            (unsigned long)profile_sync_elapsed_ms(first_ms),
+                            (unsigned long)timeout_ms, (unsigned)profile_sync_received,
+                            (unsigned)profile_sync_expected);
             print_profile_sync_cards();
+            if (profile_sync_any_no_boot_status()) {
+                // Carte présente qui n'a jamais annoncé de PROFILE_STATUS de boot :
+                // firmware Moteur antérieur à ADR-0013, seule action = reflasher.
+                emit_status(DIAG_STATUS_PROFILE_UNSUPPORTED);
+            }
+            profile_request_probe();
             if (tuning) {
-                printf("[PROFILE] reglage: ECHEC (pas d'acquittement). Les cartes MANQUANT ont pu "
-                       "appliquer sans que l'acquittement ne revienne; 'p send' resynchronise\n");
+                diag_out_printf("[PROFILE] reglage: ECHEC (pas d'acquittement). Voir le motif par "
+                                "carte ci-dessus; 'p send' resynchronise\n");
             }
         }
     }
@@ -2044,6 +2245,8 @@ can_link_request_result_t can_link_request_uid(void) {
 }
 
 can_link_request_result_t can_link_request_selftest(void) {
+    // Demandé depuis la console : posé avant tout refus (ADR-0017 décision 5).
+    profile_sync_source = "console";
     if (selftest_session.active) {
         emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
         return CAN_LINK_REQUEST_BUSY;
@@ -2056,7 +2259,8 @@ can_link_request_result_t can_link_request_selftest(void) {
         emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
         return CAN_LINK_REQUEST_BUSY;
     }
-    if (!started || !begin_profile_sync(&k_solenoid_profile, PROFILE_SYNC_GOAL_SELFTEST)) {
+    if (!started ||
+        !begin_profile_sync(&k_solenoid_profile, PROFILE_SYNC_GOAL_SELFTEST, "console")) {
         emit_status(DIAG_STATUS_CAN_TX_FAIL);
         return CAN_LINK_REQUEST_TX_FAIL;
     }
@@ -2076,19 +2280,19 @@ const solenoid_profile_t *can_link_profile_compiled(void) {
 // rendu ([PROFILE] reglage: OK/ECHEC) est émis plus tard par can_link_poll.
 can_link_request_result_t can_link_profile_send(const solenoid_profile_t *profile) {
     if (profile == NULL || !started) {
-        printf("[PROFILE] reglage refuse: CAN non demarre\n");
+        diag_out_printf("[PROFILE] reglage refuse: CAN non demarre\n");
         return CAN_LINK_REQUEST_TX_FAIL;
     }
     if (profile_sync_active || selftest_session.active || uid_inflight || control_tx_inflight) {
-        printf("[PROFILE] reglage refuse: operation CAN en cours (attendre la fin, voir [STATUS])\n");
+        diag_out_printf("[PROFILE] reglage refuse: operation CAN en cours (attendre la fin, voir [STATUS])\n");
         return CAN_LINK_REQUEST_BUSY;
     }
     if (recent_playing()) {
-        printf("[PROFILE] reglage refuse: jeu en cours (lacher les touches, attendre 0,5 s)\n");
+        diag_out_printf("[PROFILE] reglage refuse: jeu en cours (lacher les touches, attendre 0,5 s)\n");
         return CAN_LINK_REQUEST_BUSY;
     }
-    if (!begin_profile_sync(profile, PROFILE_SYNC_GOAL_TUNING)) {
-        printf("[PROFILE] reglage: echec d'emission CAN\n");
+    if (!begin_profile_sync(profile, PROFILE_SYNC_GOAL_TUNING, "console")) {
+        diag_out_printf("[PROFILE] reglage: echec d'emission CAN\n");
         return CAN_LINK_REQUEST_TX_FAIL;
     }
     return CAN_LINK_REQUEST_SENT;

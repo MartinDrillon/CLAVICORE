@@ -474,23 +474,38 @@ static void test_diag_lines(void) {
     diag_card_report_t card = {4u, 6u, {0}, DIAG_CARD_STATE_OK, 0x00Bu,
                                "0,1,3", "1,2,3", "DO2(36),DO#2(37),RE2(38)"};
     diag_summary_report_t summary = {1u, 1u, 3u, 3u, "4-49", "WRITTEN"};
+    diag_boot_report_t boot = {0u, 1u, 0u, 1u, "2026-10-22 12:00:00", "loaded", 2u};
 
     memcpy(uid.uid, UID_A, 8u);
     memcpy(table.uid, UID_A, 8u);
     memcpy(card.uid, UID_A, 8u);
     CHECK(diag_format_uid_line(out, sizeof(out), &uid) ==
           strlen("[UID] pos=127 uid=E660583883123456 fw=0.1.0 proto=1 reply_to=0"));
-    CHECK(diag_format_boot_line(out, sizeof(out), "loaded", 2u) ==
-          strlen("[BOOT] table=loaded cards=2"));
-    CHECK(strcmp(out, "[BOOT] table=loaded cards=2") == 0);
+    boot.fw_major = 0u;
+    boot.fw_minor = 1u;
+    boot.fw_patch = 0u;
+    boot.proto_version = 1u;
+    boot.build_id = "2026-10-22 12:00:00";
+    boot.table_state = "loaded";
+    boot.cards = 2u;
+    CHECK(diag_format_boot_line(out, sizeof(out), &boot) ==
+          strlen("[BOOT] fw=0.1.0 proto=1 build=2026-10-22 12:00:00 table=loaded cards=2"));
+    CHECK(strcmp(out, "[BOOT] fw=0.1.0 proto=1 build=2026-10-22 12:00:00 table=loaded cards=2") ==
+          0);
+    boot.build_id = NULL;
+    CHECK(diag_format_boot_line(out, sizeof(out), &boot) != 0u);
+    CHECK(strcmp(out, "[BOOT] fw=0.1.0 proto=1 build=inconnu table=loaded cards=2") == 0);
     CHECK(diag_format_help_line(out, sizeof(out)) ==
           strlen("[HELP] bouton Moteur 3 s = auto-test ; table rechargee depuis la flash"));
-    CHECK(diag_format_trigger_line(out, sizeof(out), 42u) ==
-          strlen("[TRIGGER] bouton Moteur recu -> auto-test lance (req=42)"));
-    CHECK(strcmp(out, "[TRIGGER] bouton Moteur recu -> auto-test lance (req=42)") == 0);
-    CHECK(diag_format_trigger_refused_line(out, sizeof(out), "jeu en cours") ==
-          strlen("[TRIGGER] bouton Moteur recu -> refus: jeu en cours"));
-    CHECK(strcmp(out, "[TRIGGER] bouton Moteur recu -> refus: jeu en cours") == 0);
+    CHECK(diag_format_trigger_line(out, sizeof(out), "bouton", 42u) ==
+          strlen("[TRIGGER] source=bouton req=42 -> auto-test lance"));
+    CHECK(strcmp(out, "[TRIGGER] source=bouton req=42 -> auto-test lance") == 0);
+    CHECK(diag_format_trigger_line(out, sizeof(out), "console", 7u) ==
+          strlen("[TRIGGER] source=console req=7 -> auto-test lance"));
+    CHECK(strcmp(out, "[TRIGGER] source=console req=7 -> auto-test lance") == 0);
+    CHECK(diag_format_trigger_refused_line(out, sizeof(out), "console", "jeu en cours") ==
+          strlen("[TRIGGER] source=console -> refus: jeu en cours"));
+    CHECK(strcmp(out, "[TRIGGER] source=console -> refus: jeu en cours") == 0);
     CHECK(diag_format_table_loaded_line(out, sizeof(out), true, "count=2") ==
           strlen("[TABLE] loaded count=2"));
     CHECK(strcmp(out, "[TABLE] loaded count=2") == 0);
@@ -599,9 +614,11 @@ static void print_example_case_a(void) {
     memcpy(card.uid, UID_A, 8u);
 
     puts("EXEMPLE_CASE_A_BEGIN");
-    (void)diag_format_boot_line(line, sizeof(line), "absent", 0u);
+    (void)diag_format_boot_line(
+        line, sizeof(line),
+        &(diag_boot_report_t){0u, 1u, 0u, 1u, "2026-10-22 12:00:00", "absent", 0u});
     puts(line);
-    (void)diag_format_trigger_line(line, sizeof(line), 42u);
+    (void)diag_format_trigger_line(line, sizeof(line), "bouton", 42u);
     puts(line);
     (void)diag_format_selftest_line(
         line, sizeof(line),

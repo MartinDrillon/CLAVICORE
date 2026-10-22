@@ -33,6 +33,10 @@ typedef struct {
     uint32_t boot_unknown;
     uint32_t profile_sync_failed;
     uint32_t profile_divergent;
+    // ADR-0016 décision 4 : PROFILE_STATUS non attribuable à une carte attendue.
+    uint32_t profile_ack_unattributed;
+    // ADR-0017 décision 4 : annonces de boot spontanées (redémarrages de carte).
+    uint32_t card_rebooted;
 } can_link_stats_t;
 
 void can_link_init(void);

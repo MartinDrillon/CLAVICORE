@@ -74,6 +74,9 @@ const char *diag_status_code_name(diag_status_code_t code) {
     case DIAG_STATUS_PROFILE_SYNC_FAILED: return "PROFILE_SYNC_FAILED";
     case DIAG_STATUS_PROFILE_DIVERGENT: return "PROFILE_DIVERGENT";
     case DIAG_STATUS_PROFILE_FALLBACK_IN_USE: return "PROFILE_FALLBACK_IN_USE";
+    case DIAG_STATUS_PROFILE_ACK_UNATTRIBUTED: return "PROFILE_ACK_UNATTRIBUTED";
+    case DIAG_STATUS_PROFILE_UNSUPPORTED: return "PROFILE_UNSUPPORTED";
+    case DIAG_STATUS_CARD_REBOOTED: return "CARD_REBOOTED";
     default: return NULL;
     }
 }
@@ -106,6 +109,7 @@ const char *diag_card_state_name(diag_card_state_t state) {
     case DIAG_CARD_STATE_OK: return "OK";
     case DIAG_CARD_STATE_MISSING: return "MISSING";
     case DIAG_CARD_STATE_NOT_OK: return "NOT_OK";
+    case DIAG_CARD_STATE_REBOOT: return "REBOOT";
     default: return NULL;
     }
 }
@@ -315,14 +319,24 @@ size_t diag_format_map_line(char *out, size_t capacity, uint8_t position, uint8_
     return (written < 0) ? 0u : (size_t)written;
 }
 
-size_t diag_format_boot_line(char *out, size_t capacity, const char *table_state, uint8_t cards) {
+size_t diag_format_boot_line(char *out, size_t capacity, const diag_boot_report_t *report) {
     int written;
+    const char *table_state;
+    const char *build_id;
 
-    if (table_state == NULL || table_state[0] == '\0') {
+    if (report == NULL) {
         return 0u;
     }
-    written = write_line(out, capacity, "[BOOT] table=%s cards=%u", table_state,
-                         (unsigned)cards);
+    table_state = (report->table_state != NULL && report->table_state[0] != '\0')
+                      ? report->table_state
+                      : "inconnu";
+    build_id = (report->build_id != NULL && report->build_id[0] != '\0') ? report->build_id
+                                                                         : "inconnu";
+    written = write_line(out, capacity,
+                         "[BOOT] fw=%u.%u.%u proto=%u build=%s table=%s cards=%u",
+                         (unsigned)report->fw_major, (unsigned)report->fw_minor,
+                         (unsigned)report->fw_patch, (unsigned)report->proto_version, build_id,
+                         table_state, (unsigned)report->cards);
     return (written < 0) ? 0u : (size_t)written;
 }
 
@@ -333,20 +347,26 @@ size_t diag_format_help_line(char *out, size_t capacity) {
     return (written < 0) ? 0u : (size_t)written;
 }
 
-size_t diag_format_trigger_line(char *out, size_t capacity, uint8_t request_id) {
-    const int written = write_line(
-        out, capacity,
-        "[TRIGGER] bouton Moteur recu -> auto-test lance (req=%u)", (unsigned)request_id);
+// ADR-0017 décision 5 : la provenance réelle du déclenchement, jamais supposée.
+size_t diag_format_trigger_line(char *out, size_t capacity, const char *source, uint8_t request_id) {
+    int written;
+
+    if (source == NULL || source[0] == '\0') {
+        return 0u;
+    }
+    written = write_line(out, capacity, "[TRIGGER] source=%s req=%u -> auto-test lance", source,
+                         (unsigned)request_id);
     return (written < 0) ? 0u : (size_t)written;
 }
 
-size_t diag_format_trigger_refused_line(char *out, size_t capacity, const char *reason) {
+size_t diag_format_trigger_refused_line(char *out, size_t capacity, const char *source,
+                                        const char *reason) {
     int written;
 
-    if (reason == NULL || reason[0] == '\0') {
+    if (source == NULL || source[0] == '\0' || reason == NULL || reason[0] == '\0') {
         return 0u;
     }
-    written = write_line(out, capacity, "[TRIGGER] bouton Moteur recu -> refus: %s", reason);
+    written = write_line(out, capacity, "[TRIGGER] source=%s -> refus: %s", source, reason);
     return (written < 0) ? 0u : (size_t)written;
 }
 
