@@ -67,6 +67,10 @@ flash : `tests/build_clavier_windows.md` §6.4.
 - `MOTEUR_ENABLE_CLOCK_TEST` (**ON** par défaut, `CMakeLists.txt:38`) : compile la
   feature de diagnostic d'horloge (GPIO41). `OFF` n'inclut aucun code et
   n'utilise que les stubs de `src/clock_test.h`.
+- `MOTEUR_DIAG_TRACE` (**ON** au bring-up, ADR-0025 implémentée) : inclut les
+  événements ordinaires, les compteurs et le répondeur `0x403`/`0x425`. `OFF`
+  retire ces outils d'un build final validé, mais conserve les événements de
+  santé/action et toutes les trames fonctionnelles.
 
 ## 5. Tests hôte et validation (procédure exécutée le 2026-10-21)
 
@@ -77,6 +81,13 @@ cmake --build "build/moteur"                     # recompilation + link
 
 Les tests hôte compilent `firmware/moteur/src/ipropi_ohm.c` (calcul ohmique pur,
 ADR-0009) mais **pas** le reste du Moteur : ils ne remplacent pas un build.
+ADR-0024 (implémentée, validée hôte 2026-10-24) a ajouté le harnais dédié au
+réveil (`solenoid_driver.c` avec doublures GPIO/PWM) et des tests de ventilation
+des compteurs. Procédure complète, build, tests hôte et campagne uptime/24 h :
+[`procedure_adr0024_reveil_uptime.md`](./procedure_adr0024_reveil_uptime.md).
+ADR-0025 (implémentée, validée hôte 2026-10-24) a ajouté l'option
+`MOTEUR_DIAG_TRACE` et la validation des événements ordinaires/santé : voir
+[`procedure_adr0025_journal_niveaux.md`](./procedure_adr0025_journal_niveaux.md).
 
 Rediriger les sorties vers un fichier (`*> "build\...\build.log"`) puis n'en
 extraire que les erreurs et le résumé.

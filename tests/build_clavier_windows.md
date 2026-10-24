@@ -8,10 +8,10 @@ projet. Elle couvre les deux firmwares :
 - **Moteur** (RP2354B, **sans port USB**) : `build/moteur/moteur.elf`, flashé par
   **SWD** avec OpenOCD — section 6. Aucun `.uf2` n'est utilisé pour cette carte.
 
-Statut : procédures validées — builds réussis sans warning/erreur. Dernière
-validation : **2026-10-21** (ADR-0010) ; artefact Clavier
-`build/clavier/clavier.uf2` de **129 536 octets**, `.elf` à `text 68 440 /
-data 0 / bss 11 060` (RP2350 : 4 Mo flash, 520 Ko SRAM). La taille dépend des
+Statut : procédures de build validées — builds réussis sans warning/erreur.
+Dernière validation complète : **2026-10-24** (lot ADR-0016 à ADR-0021) ; artefact
+Clavier `build/clavier/clavier.uf2` de **166 912 octets**, `moteur.elf` de
+**647 628 octets** (RP2350 : 4 Mo flash, 520 Ko SRAM). La taille dépend des
 options de build (§5), volontairement activées pendant le bring-up.
 
 ## 1. Pré-requis d'environnement
@@ -82,10 +82,15 @@ mode BOOTSEL.
 Commandes validées le **2026-10-21** (ADR-0010), à rejouer identiquement :
 
 ```powershell
-powershell -File tests\host\run_host_tests.ps1   # 221 vérifications, 0 échec
+powershell -File tests\host\run_host_tests.ps1   # 221 au lot ADR-0010 ; résultat courant 2026-10-24 : 581
 cmake --build "build/clavier"                    # Clavier (pico2) → clavier.uf2
 cmake --build "build/moteur"                     # Moteur → moteur.elf (flash SWD, §6)
 ```
+
+**Résultat de référence du 2026-10-24** (ADR-0016 à ADR-0025) : **581
+vérifications hôte, 0 échec**, `clavier.uf2` 173 056 o, `clavier-final.uf2`
+169 984 o, `moteur.elf` 651 080 o (648 872 o final). Détail :
+`docs/specs/validation-adr-0023-25-2026-10-24.md`.
 
 Rediriger les sorties vers un fichier (`*> "build\...\build.log"`) plutôt que de
 les laisser dans la conversation, puis n'en extraire que les erreurs et le
@@ -102,14 +107,29 @@ build/moteur/CMakeFiles/moteur.dir/D_/<chemin-du-repo>/shared/protocol/commissio
 ```
 
 **Options actives pendant le bring-up** (défauts de
-`firmware/clavier/CMakeLists.txt:17,19` et `can_link.c:35`) :
+`firmware/clavier/CMakeLists.txt:17,19` et `can_link.c:43-47`) :
 `CLAVIER_SELFTEST_CALIBRATION=ON`, `CLAVIER_CDC_CONSOLE=ON`,
-`CLAVIER_MAP_LOG=1`. Elles expliquent la taille actuelle de l'artefact et sont à
-repasser à `OFF`/`0` en configuration finale (ADR-0009 §7/§9).
+`CLAVIER_DIAG_DEFAULT_LEVEL=1`, `CLAVIER_DIAG_TRACE=ON`. ADR-0025 a remplacé
+`CLAVIER_MAP_LOG`/`CLAVIER_NOTE_LOG` ; le build final utilise niveau `0` et
+TRACE `OFF`.
+Ces options expliquent la taille de l'artefact et sont à ajuster en configuration
+finale (ADR-0009 §7/§9, ADR-0025 §8).
 
 **Non couvert par ces commandes** (à faire au banc) : PROBE 5 ms, estimation
 ohmique et tri des bobines (`tests/bringup_commissioning_provisoire.md`),
 résolution de notes bout en bout (`tests/phase3b_bout_en_bout.md`).
+
+**ADR-0023 — synchronisation du profil** : la procédure dédiée, avec tests hôte
+des reprises/réconciliations et campagne de 200 alternances, est dans
+[`tests/procedure_adr0023_sync_profil.md`](./procedure_adr0023_sync_profil.md).
+**ADR-0024 — réveil et compteurs** : la procédure de build, tests hôte et
+campagnes uptime/24 h est dans
+[`tests/procedure_adr0024_reveil_uptime.md`](./procedure_adr0024_reveil_uptime.md).
+**ADR-0025 — journal et statistiques** : la procédure des niveaux `l 0|1|2`,
+des builds TRACE ON/OFF et des mesures avant/après est dans
+[`tests/procedure_adr0025_journal_niveaux.md`](./procedure_adr0025_journal_niveaux.md).
+Les tests hôte supplémentaires s'ajoutent à `run_host_tests.ps1` ; le nombre de
+vérifications ci-dessus ne doit pas être réutilisé comme oracle.
 
 ## 6. Carte Moteur — build du `.elf` et flash SWD (pas de UF2)
 

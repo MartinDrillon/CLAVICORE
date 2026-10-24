@@ -1,20 +1,22 @@
 ---
 title: "ADR-0022: Précisions après le premier banc — acquittement répété inconditionnellement, refus de tag non signalé, appui court renommé"
-status: "Proposed"
+status: "Superseded"
 date: "2026-10-24"
 authors: "Agent Architecte"
 tags: ["architecture", "diagnostic", "firmware"]
 supersedes: ""
-superseded_by: ""
+superseded_by: "0023, 0025"
 ---
 
 ### Status
-**Proposed**
+**Superseded**
 
-Amende ADR-0020 (décision 1 et §3) et ADR-0018 (vocabulaire de l'événement 0).
-**Aucune interface de `shared/protocol/` n'est modifiée** : mêmes identifiants,
-mêmes DLC, mêmes octets, même valeur numérique pour l'événement renommé. Aucune
-dérogation aux invariants 1 à 6.
+ADR non implémentée, remplacée avant acceptation : sa décision 1 est remplacée
+par ADR-0023 (reprise complète et réconciliation d'état) ; ses décisions 2 et 3
+sont reprises par ADR-0025 (politique de journal). Ce remplacement documentaire
+est immédiat ; l'implémentation des ADR remplaçantes attend leur propre passage à
+`Accepted`. Le contenu ci-dessous est conservé pour l'historique et ne doit pas
+être implémenté isolément.
 
 ### Context
 

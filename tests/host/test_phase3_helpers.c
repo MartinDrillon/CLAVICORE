@@ -4,11 +4,17 @@
 #include <string.h>
 
 #include "can_protocol.h"
+#include "card_counter_names.h"
 #include "commissioning_table.h"
 #include "diag_log.h"
+#include "diag_out.h"
 #include "ipropi_ohm.h"
+#include "motor_counter_map.h"
 #include "profile_tuning.h"
 #include "solenoid_profile.h"
+#include "solenoid_wake.h"
+#include "stats_probe_logic.h"
+#include "stats_line_format.h"
 #include "uid_position_format.h"
 
 static int g_failures = 0;
@@ -270,6 +276,13 @@ static void test_card_event_and_stats_codecs(void) {
     can_card_stats_t stats = {CAN_PROTO_VERSION, CAN_CARD_COUNTER_COMMANDS_OK, 0x29B1u, 123456u};
     can_card_stats_t stats_out = {0};
 
+    CHECK(CAN_CARD_EVENT_MANUAL_TEST_STARTED == 0u);
+    CHECK(CAN_CARD_COUNTER_COUNT == 18u);
+    event.event = CAN_CARD_EVENT_MANUAL_TEST_STARTED;
+    CHECK(diag_format_card_event_line(line, sizeof(line), 2u, &event) > 0u);
+    CHECK(strcmp(line, "[CARD] pos=2 event=MANUAL_TEST_STARTED ch=3 state=2 fault=0x000") == 0);
+    event.event = CAN_CARD_EVENT_TRIGGER_BLOCKED;
+
     CHECK(can_encode_card_event(data, &event) == CAN_PROTO_OK);
     CHECK(can_decode_card_event(data, CAN_DLC_CARD_EVENT, &out) == CAN_PROTO_OK);
     CHECK(out.event == event.event && out.channel == event.channel && out.state == event.state);
@@ -306,6 +319,16 @@ static void test_card_event_and_stats_codecs(void) {
     CHECK(can_encode_card_stats(stats_data, &stats) == CAN_PROTO_OK);
     CHECK(can_decode_card_stats(stats_data, CAN_DLC_CARD_STATS, &stats_out) == CAN_PROTO_OK);
     CHECK(stats_out.value == stats.value && stats_out.uid_tag == stats.uid_tag);
+    // ADR-0024 : les IDs 13–17 sont valides, 18 est hors bornes.
+    request.counter_id = CAN_CARD_COUNTER_REJECT_OTHER;
+    CHECK(can_encode_card_stats_request(req_data, &request) == CAN_PROTO_OK);
+    CHECK(can_decode_card_stats_request(req_data, CAN_DLC_CARD_STATS_REQUEST, &request_out) ==
+          CAN_PROTO_OK);
+    CHECK(request_out.counter_id == CAN_CARD_COUNTER_REJECT_OTHER);
+    stats.counter_id = CAN_CARD_COUNTER_REJECT_SLEEP;
+    CHECK(can_encode_card_stats(stats_data, &stats) == CAN_PROTO_OK);
+    CHECK(can_decode_card_stats(stats_data, CAN_DLC_CARD_STATS, &stats_out) == CAN_PROTO_OK);
+    CHECK(stats_out.counter_id == CAN_CARD_COUNTER_REJECT_SLEEP);
     stats_data[1] = (uint8_t)CAN_CARD_COUNTER_COUNT;  // compteur inconnu
     CHECK(can_decode_card_stats(stats_data, CAN_DLC_CARD_STATS, &stats_out) == CAN_PROTO_BAD_VALUE);
 }
@@ -556,6 +579,133 @@ static void test_ipropi_ohm_codec(void) {
     CHECK(can_decode_ipropi_ohm(data, CAN_DLC_IPROPI_OHM, &out) == CAN_PROTO_BAD_VALUE);
 }
 
+static void test_adr24_counter_mapping(void) {
+    // C-01 : un succès n'a aucun compteur de refus.
+    CHECK(solenoid_reject_counter_id(SOLENOID_OK) == CAN_CARD_COUNTER_COUNT);
+    // C-02 : les quatre causes explicites.
+    CHECK(solenoid_reject_counter_id(SOLENOID_ERR_SLEEP) == CAN_CARD_COUNTER_REJECT_SLEEP);
+    CHECK(solenoid_reject_counter_id(SOLENOID_ERR_REST) == CAN_CARD_COUNTER_REJECT_REST);
+    CHECK(solenoid_reject_counter_id(SOLENOID_ERR_BUSY) == CAN_CARD_COUNTER_REJECT_BUSY);
+    CHECK(solenoid_reject_counter_id(SOLENOID_ERR_FAULT) == CAN_CARD_COUNTER_REJECT_FAULT);
+    // C-03 : tout autre refus tombe dans OTHER.
+    CHECK(solenoid_reject_counter_id(SOLENOID_ERR_PARAM) == CAN_CARD_COUNTER_REJECT_OTHER);
+    CHECK(solenoid_reject_counter_id(SOLENOID_ERR_PWM) == CAN_CARD_COUNTER_REJECT_OTHER);
+    CHECK(solenoid_reject_counter_id(SOLENOID_ERR_FAULT_PERSISTS) ==
+          CAN_CARD_COUNTER_REJECT_OTHER);
+    // C-04 : les causes sont distinctes et dans la plage 13–17.
+    CHECK(CAN_CARD_COUNTER_REJECT_SLEEP != CAN_CARD_COUNTER_REJECT_REST);
+    CHECK(CAN_CARD_COUNTER_REJECT_REST != CAN_CARD_COUNTER_REJECT_BUSY);
+    CHECK(CAN_CARD_COUNTER_REJECT_BUSY != CAN_CARD_COUNTER_REJECT_FAULT);
+    CHECK(CAN_CARD_COUNTER_REJECT_FAULT != CAN_CARD_COUNTER_REJECT_OTHER);
+    // C-07 : la trame relit la source ISR, pas une copie périmée.
+    CHECK(motor_counter_rx_overrun(7u, 0u) == 7u);
+    CHECK(motor_counter_rx_overrun(0u, 99u) == 0u);
+    // C-08 : tous les IDs 0–17 sont nommés, 18 ne l'est pas.
+    for (uint8_t id = 0u; id < (uint8_t)CAN_CARD_COUNTER_COUNT; ++id) {
+        CHECK(clavier_card_counter_name((can_card_counter_t)id) != NULL);
+    }
+    CHECK(clavier_card_counter_name((can_card_counter_t)CAN_CARD_COUNTER_COUNT) == NULL);
+    // C-09/C-10 : carte ancienne ext=n/a, carte muette NO_RESPONSE.
+    CHECK(stats_card_ext_unavailable(true, false));
+    CHECK(!stats_card_ext_unavailable(true, true));
+    CHECK(!stats_card_ext_unavailable(false, false));
+    CHECK(stats_card_silent(false));
+    CHECK(!stats_card_silent(true));
+}
+
+static void test_stats_aggregation(void) {
+    bool seen[CAN_CARD_COUNTER_COUNT] = {0};
+    uint32_t value[CAN_CARD_COUNTER_COUNT] = {0};
+    char line[DIAG_OUT_LINE_MAX];
+    char status[DIAG_OUT_LINE_MAX];
+    bool incomplete = false;
+
+    // L-16/L-17 : une ligne par carte, champs obligatoires et non-nuls seulement.
+    for (uint8_t id = 0u; id < (uint8_t)CAN_CARD_COUNTER_COUNT; ++id) {
+        seen[id] = true;
+    }
+    value[CAN_CARD_COUNTER_COMMANDS_OK] = 61u;
+    value[CAN_CARD_COUNTER_IGNORED_TAG] = 3u;
+    CHECK(stats_format_card_line(line, sizeof(line), 0u, seen, value, false, &incomplete));
+    CHECK(strstr(line, "[CARD] pos=0 stats ") == line);
+    CHECK(strstr(line, "commands_ok=61") != NULL);
+    CHECK(strstr(line, "ignored_tag=3") != NULL);
+    CHECK(strstr(line, "selftest_blocked=0") == NULL);
+    CHECK(!incomplete);
+
+    // L-18 : carte ancienne répond aux anciens compteurs, pas aux nouveaux.
+    CHECK(stats_format_card_line(line, sizeof(line), 2u, seen, value, true, &incomplete));
+    CHECK(strstr(line, "ext=n/a") != NULL);
+    CHECK(!incomplete);
+
+    // L-19/L-20 : champ obligatoire absent et bilan incomplet.
+    seen[CAN_CARD_COUNTER_COMMANDS_OK] = false;
+    CHECK(stats_format_card_line(line, sizeof(line), 0u, seen, value, false, &incomplete));
+    CHECK(incomplete);
+    CHECK(strstr(line, "commands_ok=?") != NULL);
+    CHECK(stats_format_summary_line(status, sizeof(status), 123u, 61u, true));
+    CHECK(strcmp(status, "[STATS] note_sent=123 cartes_ok=n/a ecart=n/a") == 0);
+    CHECK(stats_format_summary_line(status, sizeof(status), 123u, 61u, false));
+    CHECK(strcmp(status, "[STATS] note_sent=123 cartes_ok=61 ecart=62") == 0);
+
+    // Une ligne trop petite échoue explicitement, sans troncature silencieuse.
+    CHECK(!stats_format_card_line(line, 8u, 0u, seen, value, false, &incomplete));
+}
+
+static void test_solenoid_wake_latch(void) {
+    solenoid_wake_state_t s = {false, 0u};
+
+    // W-01/W-02 : pas prêt avant l'échéance, prêt et verrouillé après.
+    s.deadline_us = 2000u;
+    CHECK(!solenoid_wake_ready(&s, false, 2000u));
+    CHECK(!solenoid_wake_ready(&s, true, 1999u));
+    CHECK(solenoid_wake_ready(&s, true, 2000u));
+    CHECK(s.latched);
+    // W-03/W-09 : le verrou tient au-delà de 2^31 µs et des rebouclages.
+    CHECK(solenoid_wake_ready(&s, true, 0x80000000u + 2000u));
+    CHECK(solenoid_wake_ready(&s, true, 0xFFFFFFFFu));
+
+    s.latched = false;
+    // W-04 : échéance après rebouclage.
+    s.deadline_us = 0x700u;
+    CHECK(!solenoid_wake_ready(&s, true, 0xFFFFFC18u));
+    CHECK(solenoid_wake_ready(&s, true, 0x700u));
+    CHECK(solenoid_wake_ready(&s, true, 0x800u));
+
+    // W-05 : sleep/wake réarme l'attente.
+    s.latched = true;
+    s.latched = false;
+    s.deadline_us = 5000u;
+    CHECK(!solenoid_wake_ready(&s, true, 4999u));
+    CHECK(solenoid_wake_ready(&s, true, 5000u));
+
+    // W-06/W-07/W-08 : le verrou est global, ne prend aucun état de canal, et
+    // reste soumis à nSLEEP ; note_on/probe/push/reset partagent cette porte.
+    s.latched = false;
+    s.deadline_us = 100u;
+    CHECK(!solenoid_wake_ready(&s, true, 99u));
+    CHECK(solenoid_wake_ready(&s, true, 100u));
+    CHECK(!solenoid_wake_ready(&s, false, 100u));
+    CHECK(s.latched);
+}
+
+static void test_diag_class_filter(void) {
+    // L-01/L-02/L-03 : niveau et catégories de base.
+    // L-06/L-07/L-11/L-12 : notes, RAW et PUSH courants sont TRACE.
+    // L-10 : alertes et réponses console ne sont jamais filtrées.
+    // L-24/L-25 : TRACE non compilé ne rend jamais le niveau 2 disponible.
+    for (uint8_t level = 0u; level <= 2u; ++level) {
+        CHECK(diag_class_enabled_for_level(DIAG_CLASS_ALWAYS, level, true));
+        CHECK(diag_class_enabled_for_level(DIAG_CLASS_CONSOLE, level, true));
+        CHECK(diag_class_enabled_for_level(DIAG_CLASS_NORMAL, level, true));
+        CHECK(diag_class_enabled_for_level(DIAG_CLASS_BRINGUP, level, true) == (level >= 1u));
+        CHECK(diag_class_enabled_for_level(DIAG_CLASS_TRACE, level, true) == (level >= 2u));
+        CHECK(!diag_class_enabled_for_level(DIAG_CLASS_TRACE, level, false));
+    }
+    CHECK(diag_class_enabled_for_level(DIAG_CLASS_ALWAYS, 0u, false));
+    CHECK(diag_class_enabled_for_level(DIAG_CLASS_NORMAL, 0u, false));
+}
+
 static void test_diag_lines(void) {
     char out[DIAG_LOG_LINE_MAX];
     diag_uid_report_t uid = {0u, {0}, 0u, 1u, 0u, 1u, 0x7Fu};
@@ -564,7 +714,7 @@ static void test_diag_lines(void) {
     diag_selftest_raw_report_t raw = {42u, 4u, 3u, 12u, 345u, 6005u, 3846u};
     diag_card_report_t card = {4u, 6u, {0}, DIAG_CARD_STATE_OK, 0x00Bu,
                                "0,1,3", "1,2,3", "DO2(36),DO#2(37),RE2(38)"};
-    diag_summary_report_t summary = {1u, 1u, 3u, 3u, "4-49", "WRITTEN"};
+    diag_summary_report_t summary = {1u, 1u, 3u, 3u, "4-49", "WRITTEN", true};
     diag_boot_report_t boot = {0u, 1u, 0u, 1u, "2026-10-22 12:00:00", "loaded", 2u};
 
     memcpy(uid.uid, UID_A, 8u);
@@ -623,8 +773,12 @@ static void test_diag_lines(void) {
           strlen("[CARD_UNKNOWN] uid=AA10203040506070"));
     CHECK(strcmp(out, "[CARD_UNKNOWN] uid=AA10203040506070") == 0);
     CHECK(diag_format_summary_line(out, sizeof(out), &summary) ==
-          strlen("[SUMMARY] cards_ok=1/1 channels=3 keys=3/49 missing_keys=4-49 table=WRITTEN"));
-    CHECK(strcmp(out, "[SUMMARY] cards_ok=1/1 channels=3 keys=3/49 missing_keys=4-49 table=WRITTEN") == 0);
+          strlen("[SUMMARY] cards_ok=1/1 channels=3 keys=3/49 missing_keys=4-49 table=WRITTEN calib=ON"));
+    CHECK(strcmp(out, "[SUMMARY] cards_ok=1/1 channels=3 keys=3/49 missing_keys=4-49 table=WRITTEN calib=ON") == 0);
+    summary.calib_enabled = false;
+    CHECK(diag_format_summary_line(out, sizeof(out), &summary) > 0u);
+    CHECK(strstr(out, "calib=OFF") != NULL);
+    summary.calib_enabled = true;
     CHECK(diag_format_note_line(out, sizeof(out), 84u, 49u, 4u, 3u) ==
           strlen("[NOTE] midi=84 key=49 pos=4 ch=3"));
     CHECK(strcmp(out, "[NOTE] midi=84 key=49 pos=4 ch=3") == 0);
@@ -700,7 +854,7 @@ static void print_example_case_a(void) {
     char line[DIAG_LOG_LINE_MAX];
     diag_card_report_t card = {4u, 6u, {0}, DIAG_CARD_STATE_OK, 0x00Bu,
                                "0,1,3", "1,2,3", "DO2(36),DO#2(37),RE2(38)"};
-    diag_summary_report_t summary = {1u, 1u, 3u, 3u, "4-49", "WRITTEN"};
+    diag_summary_report_t summary = {1u, 1u, 3u, 3u, "4-49", "WRITTEN", true};
 
     memcpy(card.uid, UID_A, 8u);
 
@@ -999,6 +1153,10 @@ int main(void) {
     test_commissioning_flash_state_and_legacy();
     test_ipropi_ohm_math();
     test_ipropi_ohm_codec();
+    test_adr24_counter_mapping();
+    test_stats_aggregation();
+    test_solenoid_wake_latch();
+    test_diag_class_filter();
     test_diag_lines();
     print_example_case_a();
 

@@ -7,6 +7,10 @@
 
 #include "board_identity.h"
 #include "can_link.h"
+
+#ifndef MOTEUR_DIAG_TRACE
+#define MOTEUR_DIAG_TRACE 1
+#endif
 #include "clock_test.h"
 #include "config.h"
 #include "ipropi_selftest.h"
@@ -146,7 +150,7 @@ int main(void) {
             }
             // ADR-0018 : action locale jusqu'ici invisible côté Clavier.
             (void)can_link_send_card_event(
-                CAN_CARD_EVENT_BUTTON_SHORT_PRESS, manual_test_active_channel,
+                CAN_CARD_EVENT_MANUAL_TEST_STARTED, manual_test_active_channel,
                 (uint8_t)solenoid_driver_state(&drivers[manual_test_active_channel]),
                 (uint8_t)solenoid_driver_fault(&drivers[manual_test_active_channel]));
         }
@@ -159,8 +163,10 @@ int main(void) {
             trigger_blocked_reported = false;
             ignore_until_release = true;
             selftest_logged = false;
+#if MOTEUR_DIAG_TRACE
             (void)can_link_send_card_event(CAN_CARD_EVENT_TRIGGER_PENDING,
                                            CAN_CARD_EVENT_CHANNEL_NONE, 0u, 0u);
+#endif
         }
 
         if (falling) {
@@ -193,8 +199,10 @@ int main(void) {
                                                    (uint8_t)solenoid_driver_state(&drivers[i]),
                                                    fault_code);
                 } else {
+#if MOTEUR_DIAG_TRACE
                     (void)can_link_send_card_event(CAN_CARD_EVENT_CHANNEL_FAULT_CLEARED, i,
                                                    (uint8_t)solenoid_driver_state(&drivers[i]), 0u);
+#endif
                 }
                 last_fault_code[i] = fault_code;
             }
@@ -203,8 +211,10 @@ int main(void) {
         if (selftest_trigger_pending && all_channels_idle(drivers)) {
             if (can_link_send_selftest_trigger()) {
                 printf("[moteur] selftest trigger 0x402 emis apres appui long\n");
+#if MOTEUR_DIAG_TRACE
                 (void)can_link_send_card_event(CAN_CARD_EVENT_TRIGGER_SENT,
                                                CAN_CARD_EVENT_CHANNEL_NONE, 0u, 0u);
+#endif
             } else {
                 printf("[moteur] echec emission selftest trigger 0x402\n");
             }

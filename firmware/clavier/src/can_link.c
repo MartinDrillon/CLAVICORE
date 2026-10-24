@@ -12,6 +12,10 @@
 #include "can_protocol.h"
 #include "commissioning.h"
 #include "diag_out.h"
+#include "profile_sync_logic.h"
+#include "card_counter_names.h"
+#include "stats_probe_logic.h"
+#include "stats_line_format.h"
 #include "solenoid_profile.h"
 #include "solenoid_profile_config.h"
 #include "uid_position.h"
@@ -38,18 +42,8 @@
 #ifndef CLAVIER_SELFTEST_CALIBRATION
 #define CLAVIER_SELFTEST_CALIBRATION 0
 #endif
-// Lignes [MAP] (une par canal assigné) : confort de bring-up (ADR-0009 §4).
-// Passer à 0 en configuration finale.
-#ifndef CLAVIER_MAP_LOG
-#define CLAVIER_MAP_LOG 1
-#endif
-#ifndef CLAVIER_NOTE_LOG
-#define CLAVIER_NOTE_LOG 0
-#endif
-
-// ADR-0020 §4 : affichage des notes à l'exécution, basculable par la console
-// (`n`). La constante de compilation ne fixe que l'état initial.
-static bool note_log_enabled = (CLAVIER_NOTE_LOG != 0);
+// Journal ADR-0025 : toute émission passe par une catégorie explicite. Les
+// helpers sans catégorie restent ALWAYS pour ne jamais perdre une erreur.
 
 typedef enum {
     SLOT_FREE = 0,
@@ -138,13 +132,26 @@ static bool boot_card_summary_pending;
 // Synchronisation du profil d'activation (ADR-0013 §4) : le profil est diffusé
 // AVANT 0x401, et l'auto-test n'est déclenché que si toutes les cartes présentes
 // l'ont acquitté.
+#define CAN_LINK_PROFILE_MAX_ATTEMPTS PROFILE_SYNC_MAX_ATTEMPTS
 static bool profile_sync_active;
 static uint8_t profile_sync_transfer_id;
 static uint8_t profile_sync_next_transfer_id;
+static uint8_t profile_sync_transfer_ids[CAN_LINK_PROFILE_MAX_ATTEMPTS];
+static uint8_t profile_sync_transfer_count;
+static uint8_t profile_sync_attempt;
 static uint8_t profile_sync_expected;
 static uint8_t profile_sync_received;
+static uint8_t profile_sync_reconciled;
+static uint8_t profile_sync_late;
+static uint8_t profile_sync_retries;
 static bool profile_sync_failed;
+static bool profile_probe_finished;
+static bool profile_selftest_start_pending;
 static uint32_t profile_sync_start_ms;
+static uint32_t profile_sync_attempt_start_ms;
+static uint32_t profile_sync_expected_tag;
+static uint8_t profile_sync_wire[SOLENOID_PROFILE_WIRE_SIZE];
+static size_t profile_sync_wire_len;
 static uint32_t local_profile_tag;
 
 // Attente et attribution des acquittements (ADR-0016 décisions 1 à 5) : tout est
@@ -152,9 +159,11 @@ static uint32_t local_profile_tag;
 // position. La position restituée au journal est toujours la position STOCKÉE de
 // l'entrée (`uid_position_table[i].position`).
 typedef enum {
-    PROFILE_CARD_WAITING = 0,   // attendue, aucun acquittement attribuable
-    PROFILE_CARD_ACK_OK,        // PROFILE_STATUS reçu, result = OK
-    PROFILE_CARD_ACK_REJECTED,  // PROFILE_STATUS reçu, result != OK
+    PROFILE_CARD_WAITING = 0,       // attendue, aucun acquittement attribuable
+    PROFILE_CARD_ACK_OK,            // PROFILE_STATUS reçu, result = OK
+    PROFILE_CARD_RETRYABLE,         // refus de transport, tentative suivante permise
+    PROFILE_CARD_TERMINAL,          // refus terminal ou divergence
+    PROFILE_CARD_VERIFIED_NVM,      // sonde finale: OK + NVM + tag attendu
 } profile_card_ack_t;
 // UID de l'entrée vu en ligne depuis le dernier scan de boot : c'est ce qui
 // définit « attendue » (ADR-0016 décision 2), pas le numéro de position.
@@ -163,6 +172,7 @@ static bool profile_seed_online[UID_POSITION_COUNT];
 // ACK_TIMEOUT de NO_PROFILE_STATUS (ADR-0016 décision 5).
 static bool profile_boot_seen[UID_POSITION_COUNT];
 static profile_card_ack_t profile_card_ack[UID_POSITION_COUNT];
+static bool profile_card_divergent[UID_POSITION_COUNT];
 // Source réelle du déclenchement en cours (ADR-0017 décision 5).
 static const char *profile_sync_source = "bouton";
 // Re-requête d'UID émise après un échec, pour rendre compte de ce que chaque
@@ -210,8 +220,20 @@ static void format_uid_hex(char out[17], const uint8_t uid[CAN_UID_SIZE]) {
     out[16] = '\0';
 }
 
+static void emit_line_class(diag_class_t category, const char *line) {
+    diag_out_line_class(category, line);
+}
+
 static void emit_line(const char *line) {
-    diag_out_line(line);
+    emit_line_class(DIAG_CLASS_ALWAYS, line);
+}
+
+// Seuls SELFTEST_STARTED (0x20) et TABLE_WRITTEN (0x23) sont des progressions
+// normales. Tout autre code est une anomalie qui reste visible à l 0.
+static diag_class_t status_class(diag_status_code_t code) {
+    return (code == DIAG_STATUS_SELFTEST_STARTED || code == DIAG_STATUS_TABLE_WRITTEN)
+               ? DIAG_CLASS_BRINGUP
+               : DIAG_CLASS_ALWAYS;
 }
 
 static void emit_status(diag_status_code_t code) {
@@ -221,7 +243,7 @@ static void emit_status(diag_status_code_t code) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(status_class(code), line);
 }
 
 static void emit_status_position(diag_status_code_t code, uint8_t position) {
@@ -231,7 +253,7 @@ static void emit_status_position(diag_status_code_t code, uint8_t position) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(status_class(code), line);
 }
 
 static void emit_status_bitmap(diag_status_code_t code, uint8_t position, uint16_t bitmap) {
@@ -241,7 +263,7 @@ static void emit_status_bitmap(diag_status_code_t code, uint8_t position, uint16
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(DIAG_CLASS_ALWAYS, line);
 }
 
 static void emit_table_loaded(bool loaded, const char *detail) {
@@ -251,10 +273,10 @@ static void emit_table_loaded(bool loaded, const char *detail) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(loaded ? DIAG_CLASS_BRINGUP : DIAG_CLASS_ALWAYS, line);
 }
 
-static void emit_table_state_line(void) {
+static void emit_table_state_line(diag_class_t category) {
     diag_table_state_t state;
     char line[DIAG_LOG_LINE_MAX];
 
@@ -269,14 +291,15 @@ static void emit_table_state_line(void) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(category, line);
 }
 
 // Une ligne `[MAP]` par canal assigné (ADR-0009 §4) : canal -> touche -> note.
 // Dans un bloc, les canaux occupés croissants reçoivent les touches croissantes.
 // La touche de départ du bloc vient de `runtime.position_first_key`, calculée par
 // `commissioning_build_runtime` : ancrage grave (règle ascendante, ADR-0010).
-static void emit_map_line(uint8_t position, uint8_t channel, uint8_t key) {
+static void emit_map_line(uint8_t position, uint8_t channel, uint8_t key,
+                          diag_class_t category) {
     char line[DIAG_LOG_LINE_MAX];
 
     if (diag_format_map_line(line, sizeof(line), position, channel, key,
@@ -284,11 +307,10 @@ static void emit_map_line(uint8_t position, uint8_t channel, uint8_t key) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(category, line);
 }
 
-static void emit_map_lines(void) {
-#if CLAVIER_MAP_LOG
+static void emit_map_lines(diag_class_t category) {
     for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
         const commissioning_entry_t *entry;
         uint8_t key;
@@ -308,11 +330,10 @@ static void emit_map_lines(void) {
             if ((entry->occupation_bitmap & ((uint16_t)1u << channel)) == 0u) {
                 continue;
             }
-            emit_map_line(position, channel, key);
+            emit_map_line(position, channel, key, category);
             ++key;
         }
     }
-#endif
 }
 
 // L'état provisoire est toujours signalé (invariant 1, ADR-0009 §4).
@@ -322,7 +343,7 @@ static void emit_table_state_status(void) {
     }
 }
 
-static void emit_table_entry_for_position(uint8_t position) {
+static void emit_table_entry_for_position(uint8_t position, diag_class_t category) {
     const commissioning_entry_t *entry = commissioning_state_entry_by_position(&commissioning, position);
     diag_table_entry_t line_entry;
     char line[DIAG_LOG_LINE_MAX];
@@ -343,12 +364,12 @@ static void emit_table_entry_for_position(uint8_t position) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(category, line);
 }
 
-static void emit_all_table_entries(void) {
+static void emit_all_table_entries(diag_class_t category) {
     for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
-        emit_table_entry_for_position(position);
+        emit_table_entry_for_position(position, category);
     }
 }
 
@@ -367,7 +388,7 @@ static void emit_boot_line(const char *table_state, uint8_t cards) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(DIAG_CLASS_BRINGUP, line);
 }
 
 static void emit_help_line(void) {
@@ -377,7 +398,7 @@ static void emit_help_line(void) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(DIAG_CLASS_BRINGUP, line);
 }
 
 static void emit_trigger_line(uint8_t request_id) {
@@ -387,7 +408,7 @@ static void emit_trigger_line(uint8_t request_id) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(DIAG_CLASS_BRINGUP, line);
 }
 
 static void emit_trigger_refused_line(const char *reason) {
@@ -397,17 +418,7 @@ static void emit_trigger_refused_line(const char *reason) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
-}
-
-static void emit_diff_line(uint8_t position, uint16_t old_bitmap, uint16_t new_bitmap) {
-    char line[DIAG_LOG_LINE_MAX];
-
-    if (diag_format_diff_line(line, sizeof(line), position, old_bitmap, new_bitmap) == 0u) {
-        ++stats.events_dropped;
-        return;
-    }
-    emit_line(line);
+    emit_line_class(DIAG_CLASS_ALWAYS, line);
 }
 
 static void emit_card_unknown_line(const uint8_t uid[CAN_UID_SIZE]) {
@@ -417,7 +428,7 @@ static void emit_card_unknown_line(const uint8_t uid[CAN_UID_SIZE]) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(DIAG_CLASS_ALWAYS, line);
 }
 
 static void emit_card_line(const diag_card_report_t *report) {
@@ -427,7 +438,9 @@ static void emit_card_line(const diag_card_report_t *report) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(report->state == DIAG_CARD_STATE_OK ? DIAG_CLASS_BRINGUP
+                                                         : DIAG_CLASS_ALWAYS,
+                    line);
 }
 
 static void emit_summary_line(const diag_summary_report_t *report) {
@@ -437,7 +450,7 @@ static void emit_summary_line(const diag_summary_report_t *report) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(DIAG_CLASS_NORMAL, line);
 }
 
 static bool seed_position_is_configured(uint8_t position) {
@@ -609,30 +622,52 @@ static bool build_missing_keys_text(const bool assigned[COMMISSIONING_KEY_COUNT]
     return true;
 }
 
+#if CLAVIER_DIAG_TRACE
 static void emit_note(uint8_t midi_note, uint8_t key, uint8_t position, uint8_t channel) {
     char line[DIAG_LOG_LINE_MAX];
 
-    // ADR-0020 §4 : affichage des notes à l'exécution, activable par la console
-    // (`n`) — sans quoi une note jouée et une note refusée se ressemblent.
-    if (!note_log_enabled) {
-        return;
-    }
     if (diag_format_note_line(line, sizeof(line), midi_note, key, position, channel) == 0u) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(DIAG_CLASS_TRACE, line);
 }
+#else
+static void emit_note(uint8_t midi_note, uint8_t key, uint8_t position, uint8_t channel) {
+    (void)midi_note;
+    (void)key;
+    (void)position;
+    (void)channel;
+}
+#endif
 
 static void emit_push(uint8_t midi_note, uint8_t key, uint8_t position, uint8_t channel,
                       diag_push_event_t event) {
     char line[DIAG_LOG_LINE_MAX];
 
+#if CLAVIER_DIAG_TRACE
+    if (event != DIAG_PUSH_EVENT_TIMEOUT) {
+        if (diag_format_push_line(line, sizeof(line), midi_note, key, position, channel, event) == 0u) {
+            ++stats.events_dropped;
+            return;
+        }
+        emit_line_class(DIAG_CLASS_TRACE, line);
+        return;
+    }
+#else
+    if (event != DIAG_PUSH_EVENT_TIMEOUT) {
+        (void)midi_note;
+        (void)key;
+        (void)position;
+        (void)channel;
+        return;
+    }
+#endif
     if (diag_format_push_line(line, sizeof(line), midi_note, key, position, channel, event) == 0u) {
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(DIAG_CLASS_ALWAYS, line);
 }
 
 static void emit_note_dropped(uint8_t midi_note, diag_note_dropped_reason_t reason) {
@@ -642,7 +677,7 @@ static void emit_note_dropped(uint8_t midi_note, diag_note_dropped_reason_t reas
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(DIAG_CLASS_ALWAYS, line);
 }
 
 static bool seed_lookup_position(const uint8_t uid[CAN_UID_SIZE], uint8_t *position) {
@@ -749,7 +784,7 @@ static void emit_uid_report(const uint8_t uid[CAN_UID_SIZE], const can_announce_
     if (diag_format_uid_line(line, sizeof(line), &report) == 0u) {
         ++stats.events_dropped;
     } else {
-        emit_line(line);
+        emit_line_class(DIAG_CLASS_BRINGUP, line);
         ++stats.reports_emitted;
     }
 
@@ -900,10 +935,83 @@ static bool send_profile_frame(uint32_t id, uint8_t dlc, const uint8_t *data) {
 // PROFILE_STATUS. Ne déclenche PAS 0x401 : can_link_poll le fait, pour le but
 // SELFTEST uniquement, quand toutes les cartes présentes ont acquitté
 // (ADR-0013 §4). Le but TUNING (ADR-0015) s'arrête au compte rendu.
+static bool profile_transfer_id_in_operation(uint8_t transfer_id) {
+    for (uint8_t i = 0u; i < profile_sync_transfer_count; ++i) {
+        if (profile_sync_transfer_ids[i] == transfer_id) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Émet une tentative COMPLÈTE avec un nouvel identifiant (ADR-0023). Le payload
+// et le CRC sont ceux mémorisés au début de l'opération. Un échec local n'est
+// pas terminal : la tentative expirera puis une reprise sera lancée.
+static bool profile_start_attempt(void) {
+    uint8_t frame[CAN_DLC_PROFILE_BEGIN];
+    const can_profile_begin_t begin = {
+        .proto_version = CAN_PROTO_VERSION,
+        .format_version = SOLENOID_PROFILE_FORMAT_VERSION,
+        .transfer_id = profile_sync_next_transfer_id,
+        .flags = CAN_PROFILE_FLAG_GLOBAL,
+        .payload_len = (uint16_t)profile_sync_wire_len,
+        .chunk_size = CAN_PROFILE_CHUNK_SIZE,
+        .reserved = 0u,
+    };
+    bool ok = true;
+
+    if (profile_sync_transfer_count >= CAN_LINK_PROFILE_MAX_ATTEMPTS) {
+        return false;
+    }
+    profile_sync_transfer_id = profile_sync_next_transfer_id;
+    profile_sync_transfer_ids[profile_sync_transfer_count++] = profile_sync_transfer_id;
+    profile_sync_next_transfer_id = (uint8_t)(profile_sync_next_transfer_id + 1u);
+    if (profile_sync_next_transfer_id == CAN_PROFILE_TRANSFER_ID_BOOT) {
+        profile_sync_next_transfer_id = CAN_PROFILE_TRANSFER_ID_MIN;
+    }
+
+    if (can_encode_profile_begin(frame, &begin) != CAN_PROTO_OK ||
+        !send_profile_frame(CAN_ID_PROFILE_BEGIN, CAN_DLC_PROFILE_BEGIN, frame)) {
+        ok = false;
+    }
+    for (uint8_t seq = 0u; ok && (size_t)seq * CAN_PROFILE_CHUNK_SIZE < profile_sync_wire_len;
+         ++seq) {
+        can_profile_chunk_t chunk = {0};
+        uint8_t chunk_frame[CAN_DLC_PROFILE_CHUNK];
+        const size_t offset = (size_t)seq * CAN_PROFILE_CHUNK_SIZE;
+        const size_t remaining = profile_sync_wire_len - offset;
+        const size_t count =
+            remaining < CAN_PROFILE_CHUNK_SIZE ? remaining : CAN_PROFILE_CHUNK_SIZE;
+
+        chunk.transfer_id = profile_sync_transfer_id;
+        chunk.seq = seq;
+        memcpy(chunk.data, &profile_sync_wire[offset], count);
+        if (can_encode_profile_chunk(chunk_frame, &chunk) != CAN_PROTO_OK ||
+            !send_profile_frame(CAN_ID_PROFILE_CHUNK, CAN_DLC_PROFILE_CHUNK, chunk_frame)) {
+            ok = false;
+        }
+    }
+    if (ok) {
+        const can_profile_commit_t commit = {
+            .proto_version = CAN_PROTO_VERSION,
+            .format_version = SOLENOID_PROFILE_FORMAT_VERSION,
+            .transfer_id = profile_sync_transfer_id,
+            .reserved = 0u,
+            .crc32 = solenoid_profile_crc32(profile_sync_wire, profile_sync_wire_len),
+        };
+
+        if (can_encode_profile_commit(frame, &commit) != CAN_PROTO_OK ||
+            !send_profile_frame(CAN_ID_PROFILE_COMMIT, CAN_DLC_PROFILE_COMMIT, frame)) {
+            ok = false;
+        }
+    }
+    profile_sync_attempt_start_ms = now_ms();
+    return ok;
+}
+
 static bool begin_profile_sync(const solenoid_profile_t *profile, profile_sync_goal_t goal,
                                const char *source) {
     uint8_t wire[SOLENOID_PROFILE_WIRE_SIZE];
-    uint8_t frame[CAN_DLC_PROFILE_BEGIN];
     const size_t length = solenoid_profile_encode(profile, wire, sizeof(wire));
 
     if (length != SOLENOID_PROFILE_WIRE_SIZE ||
@@ -912,58 +1020,24 @@ static bool begin_profile_sync(const solenoid_profile_t *profile, profile_sync_g
         return false;
     }
 
-    profile_sync_transfer_id = profile_sync_next_transfer_id;
-    profile_sync_next_transfer_id = (uint8_t)(profile_sync_next_transfer_id + 1u);
-    if (profile_sync_next_transfer_id == CAN_PROFILE_TRANSFER_ID_BOOT) {
-        profile_sync_next_transfer_id = CAN_PROFILE_TRANSFER_ID_MIN;
-    }
-
-    const can_profile_begin_t begin = {
-        .proto_version = CAN_PROTO_VERSION,
-        .format_version = SOLENOID_PROFILE_FORMAT_VERSION,
-        .transfer_id = profile_sync_transfer_id,
-        .flags = CAN_PROFILE_FLAG_GLOBAL,
-        .payload_len = (uint16_t)length,
-        .chunk_size = CAN_PROFILE_CHUNK_SIZE,
-        .reserved = 0u,
-    };
-    if (can_encode_profile_begin(frame, &begin) != CAN_PROTO_OK ||
-        !send_profile_frame(CAN_ID_PROFILE_BEGIN, CAN_DLC_PROFILE_BEGIN, frame)) {
-        return false;
-    }
-
-    for (uint8_t seq = 0u; (size_t)seq * CAN_PROFILE_CHUNK_SIZE < length; ++seq) {
-        can_profile_chunk_t chunk = {0};
-        uint8_t chunk_frame[CAN_DLC_PROFILE_CHUNK];
-        const size_t offset = (size_t)seq * CAN_PROFILE_CHUNK_SIZE;
-        const size_t remaining = length - offset;
-        const size_t count =
-            remaining < CAN_PROFILE_CHUNK_SIZE ? remaining : CAN_PROFILE_CHUNK_SIZE;
-
-        chunk.transfer_id = profile_sync_transfer_id;
-        chunk.seq = seq;
-        memcpy(chunk.data, &wire[offset], count);
-        if (can_encode_profile_chunk(chunk_frame, &chunk) != CAN_PROTO_OK ||
-            !send_profile_frame(CAN_ID_PROFILE_CHUNK, CAN_DLC_PROFILE_CHUNK, chunk_frame)) {
-            return false;
-        }
-    }
-
-    const can_profile_commit_t commit = {
-        .proto_version = CAN_PROTO_VERSION,
-        .format_version = SOLENOID_PROFILE_FORMAT_VERSION,
-        .transfer_id = profile_sync_transfer_id,
-        .reserved = 0u,
-        .crc32 = solenoid_profile_crc32(wire, length),
-    };
-    if (can_encode_profile_commit(frame, &commit) != CAN_PROTO_OK ||
-        !send_profile_frame(CAN_ID_PROFILE_COMMIT, CAN_DLC_PROFILE_COMMIT, frame)) {
-        return false;
-    }
+    memcpy(profile_sync_wire, wire, length);
+    profile_sync_wire_len = length;
+    profile_sync_expected_tag = solenoid_profile_crc32(wire, length);
+    profile_sync_transfer_count = 0u;
+    profile_sync_attempt = 1u;
+    profile_sync_reconciled = 0u;
+    profile_sync_late = 0u;
+    profile_sync_retries = 0u;
+    profile_probe_finished = false;
+    profile_selftest_start_pending = false;
+    profile_sync_source = (source != NULL) ? source : "inconnu";
+    profile_sync_goal = goal;
+    profile_sync_pending = *profile;
+    profile_sync_start_ms = now_ms();
 
     memset(profile_card_ack, 0, sizeof(profile_card_ack));
+    memset(profile_card_divergent, 0, sizeof(profile_card_divergent));
     profile_probe_pending = false;
-    profile_sync_source = (source != NULL) ? source : "inconnu";
     // Cartes ATTENDUES (ADR-0016 décision 2) : les entrées de `uid_position.h`
     // dont l'UID a été vu en ligne depuis le dernier scan de boot — c'est-à-dire
     // une carte qui a annoncé son UID. Aucune table persistée n'est requise :
@@ -983,16 +1057,11 @@ static bool begin_profile_sync(const solenoid_profile_t *profile, profile_sync_g
     profile_sync_received = 0u;
     profile_sync_failed = false;
     profile_sync_active = true;
-    profile_sync_start_ms = now_ms();
-    profile_sync_goal = goal;
-    profile_sync_pending = *profile;
-    diag_out_printf("[PROFILE] sync debut but=%s tag=0x%08lX attendus=%u source=%s\n",
-                    goal == PROFILE_SYNC_GOAL_TUNING ? "reglage" : "auto-test",
-                    (unsigned long)solenoid_profile_crc32(wire, length),
-                    (unsigned)profile_sync_expected, profile_sync_source);
+    (void)profile_start_attempt();
     if (goal == PROFILE_SYNC_GOAL_SELFTEST &&
         solenoid_profile_tag(&profile_active) != solenoid_profile_tag(profile)) {
-        diag_out_printf(
+        diag_out_printf_class(
+            DIAG_CLASS_BRINGUP,
             "[PROFILE] auto-test: le profil du fichier compile remplace le profil regle a chaud\n");
     }
     return true;
@@ -1027,7 +1096,10 @@ static const char *profile_result_name(uint8_t result) {
 static const char *profile_card_motive_name(size_t index) {
     switch (profile_card_ack[index]) {
     case PROFILE_CARD_ACK_OK: return "PROFILE_STATUS_SENT_OK";
-    case PROFILE_CARD_ACK_REJECTED: return "ACK_REJECTED";
+    case PROFILE_CARD_VERIFIED_NVM: return "PROFILE_VERIFIED_NVM";
+    case PROFILE_CARD_TERMINAL:
+        return profile_card_divergent[index] ? "PROFILE_DIVERGENT" : "ACK_REJECTED";
+    case PROFILE_CARD_RETRYABLE: return "ACK_REJECTED";
     case PROFILE_CARD_WAITING:
     default:
         return profile_boot_seen[index] ? "ACK_TIMEOUT" : "NO_PROFILE_STATUS";
@@ -1036,12 +1108,17 @@ static const char *profile_card_motive_name(size_t index) {
 
 // Au moins une carte attendue n'a rien acquitté ET n'a jamais annoncé de
 // PROFILE_STATUS de boot : son firmware est antérieur à ADR-0013 (IMP-011).
+static bool profile_card_confirmed(size_t index) {
+    return profile_card_ack[index] == PROFILE_CARD_ACK_OK ||
+           profile_card_ack[index] == PROFILE_CARD_VERIFIED_NVM;
+}
+
 static bool profile_sync_any_no_boot_status(void) {
     for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
         if (uid_position_table[i].position == UID_POSITION_EMPTY || !profile_seed_online[i]) {
             continue;
         }
-        if (profile_card_ack[i] != PROFILE_CARD_ACK_OK && !profile_boot_seen[i]) {
+        if (!profile_card_confirmed(i) && !profile_boot_seen[i]) {
             return true;
         }
     }
@@ -1051,10 +1128,13 @@ static bool profile_sync_any_no_boot_status(void) {
 // ADR-0017 décision 6 : après un échec, une seule requête d'UID pour rendre
 // compte de ce que chaque carte détient réellement. N'ouvre aucune fenêtre
 // d'acquittement et ne compte rien.
-static void profile_request_probe(void) {
+static bool profile_request_probe(void) {
+    profile_probe_finished = false;
     if (start_uid_request(UID_REQUEST_MODE_MANUAL, false)) {
         profile_probe_pending = true;
+        return true;
     }
+    return false;
 }
 
 // Liste, pour chaque carte attendue, l'état de son acquittement : sans cela un
@@ -1083,7 +1163,14 @@ static void handle_card_event(const can_card_event_msg_t *event) {
     if (diag_format_card_event_line(line, sizeof(line), position, event) == 0u) {
         ++stats.events_dropped;
     } else {
-        emit_line(line);
+        const bool health =
+            event->event == CAN_CARD_EVENT_MANUAL_TEST_STARTED ||
+            event->event == CAN_CARD_EVENT_TRIGGER_BLOCKED ||
+            event->event == CAN_CARD_EVENT_CHANNEL_FAULT ||
+            event->event == CAN_CARD_EVENT_COMMAND_IGNORED ||
+            event->event == CAN_CARD_EVENT_SELFTEST_ABORTED;
+
+        emit_line_class(health ? DIAG_CLASS_ALWAYS : DIAG_CLASS_BRINGUP, line);
         ++stats.card_events;
     }
     if (seed_index < 0) {
@@ -1114,11 +1201,43 @@ static void handle_profile_status(const can_profile_status_t *status) {
             profile_boot_seen[(size_t)seed_index] = true;
         }
         if (profile_probe_pending) {
-            // ADR-0017 décision 6 : compte rendu après échec. Une réponse de boot
-            // n'est JAMAIS un acquittement du transfert qui vient d'échouer.
-            diag_out_printf("[PROFILE] pos=%u detient tag=0x%08lX source=%s\n",
-                            (unsigned)position, (unsigned long)status->profile_tag32,
-                            status->source == CAN_PROFILE_SOURCE_NVM ? "NVM" : "DEFAULTS");
+            // ADR-0023 décision 3 : la sonde finale peut réconcilier une carte
+            // qui détient déjà le profil attendu en NVM. Elle ne transforme
+            // jamais une réponse de boot en acquittement du transfert.
+            if (seed_index < 0 || !profile_seed_online[(size_t)seed_index] ||
+                profile_card_confirmed((size_t)seed_index)) {
+                return;
+            }
+            const size_t index = (size_t)seed_index;
+
+            if (status->result == CAN_PROFILE_RESULT_OK &&
+                status->source == CAN_PROFILE_SOURCE_NVM &&
+                status->profile_tag32 == profile_sync_expected_tag) {
+                profile_card_ack[index] = PROFILE_CARD_VERIFIED_NVM;
+                ++profile_sync_reconciled;
+                return;
+            }
+
+            profile_card_ack[index] = PROFILE_CARD_TERMINAL;
+            profile_sync_failed = true;
+            if (status->result == CAN_PROFILE_RESULT_OK &&
+                status->profile_tag32 != profile_sync_expected_tag) {
+                profile_card_divergent[index] = true;
+                emit_status_position(DIAG_STATUS_PROFILE_DIVERGENT, position);
+                diag_out_printf_class(
+                    DIAG_CLASS_ALWAYS,
+                    "[PROFILE] pos=%u card=0x%08lX local=0x%08lX source=%s divergence de tag",
+                    (unsigned)position, (unsigned long)status->profile_tag32,
+                    (unsigned long)profile_sync_expected_tag,
+                    status->source == CAN_PROFILE_SOURCE_NVM ? "NVM" : "DEFAULTS");
+                ++stats.profile_divergent;
+            } else if (status->source == CAN_PROFILE_SOURCE_DEFAULTS) {
+                emit_status_position(DIAG_STATUS_PROFILE_FALLBACK_IN_USE, position);
+            }
+            diag_out_printf_class(DIAG_CLASS_ALWAYS,
+                                  "[PROFILE] pos=%u detient tag=0x%08lX source=%s",
+                                  (unsigned)position, (unsigned long)status->profile_tag32,
+                                  status->source == CAN_PROFILE_SOURCE_NVM ? "NVM" : "DEFAULTS");
             return;
         }
         // Annonce de boot / réponse à UID_REQUEST (ADR-0013 §6) : signaler une
@@ -1136,36 +1255,93 @@ static void handle_profile_status(const can_profile_status_t *status) {
         }
         return;
     }
-    if (!profile_sync_active || status->transfer_id != profile_sync_transfer_id) {
+    if (!profile_sync_active || !profile_transfer_id_in_operation(status->transfer_id)) {
         return;
     }
     if (seed_index < 0 || !profile_seed_online[(size_t)seed_index]) {
         // ADR-0016 décision 4 : un acquittement non attribuable n'est jamais
         // jeté en silence. Produit dès réception, sans attendre le délai.
-        diag_out_printf("[PROFILE] ack inattendu tag=0x%04X transfer=%u result=%u\n",
-                        (unsigned)status->uid_tag, (unsigned)status->transfer_id,
-                        (unsigned)status->result);
+        diag_out_printf_class(
+            DIAG_CLASS_ALWAYS,
+            "[PROFILE] ack inattendu tag=0x%04X transfer=%u result=%u",
+            (unsigned)status->uid_tag, (unsigned)status->transfer_id,
+            (unsigned)status->result);
         emit_status(DIAG_STATUS_PROFILE_ACK_UNATTRIBUTED);
         ++stats.profile_ack_unattributed;
         return;
     }
+
+    const size_t index = (size_t)seed_index;
+
+    if (profile_card_confirmed(index) || profile_card_ack[index] == PROFILE_CARD_TERMINAL) {
+        if (status->result == CAN_PROFILE_RESULT_OK &&
+            status->profile_tag32 != profile_sync_expected_tag) {
+            if (profile_card_ack[index] == PROFILE_CARD_ACK_OK && profile_sync_received > 0u) {
+                --profile_sync_received;
+            } else if (profile_card_ack[index] == PROFILE_CARD_VERIFIED_NVM &&
+                       profile_sync_reconciled > 0u) {
+                --profile_sync_reconciled;
+            }
+            profile_card_divergent[index] = true;
+            profile_card_ack[index] = PROFILE_CARD_TERMINAL;
+            profile_sync_failed = true;
+            emit_status_position(DIAG_STATUS_PROFILE_DIVERGENT, position);
+            diag_out_printf_class(
+                DIAG_CLASS_ALWAYS,
+                "[PROFILE] pos=%u card=0x%08lX local=0x%08lX divergence de tag apres confirmation",
+                (unsigned)position, (unsigned long)status->profile_tag32,
+                (unsigned long)profile_sync_expected_tag);
+            ++stats.profile_divergent;
+        }
+        return;
+    }
+
     if (status->result == CAN_PROFILE_RESULT_OK) {
-        if (profile_card_ack[(size_t)seed_index] != PROFILE_CARD_ACK_OK) {
-            profile_card_ack[(size_t)seed_index] = PROFILE_CARD_ACK_OK;
+        if (status->profile_tag32 != profile_sync_expected_tag) {
+            profile_card_divergent[index] = true;
+            profile_card_ack[index] = PROFILE_CARD_TERMINAL;
+            profile_sync_failed = true;
+            emit_status_position(DIAG_STATUS_PROFILE_DIVERGENT, position);
+            diag_out_printf_class(
+                DIAG_CLASS_ALWAYS,
+                "[PROFILE] pos=%u card=0x%08lX local=0x%08lX divergence de tag",
+                (unsigned)position, (unsigned long)status->profile_tag32,
+                (unsigned long)profile_sync_expected_tag);
+            ++stats.profile_divergent;
+            return;
+        }
+        if (profile_card_ack[index] != PROFILE_CARD_ACK_OK) {
+            profile_card_ack[index] = PROFILE_CARD_ACK_OK;
             ++profile_sync_received;
+            if (status->transfer_id != profile_sync_transfer_id &&
+                profile_sync_late < UID_POSITION_COUNT) {
+                ++profile_sync_late;
+            }
         }
-    } else {
-        profile_card_ack[(size_t)seed_index] = PROFILE_CARD_ACK_REJECTED;
-        profile_sync_failed = true;
-        diag_out_printf("[PROFILE] refus pos=%u result=%u %s\n", (unsigned)position,
-                        (unsigned)status->result,
-                        profile_result_name((uint8_t)status->result));
-        if (status->result == CAN_PROFILE_RESULT_UNSUPPORTED_VERSION) {
-            // ADR-0019 : carte restée en v1 face à un profil v2 (result = 7).
-            diag_out_printf("[PROFILE] pos=%u version de profil non supportee: reflasher la "
-                            "carte Moteur (profil v2 requis)\n",
-                            (unsigned)position);
-        }
+        return;
+    }
+
+    if (profile_sync_result_retryable((uint8_t)status->result)) {
+        profile_card_ack[index] = PROFILE_CARD_RETRYABLE;
+        diag_out_printf_class(DIAG_CLASS_BRINGUP,
+                              "[PROFILE] refus pos=%u result=%u %s (reessayable)",
+                              (unsigned)position, (unsigned)status->result,
+                              profile_result_name((uint8_t)status->result));
+        return;
+    }
+
+    profile_card_ack[index] = PROFILE_CARD_TERMINAL;
+    profile_sync_failed = true;
+    diag_out_printf_class(DIAG_CLASS_ALWAYS, "[PROFILE] refus pos=%u result=%u %s",
+                          (unsigned)position, (unsigned)status->result,
+                          profile_result_name((uint8_t)status->result));
+    if (status->result == CAN_PROFILE_RESULT_UNSUPPORTED_VERSION) {
+        // ADR-0019 : carte restée en v1 face à un profil v2 (result = 7).
+        diag_out_printf_class(
+            DIAG_CLASS_ALWAYS,
+            "[PROFILE] pos=%u version de profil non supportee: reflasher la carte Moteur "
+            "(profil v2 requis)",
+            (unsigned)position);
     }
 }
 
@@ -1177,6 +1353,11 @@ static bool start_selftest_request(void) {
         .calibration_mode = calibration_enabled,
     };
 
+    // Le 0x401 ne doit jamais partir pendant une requête de contrôle en vol,
+    // notamment la sonde UID de réconciliation (ADR-0023/ADR-0025).
+    if (!started || uid_inflight || control_tx_inflight) {
+        return false;
+    }
     if (can_encode_ipropi_selftest_request(payload, &request) != CAN_PROTO_OK ||
         !send_frame(CAN_ID_IPROPI_SELFTEST_REQUEST, CAN_DLC_IPROPI_SELFTEST_REQUEST,
                     payload)) {
@@ -1385,9 +1566,11 @@ static void emit_selftest_card_summary_lines(const commissioning_runtime_t *prev
     summary.keys_ok = keys_ok;
     summary.missing_keys_text = missing_keys_text;
     summary.table_text = table_result_text;
+    summary.calib_enabled = selftest_session.calibration_mode;
     emit_summary_line(&summary);
 }
 
+#if CLAVIER_DIAG_TRACE
 // Ligne `idle`/`probe` d'un canal : émise dès réception de l'IPROPI_RAW.
 static void emit_selftest_raw_probe_line(uint8_t position, const can_ipropi_raw_t *raw) {
     const uint8_t request_id = raw->reply_to;
@@ -1410,7 +1593,7 @@ static void emit_selftest_raw_probe_line(uint8_t position, const can_ipropi_raw_
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(DIAG_CLASS_TRACE, line);
     ++stats.reports_emitted;
 }
 
@@ -1433,24 +1616,53 @@ static void emit_selftest_delta_line(uint8_t position, uint8_t channel, uint16_t
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(DIAG_CLASS_TRACE, line);
     ++stats.reports_emitted;
 }
+
+#else
+static void emit_selftest_raw_probe_line(uint8_t position, const can_ipropi_raw_t *raw) {
+    (void)position;
+    (void)raw;
+}
+
+static void emit_selftest_delta_line(uint8_t position, uint8_t channel, uint16_t idle_avg,
+                                     uint16_t probe_avg, uint16_t ohm_milliohm, uint16_t i100_ma,
+                                     uint8_t request_id) {
+    (void)position;
+    (void)channel;
+    (void)idle_avg;
+    (void)probe_avg;
+    (void)ohm_milliohm;
+    (void)i100_ma;
+    (void)request_id;
+}
+#endif
 
 // Lignes `delta` des canaux dont l'IPROPI_OHM n'est jamais arrivée : le journal
 // reste complet et l'absence est visible (`ohm_est=--`), jamais silencieuse.
 static void emit_missing_ohm_delta_lines(void) {
     for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
+        uint16_t missing = 0u;
+
         for (uint8_t channel = 0u; channel < CAN_IPROPI_CHANNEL_COUNT; ++channel) {
             if (!selftest_session.raw_received_position[position][channel] ||
                 selftest_session.ohm_received_position[position][channel]) {
                 continue;
             }
+            missing |= (uint16_t)(1u << channel);
+            // Le détail par canal reste une trace ; l'absence est aussi agrégée
+            // dans une ligne [SELFTEST] always-visible (ADR-0025).
             emit_selftest_delta_line(position, channel,
                                      selftest_session.raw_idle[position][channel],
                                      selftest_session.raw_probe[position][channel],
                                      CAN_IPROPI_VALUE_INVALID, CAN_IPROPI_VALUE_INVALID,
                                      selftest_session.request_id);
+        }
+        if (missing != 0u) {
+            diag_out_printf_class(DIAG_CLASS_ALWAYS,
+                                  "[SELFTEST] pos=%u ohm_manquants=0x%03X",
+                                  (unsigned)position, (unsigned)missing);
         }
     }
 }
@@ -1525,7 +1737,8 @@ static void emit_selftest_ohm_summaries(void) {
             ++stats.events_dropped;
             continue;
         }
-        emit_line(line);
+        emit_line_class(summary.warn_i100_over_3a ? DIAG_CLASS_ALWAYS : DIAG_CLASS_BRINGUP,
+                        line);
         ++stats.reports_emitted;
     }
 }
@@ -1599,7 +1812,9 @@ static void emit_selftest_report(const uint8_t uid[CAN_UID_SIZE],
     if (diag_format_selftest_line(line, sizeof(line), &report) == 0u) {
         ++stats.events_dropped;
     } else {
-        emit_line(line);
+        const bool ok = status->test_status == CAN_SELFTEST_STATUS_OK && status->fault_bits == 0u;
+
+        emit_line_class(ok ? DIAG_CLASS_BRINGUP : DIAG_CLASS_ALWAYS, line);
         ++stats.reports_emitted;
     }
 
@@ -1631,12 +1846,12 @@ static void log_table_diff(const commissioning_entry_t *old_entry,
     if (new_entry != NULL) {
         format_uid_hex(new_uid, new_entry->identity.uid.id);
     }
-    diag_out_printf("[TABLE] diff pos=%u old_uid=%s new_uid=%s old=0x%03X new=0x%03X\n",
-           (unsigned)position, old_uid, new_uid,
-           (unsigned)(old_entry != NULL ? old_entry->occupation_bitmap : 0u),
-           (unsigned)(new_entry != NULL ? new_entry->occupation_bitmap : 0u));
-    emit_diff_line(position, old_entry != NULL ? old_entry->occupation_bitmap : 0u,
-                   new_entry != NULL ? new_entry->occupation_bitmap : 0u);
+    diag_out_printf_class(
+        DIAG_CLASS_ALWAYS,
+        "[TABLE] diff pos=%u old_uid=%s new_uid=%s old=0x%03X new=0x%03X\n",
+        (unsigned)position, old_uid, new_uid,
+        (unsigned)(old_entry != NULL ? old_entry->occupation_bitmap : 0u),
+        (unsigned)(new_entry != NULL ? new_entry->occupation_bitmap : 0u));
 }
 
 // ADR-0021 : une entrée conservée est toujours signalée.
@@ -1648,7 +1863,7 @@ static void emit_table_bitmap_kept_line(uint8_t position, uint16_t bitmap,
         ++stats.events_dropped;
         return;
     }
-    emit_line(line);
+    emit_line_class(DIAG_CLASS_ALWAYS, line);
 }
 
 static void finish_selftest_session(void) {
@@ -1829,10 +2044,10 @@ static void finish_selftest_session(void) {
         emit_selftest_ohm_summaries();
     }
 
-    emit_table_state_line();
+    emit_table_state_line(DIAG_CLASS_BRINGUP);
     emit_table_state_status();
-    emit_all_table_entries();
-    emit_map_lines();
+    emit_all_table_entries(DIAG_CLASS_BRINGUP);
+    emit_map_lines(DIAG_CLASS_BRINGUP);
     emit_selftest_card_summary_lines(&preview, table_result_text);
     selftest_session.active = false;
 }
@@ -2007,28 +2222,15 @@ static uint8_t stats_probe_received;
 static uint8_t stats_probe_expected;
 static uint8_t stats_probe_request_id;
 static uint32_t stats_probe_sent_ms;
-static bool stats_probe_seen[UID_POSITION_COUNT];
-static bool stats_probe_silent[UID_POSITION_COUNT];
-static uint32_t stats_probe_value[UID_POSITION_COUNT];
-static uint32_t stats_probe_commands_ok;
+static bool stats_probe_seen[UID_POSITION_COUNT][CAN_CARD_COUNTER_COUNT];
+static bool stats_probe_any[UID_POSITION_COUNT];
+static bool stats_probe_ext[UID_POSITION_COUNT];
+static bool stats_probe_current_seen[UID_POSITION_COUNT];
+static bool stats_probe_incomplete;
+static uint32_t stats_probe_value[UID_POSITION_COUNT][CAN_CARD_COUNTER_COUNT];
 
 static const char *card_counter_name(can_card_counter_t counter) {
-    switch (counter) {
-    case CAN_CARD_COUNTER_CAN_ERRORS: return "can_errors";
-    case CAN_CARD_COUNTER_TX_FAIL: return "tx_fail";
-    case CAN_CARD_COUNTER_RX_OVERRUN: return "rx_overrun";
-    case CAN_CARD_COUNTER_SELFTEST_BLOCKED: return "selftest_blocked";
-    case CAN_CARD_COUNTER_IGNORED_TAG: return "ignored_tag";
-    case CAN_CARD_COUNTER_BAD_CHANNEL: return "bad_channel";
-    case CAN_CARD_COUNTER_PROFILE_STATUS_LOST: return "profile_status_lost";
-    case CAN_CARD_COUNTER_PROFILE_COMMITS_REJECTED: return "profile_commits_rejected";
-    case CAN_CARD_COUNTER_PROFILE_COMMITS_OK: return "profile_commits_ok";
-    case CAN_CARD_COUNTER_RX_IGNORED: return "rx_ignored";
-    case CAN_CARD_COUNTER_UNOCCUPIED: return "unoccupied";
-    case CAN_CARD_COUNTER_REJECTED: return "rejected";
-    case CAN_CARD_COUNTER_COMMANDS_OK: return "commands_ok";
-    default: return NULL;
-    }
+    return clavier_card_counter_name(counter);
 }
 
 // Cartes attendues : mêmes entrées que la synchronisation de profil (ADR-0016).
@@ -2043,6 +2245,54 @@ static uint8_t stats_probe_expected_count(void) {
     return count;
 }
 
+static void stats_probe_print_card(size_t index) {
+    const uint8_t position = uid_position_table[index].position;
+    char line[DIAG_OUT_LINE_MAX];
+    bool incomplete = false;
+
+    if (stats_card_silent(stats_probe_any[index])) {
+        stats_probe_incomplete = true;
+        emit_status_position(DIAG_STATUS_NO_RESPONSE, position);
+        return;
+    }
+    if (!stats_format_card_line(line, sizeof(line), position, stats_probe_seen[index],
+                                stats_probe_value[index],
+                                stats_card_ext_unavailable(stats_probe_any[index],
+                                                           stats_probe_ext[index]),
+                                &incomplete)) {
+        ++stats.events_dropped;
+        return;
+    }
+    if (incomplete) {
+        stats_probe_incomplete = true;
+    }
+    emit_line_class(DIAG_CLASS_CONSOLE, line);
+}
+
+static void stats_probe_finish(void) {
+    uint32_t commands_ok = 0u;
+
+    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        if (uid_position_table[i].position == UID_POSITION_EMPTY || !profile_seed_online[i]) {
+            continue;
+        }
+        stats_probe_print_card(i);
+        if (stats_probe_seen[i][CAN_CARD_COUNTER_COMMANDS_OK]) {
+            commands_ok += stats_probe_value[i][CAN_CARD_COUNTER_COMMANDS_OK];
+        }
+    }
+    {
+        char line[DIAG_OUT_LINE_MAX];
+        if (stats_format_summary_line(line, sizeof(line), stats.note_sent, commands_ok,
+                                      stats_probe_incomplete)) {
+            emit_line_class(DIAG_CLASS_CONSOLE, line);
+        } else {
+            ++stats.events_dropped;
+        }
+    }
+    stats_probe_active = false;
+}
+
 static void stats_probe_send(uint32_t first_ms) {
     can_card_stats_request_t request = {0};
     uint8_t data[CAN_DLC_CARD_STATS_REQUEST];
@@ -2054,47 +2304,19 @@ static void stats_probe_send(uint32_t first_ms) {
         !send_frame(CAN_ID_CARD_STATS_REQUEST, CAN_DLC_CARD_STATS_REQUEST, data)) {
         ++stats.tx_fail;
     }
+    memset(stats_probe_current_seen, 0, sizeof(stats_probe_current_seen));
     stats_probe_sent_ms = first_ms;
 }
 
 static void stats_probe_advance(uint32_t first_ms) {
-    // ADR-0020 §2.4 : une carte attendue qui ne répond pas est NOMMÉE, une seule
-    // fois par balayage (pas une ligne de statut par compteur).
-    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
-        if (uid_position_table[i].position == UID_POSITION_EMPTY || !profile_seed_online[i] ||
-            stats_probe_seen[i] || stats_probe_silent[i]) {
-            continue;
-        }
-        stats_probe_silent[i] = true;
-        emit_status_position(DIAG_STATUS_NO_RESPONSE, uid_position_table[i].position);
-    }
-    if ((can_card_counter_t)stats_probe_counter == CAN_CARD_COUNTER_COMMANDS_OK) {
-        stats_probe_commands_ok = 0u;
-        for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
-            if (stats_probe_seen[i]) {
-                stats_probe_commands_ok += stats_probe_value[i];
-            }
-        }
-    }
     ++stats_probe_counter;
     if (stats_probe_counter >= (uint8_t)CAN_CARD_COUNTER_COUNT) {
-        // Compte rendu de cohérence : « transmis » (Clavier) contre « exécuté »
-        // (cartes). Un écart qui grandit pendant qu'on joue = la carte refuse.
-        diag_out_printf("[STATS] note_sent=%lu cartes_ok=%lu ecart=%ld\n",
-                        (unsigned long)stats.note_sent, (unsigned long)stats_probe_commands_ok,
-                        (long)((int32_t)stats.note_sent - (int32_t)stats_probe_commands_ok));
-        stats_probe_active = false;
+        stats_probe_finish();
         return;
     }
-    memset(stats_probe_seen, 0, sizeof(stats_probe_seen));
     stats_probe_received = 0u;
     stats_probe_expected = stats_probe_expected_count();
     stats_probe_send(first_ms);
-}
-
-bool can_link_toggle_note_log(void) {
-    note_log_enabled = !note_log_enabled;
-    return note_log_enabled;
 }
 
 can_link_request_result_t can_link_stats_request_start(void) {
@@ -2120,12 +2342,14 @@ can_link_request_result_t can_link_stats_request_start(void) {
         return CAN_LINK_REQUEST_BUSY;
     }
     memset(stats_probe_seen, 0, sizeof(stats_probe_seen));
-    memset(stats_probe_silent, 0, sizeof(stats_probe_silent));
+    memset(stats_probe_any, 0, sizeof(stats_probe_any));
+    memset(stats_probe_ext, 0, sizeof(stats_probe_ext));
+    memset(stats_probe_current_seen, 0, sizeof(stats_probe_current_seen));
     memset(stats_probe_value, 0, sizeof(stats_probe_value));
+    stats_probe_incomplete = false;
     stats_probe_active = true;
     stats_probe_counter = 0u;
     stats_probe_received = 0u;
-    stats_probe_commands_ok = 0u;
     ++stats_probe_request_id;
     if (stats_probe_request_id == 0u || stats_probe_request_id > CAN_REQUEST_ID_MAX) {
         stats_probe_request_id = CAN_REQUEST_ID_MIN;
@@ -2136,20 +2360,26 @@ can_link_request_result_t can_link_stats_request_start(void) {
 
 static void handle_card_stats(const can_card_stats_t *message) {
     const int seed_index = profile_seed_index_for_tag(message->uid_tag);
-    const uint8_t position = seed_index >= 0 ? uid_position_table[(size_t)seed_index].position
-                                             : UID_POSITION_UNKNOWN_REPORTED;
-    const char *name = card_counter_name(message->counter_id);
 
-    if (stats_probe_active && (uint8_t)message->counter_id == stats_probe_counter &&
-        seed_index >= 0 && !stats_probe_seen[(size_t)seed_index]) {
-        stats_probe_seen[(size_t)seed_index] = true;
-        stats_probe_value[(size_t)seed_index] = message->value;
-        ++stats_probe_received;
+    if (!stats_probe_active || (uint8_t)message->counter_id != stats_probe_counter ||
+        seed_index < 0 || stats_probe_current_seen[(size_t)seed_index]) {
+        return;
     }
-    if (name != NULL) {
-        diag_out_printf("[CARD] pos=%u stats %s=%lu\n", (unsigned)position, name,
-                        (unsigned long)message->value);
+    if (!profile_seed_online[(size_t)seed_index]) {
+        return;
     }
+
+    const uint8_t id = (uint8_t)message->counter_id;
+    const size_t index = (size_t)seed_index;
+
+    stats_probe_current_seen[index] = true;
+    stats_probe_seen[index][id] = true;
+    stats_probe_value[index][id] = message->value;
+    stats_probe_any[index] = true;
+    if (id >= (uint8_t)CAN_CARD_COUNTER_REJECT_SLEEP) {
+        stats_probe_ext[index] = true;
+    }
+    ++stats_probe_received;
 }
 
 static void handle_frame(const struct can2040_msg *msg, uint32_t first_ms) {
@@ -2292,27 +2522,40 @@ void can_link_init(void) {
     profile_sync_active = false;
     profile_sync_transfer_id = 0u;
     profile_sync_next_transfer_id = CAN_PROFILE_TRANSFER_ID_MIN;
+    profile_sync_transfer_count = 0u;
+    profile_sync_attempt = 0u;
     profile_sync_expected = 0u;
     profile_sync_received = 0u;
+    profile_sync_reconciled = 0u;
+    profile_sync_late = 0u;
+    profile_sync_retries = 0u;
     profile_sync_failed = false;
     profile_sync_start_ms = 0u;
+    profile_sync_attempt_start_ms = 0u;
+    profile_sync_expected_tag = 0u;
+    profile_sync_wire_len = 0u;
+    memset(profile_sync_transfer_ids, 0, sizeof(profile_sync_transfer_ids));
+    memset(profile_sync_wire, 0, sizeof(profile_sync_wire));
     memset(profile_seed_online, 0, sizeof(profile_seed_online));
     memset(profile_boot_seen, 0, sizeof(profile_boot_seen));
     memset(profile_card_ack, 0, sizeof(profile_card_ack));
+    memset(profile_card_divergent, 0, sizeof(profile_card_divergent));
     profile_probe_pending = false;
+    profile_probe_finished = false;
+    profile_selftest_start_pending = false;
 
     table_blank = commissioning_flash_table_is_blank();
     load_result = commissioning_state_load(&commissioning);
     if (load_result == COMMISSIONING_OK) {
         emit_boot_line("loaded", (uint8_t)commissioning.entry_count);
-        emit_table_state_line();
+        emit_table_state_line(DIAG_CLASS_BRINGUP);
         emit_table_state_status();
-        emit_all_table_entries();
+        emit_all_table_entries(DIAG_CLASS_BRINGUP);
         boot_card_summary_pending = true;
         if (commissioning.runtime.partial) {
             emit_status(DIAG_STATUS_TABLE_PARTIAL);
         }
-        emit_map_lines();
+        emit_map_lines(DIAG_CLASS_BRINGUP);
     } else {
         emit_boot_line(table_blank ? "absent" : "invalid", 0u);
         snprintf(detail, sizeof(detail), "reason=%s",
@@ -2332,6 +2575,70 @@ void can_link_init(void) {
     started = true;
 
     (void)start_uid_request(UID_REQUEST_MODE_BOOT_SCAN, false);
+}
+
+static void profile_sync_final_success(uint32_t first_ms) {
+    const bool tuning = profile_sync_goal == PROFILE_SYNC_GOAL_TUNING;
+
+    profile_sync_active = false;
+    profile_probe_pending = false;
+    profile_probe_finished = false;
+    profile_active = profile_sync_pending;
+    local_profile_tag = solenoid_profile_tag(&profile_active);
+    diag_out_printf_class(
+        DIAG_CLASS_NORMAL,
+        "[PROFILE] sync ok but=%s duree=%lu ms tentatives=%u/%u acquittements=%u/%u "
+        "reconciliees=%u tardifs=%u source=%s tag=0x%08lX",
+        tuning ? "reglage" : "auto-test", (unsigned long)profile_sync_elapsed_ms(first_ms),
+        (unsigned)profile_sync_transfer_count, (unsigned)CAN_LINK_PROFILE_MAX_ATTEMPTS,
+        (unsigned)profile_sync_received, (unsigned)profile_sync_expected,
+        (unsigned)profile_sync_reconciled, (unsigned)profile_sync_late, profile_sync_source,
+        (unsigned long)local_profile_tag);
+    if (tuning) {
+        if (profile_sync_expected == 0u) {
+            diag_out_printf_class(
+                DIAG_CLASS_ALWAYS,
+                "[PROFILE] aucune carte attendue (table invalide ou aucune carte en ligne au "
+                "dernier scan): application NON confirmee");
+        }
+        return;
+    }
+    if (uid_inflight || control_tx_inflight) {
+        // La sonde de réconciliation est encore en vol : le 0x401 sera émis par
+        // le poll dès que la voie de contrôle est libre.
+        profile_selftest_start_pending = true;
+        return;
+    }
+    if (!start_selftest_request()) {
+        emit_status(DIAG_STATUS_CAN_TX_FAIL);
+    } else {
+        emit_trigger_line(selftest_session.request_id);
+    }
+}
+
+static void profile_sync_final_failure(uint32_t first_ms) {
+    const bool tuning = profile_sync_goal == PROFILE_SYNC_GOAL_TUNING;
+
+    emit_status(DIAG_STATUS_PROFILE_SYNC_FAILED);
+    ++stats.profile_sync_failed;
+    profile_sync_active = false;
+    profile_probe_pending = false;
+    profile_probe_finished = false;
+    profile_selftest_start_pending = false;
+    profile_sync_failed = true;
+    diag_out_printf_class(
+        DIAG_CLASS_ALWAYS,
+        "[PROFILE] sync echec but=%s duree=%lu ms tentatives=%u/%u acquittements=%u/%u "
+        "reconciliees=%u tardifs=%u source=%s tag=0x%08lX",
+        tuning ? "reglage" : "auto-test", (unsigned long)profile_sync_elapsed_ms(first_ms),
+        (unsigned)profile_sync_transfer_count, (unsigned)CAN_LINK_PROFILE_MAX_ATTEMPTS,
+        (unsigned)profile_sync_received, (unsigned)profile_sync_expected,
+        (unsigned)profile_sync_reconciled, (unsigned)profile_sync_late, profile_sync_source,
+        (unsigned long)profile_sync_expected_tag);
+    print_profile_sync_cards();
+    if (profile_sync_any_no_boot_status()) {
+        emit_status(DIAG_STATUS_PROFILE_UNSUPPORTED);
+    }
 }
 
 void can_link_poll(void) {
@@ -2386,8 +2693,11 @@ void can_link_poll(void) {
         }
         uid_inflight = false;
         uid_request_mode = UID_REQUEST_MODE_NONE;
-        // Fin de la re-requête post-échec (ADR-0017 décision 6) : les annonces
-        // suivantes retrouvent le compte rendu de divergence habituel.
+        // Fin de la sonde de réconciliation (ADR-0023) : les annonces suivantes
+        // retrouvent le compte rendu de divergence habituel.
+        if (profile_probe_pending) {
+            profile_probe_finished = true;
+        }
         profile_probe_pending = false;
     }
 
@@ -2413,58 +2723,57 @@ void can_link_poll(void) {
 
     // Synchronisation du profil (ADR-0013 §4) : 0x401 n'est émis que lorsque
     // toutes les cartes présentes ont acquitté le profil.
+    if (profile_selftest_start_pending && !uid_inflight && !control_tx_inflight) {
+        profile_selftest_start_pending = false;
+        if (!start_selftest_request()) {
+            emit_status(DIAG_STATUS_CAN_TX_FAIL);
+        } else {
+            emit_trigger_line(selftest_session.request_id);
+        }
+    }
+
     if (profile_sync_active) {
         const bool tuning = profile_sync_goal == PROFILE_SYNC_GOAL_TUNING;
         const uint32_t timeout_ms = tuning ? CAN_LINK_PROFILE_TUNING_TIMEOUT_MS
                                            : CAN_LINK_PROFILE_SYNC_TIMEOUT_MS;
 
-        if (profile_sync_failed) {
-            emit_status(DIAG_STATUS_PROFILE_SYNC_FAILED);
-            ++stats.profile_sync_failed;
-            profile_sync_active = false;
-            print_profile_sync_cards();
-            if (tuning) {
-                diag_out_printf("[PROFILE] reglage: ECHEC (refus). Etat des cartes incertain; "
-                                "le profil actif reste celui d'avant (p show). 'p send' "
-                                "resynchronise\n");
+        if (profile_probe_pending) {
+            if (!profile_sync_failed && profile_sync_all_confirmed(profile_sync_expected, profile_sync_received, profile_sync_reconciled)) {
+                profile_sync_final_success(first_ms);
+            } else if (profile_probe_finished) {
+                profile_sync_failed = true;
+                profile_sync_final_failure(first_ms);
             }
-        } else if (profile_sync_received >= profile_sync_expected) {
-            profile_sync_active = false;
-            profile_active = profile_sync_pending;
-            local_profile_tag = solenoid_profile_tag(&profile_active);
-            diag_out_printf("[PROFILE] sync ok duree=%lu ms acquittements=%u/%u tag=0x%08lX\n",
-                            (unsigned long)profile_sync_elapsed_ms(first_ms),
-                            (unsigned)profile_sync_received, (unsigned)profile_sync_expected,
-                            (unsigned long)local_profile_tag);
-            if (tuning) {
-                if (profile_sync_expected == 0u) {
-                    diag_out_printf("[PROFILE] reglage: AUCUNE carte attendue (table invalide ou "
-                                    "aucune carte en ligne au dernier scan): application NON "
-                                    "confirmee\n");
+        } else if (profile_probe_finished) {
+            profile_sync_failed = true;
+            profile_sync_final_failure(first_ms);
+        } else if (profile_sync_failed) {
+            // Refus terminal ou divergence : aucun essai supplementaire.
+            profile_sync_final_failure(first_ms);
+        } else if (profile_sync_all_confirmed(profile_sync_expected, profile_sync_received, profile_sync_reconciled)) {
+            profile_sync_final_success(first_ms);
+        } else if (deadline_reached(first_ms, profile_sync_attempt_start_ms, timeout_ms)) {
+            if (profile_sync_attempt < CAN_LINK_PROFILE_MAX_ATTEMPTS) {
+                for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+                    if (profile_card_ack[i] == PROFILE_CARD_RETRYABLE) {
+                        profile_card_ack[i] = PROFILE_CARD_WAITING;
+                    }
                 }
-            } else if (!start_selftest_request()) {
+                ++profile_sync_attempt;
+                ++profile_sync_retries;
+                const uint8_t remaining =
+                    (uint8_t)(profile_sync_expected -
+                              (profile_sync_received + profile_sync_reconciled));
+                diag_out_printf_class(
+                    DIAG_CLASS_NORMAL,
+                    "[PROFILE] sync reprise essai=%u/%u restantes=%u tag=0x%08lX",
+                    (unsigned)profile_sync_attempt, (unsigned)CAN_LINK_PROFILE_MAX_ATTEMPTS,
+                    (unsigned)remaining, (unsigned long)profile_sync_expected_tag);
+                (void)profile_start_attempt();
+            } else if (!profile_request_probe()) {
                 emit_status(DIAG_STATUS_CAN_TX_FAIL);
-            } else {
-                emit_trigger_line(selftest_session.request_id);
-            }
-        } else if (deadline_reached(first_ms, profile_sync_start_ms, timeout_ms)) {
-            emit_status(DIAG_STATUS_PROFILE_SYNC_FAILED);
-            ++stats.profile_sync_failed;
-            profile_sync_active = false;
-            diag_out_printf("[PROFILE] sync echec duree=%lu ms delai=%lu ms acquittements=%u/%u\n",
-                            (unsigned long)profile_sync_elapsed_ms(first_ms),
-                            (unsigned long)timeout_ms, (unsigned)profile_sync_received,
-                            (unsigned)profile_sync_expected);
-            print_profile_sync_cards();
-            if (profile_sync_any_no_boot_status()) {
-                // Carte présente qui n'a jamais annoncé de PROFILE_STATUS de boot :
-                // firmware Moteur antérieur à ADR-0013, seule action = reflasher.
-                emit_status(DIAG_STATUS_PROFILE_UNSUPPORTED);
-            }
-            profile_request_probe();
-            if (tuning) {
-                diag_out_printf("[PROFILE] reglage: ECHEC (pas d'acquittement). Voir le motif par "
-                                "carte ci-dessus; 'p send' resynchronise\n");
+                profile_sync_failed = true;
+                profile_sync_final_failure(first_ms);
             }
         }
     }
@@ -2555,9 +2864,9 @@ void can_link_set_calibration_enabled(bool enabled) {
 
 void can_link_dump_table(void) {
     if (commissioning.valid) {
-        emit_table_state_line();
-        emit_all_table_entries();
-        emit_map_lines();
+        emit_table_state_line(DIAG_CLASS_CONSOLE);
+        emit_all_table_entries(DIAG_CLASS_CONSOLE);
+        emit_map_lines(DIAG_CLASS_CONSOLE);
     } else {
         char detail[32];
 
@@ -2570,12 +2879,12 @@ void can_link_dump_table(void) {
 void can_link_dump_status(void) {
     char detail[64];
 
-    snprintf(detail, sizeof(detail), "valid=%s state=%s flags=0x%02X cards=%u selftest=%s calib=%s",
+    snprintf(detail, sizeof(detail), "[CONSOLE] status valid=%s state=%s flags=0x%02X cards=%u selftest=%s calib=%s",
              commissioning.valid ? "oui" : "non",
              commissioning_table_state_name(commissioning.table_state),
              (unsigned)commissioning.table_flags, (unsigned)commissioning.entry_count,
              selftest_session.active ? "en_cours" : "repos", calibration_enabled ? "ON" : "OFF");
-    emit_line(detail);
+    emit_line_class(DIAG_CLASS_CONSOLE, detail);
 }
 
 static bool send_note_command(uint8_t midi_note, uint8_t velocity,

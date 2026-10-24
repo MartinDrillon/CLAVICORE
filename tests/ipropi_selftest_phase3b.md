@@ -5,6 +5,12 @@ Décisions de référence :
 - ADR-0005
 - [docs/specs/CAN.md](../docs/specs/CAN.md)
 
+> **Journal (ADR-0025 implémentée, validée hôte 2026-10-24)** : après
+> implémentation, taper `l 2` avant les étapes qui attendent `[SELFTEST_RAW]`.
+> À `l 0`, seuls les verdicts, échecs et warnings restent visibles ;
+> `[SELFTEST_OHM] warn` et `ohm_manquants` ne sont jamais filtrés. Sur le
+> firmware actuel, les RAW sont émis sans commande `l`.
+
 Périmètre **Livraison 1 uniquement** :
 - Moteur : `PROBE`, lecture mux/ADC, bitmap d'occupation, `fault_bits`,
   `IPROPI_SELFTEST_TRIGGER` (`0x402`), `BOARD_ANNOUNCE_STATUS` (`0x412`),

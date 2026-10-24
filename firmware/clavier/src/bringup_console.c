@@ -19,11 +19,51 @@
 
 static char g_line[CONSOLE_LINE_MAX];
 static uint8_t g_length;
-static bool g_overflow;  // ligne trop longue : tout ignorer jusqu'à la fin de ligne
+static bool g_overflow;
+static const char *skip_ws(const char *s);  // ligne trop longue : tout ignorer jusqu'à la fin de ligne
 
 static void print_help(void) {
-    diag_out_printf("[CONSOLE] t=auto-test c=mode_diagnostic d=table m=etat m stats=compteurs cartes n=journal notes ?=aide p=profil (p ?)\n");
+    diag_out_printf("[CONSOLE] t=auto-test c=mode_diagnostic d=table m=etat m stats=compteurs cartes l=niveau_journal ?=aide p=profil (p ?)\n");
+    diag_out_printf("[CONSOLE] l 0=verdicts l 1=bring-up l 2=trace l t=horodatage\n");
     diag_out_printf("[CONSOLE] aucune commande n'ecrit ni n'efface la table\n");
+}
+
+static void print_log_state(void) {
+    diag_out_printf("[CONSOLE] log niveau=%u timestamp=%s trace=%s\n",
+                    (unsigned)diag_out_level(),
+                    diag_out_timestamp_enabled() ? "on" : "off",
+                    diag_out_trace_available() ? "on" : "off");
+}
+
+static void log_command(const char *args) {
+    const char *token = skip_ws(args);
+    const char *rest;
+
+    if (*token == '\0') {
+        print_log_state();
+        return;
+    }
+    if (token[0] == 't' || token[0] == 'T') {
+        rest = skip_ws(token + 1);
+        if (*rest == '\0') {
+            diag_out_toggle_timestamp();
+            print_log_state();
+            return;
+        }
+    } else if (token[0] >= '0' && token[0] <= '2') {
+        rest = skip_ws(token + 1);
+        if (*rest == '\0') {
+            const uint8_t level = (uint8_t)(token[0] - '0');
+
+            if (!diag_out_set_level(level)) {
+                diag_out_printf("[CONSOLE] l -> niveau 2 indisponible (CLAVIER_DIAG_TRACE=OFF)\n");
+                return;
+            }
+            print_log_state();
+            return;
+        }
+    }
+    diag_out_printf("[CONSOLE] l -> usage: l [0|1|2|t]\n");
 }
 
 static void print_profile_help(void) {
@@ -166,10 +206,8 @@ static void profile_command(const char *args) {
     } else if (take_word(args, "fields", &rest)) {
         profile_fields();
     } else if (take_word(args, "send", &rest)) {
-        diag_out_printf("[PROFILE] send: re-diffusion du profil actif\n");
         (void)can_link_profile_send(can_link_profile_active());
     } else if (take_word(args, "reset", &rest)) {
-        diag_out_printf("[PROFILE] reset: diffusion du profil du fichier compile\n");
         (void)can_link_profile_send(can_link_profile_compiled());
     } else {
         diag_out_printf("[PROFILE] sous-commande inconnue (p ? pour l'aide)\n");
@@ -240,10 +278,9 @@ static void execute_line(const char *line) {
         }
         break;
     }
-    case 'n':
-    case 'N':
-        diag_out_printf("[CONSOLE] n -> journal des notes %s\n",
-                        can_link_toggle_note_log() ? "ON" : "OFF");
+    case 'l':
+    case 'L':
+        log_command(text + 1);
         break;
     case '?':
         print_help();

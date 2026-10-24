@@ -150,6 +150,7 @@ typedef struct {
     uint8_t keys_ok;
     const char *missing_keys_text;
     const char *table_text;
+    bool calib_enabled;
 } diag_summary_report_t;
 
 // Identité du firmware pour la ligne de boot (ADR-0017 décision 2). `build_id`

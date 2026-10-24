@@ -95,7 +95,7 @@ const char *diag_selftest_status_name(can_selftest_status_t status) {
 
 const char *diag_card_event_name(can_card_event_t event) {
     switch (event) {
-    case CAN_CARD_EVENT_BUTTON_SHORT_PRESS: return "BUTTON_SHORT_PRESS";
+    case CAN_CARD_EVENT_MANUAL_TEST_STARTED: return "MANUAL_TEST_STARTED";
     case CAN_CARD_EVENT_TRIGGER_PENDING: return "TRIGGER_PENDING";
     case CAN_CARD_EVENT_TRIGGER_SENT: return "TRIGGER_SENT";
     case CAN_CARD_EVENT_TRIGGER_BLOCKED: return "TRIGGER_BLOCKED";
@@ -594,10 +594,11 @@ size_t diag_format_summary_line(char *out, size_t capacity,
 
     written = write_line(
         out, capacity,
-        "[SUMMARY] cards_ok=%u/%u channels=%u keys=%u/%u missing_keys=%s table=%s",
+        "[SUMMARY] cards_ok=%u/%u channels=%u keys=%u/%u missing_keys=%s table=%s calib=%s",
         (unsigned)report->cards_ok, (unsigned)report->cards_total,
         (unsigned)report->channels_ok, (unsigned)report->keys_ok,
-        (unsigned)COMMISSIONING_KEY_COUNT, missing_keys_text, table_text);
+        (unsigned)COMMISSIONING_KEY_COUNT, missing_keys_text, table_text,
+        report->calib_enabled ? "ON" : "OFF");
     return (written < 0) ? 0u : (size_t)written;
 }
 

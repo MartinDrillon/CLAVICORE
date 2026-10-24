@@ -36,3 +36,39 @@ if ($LASTEXITCODE -ne 0) { throw "Compilation hote (console) en echec" }
 
 & $exe2
 if ($LASTEXITCODE -ne 0) { throw "Tests hote (console) en echec" }
+
+# Règles pures de synchronisation du profil (ADR-0023).
+$exe3 = Join-Path $out "test_profile_sync.exe"
+& gcc -std=c11 -Wall -Wextra -Werror -pedantic `
+    -I (Join-Path $root "shared\protocol") -I (Join-Path $root "firmware\clavier\src") `
+    (Join-Path $PSScriptRoot "test_profile_sync.c") `
+    -o $exe3
+if ($LASTEXITCODE -ne 0) { throw "Compilation hote (profile sync) en echec" }
+
+& $exe3
+if ($LASTEXITCODE -ne 0) { throw "Tests hote (profile sync) en echec" }
+
+# Pilote réel de réveil (ADR-0024), avec GPIO/PWM simulés.
+$exe4 = Join-Path $out "test_solenoid_wake.exe"
+& gcc -std=c11 -Wall -Wextra -Werror -pedantic `
+    -I (Join-Path $PSScriptRoot "stubs") `
+    -I (Join-Path $root "shared\protocol") -I (Join-Path $root "firmware\moteur\src") `
+    (Join-Path $PSScriptRoot "test_solenoid_wake.c") `
+    -o $exe4
+if ($LASTEXITCODE -ne 0) { throw "Compilation hote (wake) en echec" }
+
+& $exe4
+if ($LASTEXITCODE -ne 0) { throw "Tests hote (wake) en echec" }
+
+# Point d'émission journal ADR-0025 avec horloge Pico simulée.
+$exe5 = Join-Path $out "test_diag_out.exe"
+& gcc -std=c11 -Wall -Wextra -Werror -pedantic `
+    -I (Join-Path $PSScriptRoot "stubs") `
+    -I (Join-Path $root "firmware\clavier\src") `
+    (Join-Path $PSScriptRoot "test_diag_out.c") `
+    (Join-Path $root "firmware\clavier\src\diag_out.c") `
+    -o $exe5
+if ($LASTEXITCODE -ne 0) { throw "Compilation hote (diag_out) en echec" }
+
+& $exe5
+if ($LASTEXITCODE -ne 0) { throw "Tests hote (diag_out) en echec" }

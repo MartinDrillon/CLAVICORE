@@ -1,4 +1,5 @@
 #include "solenoid_driver.h"
+#include "solenoid_wake.h"
 
 #include "hardware/gpio.h"
 
@@ -81,20 +82,23 @@ static bool elapsed(uint32_t now_us, uint32_t start_us, uint32_t duration_us) {
 }
 
 // --- global_sleep ---
-static uint32_t g_wake_deadline_us;
+static solenoid_wake_state_t g_wake_state;
 
 void solenoid_global_sleep_init(void) {
+    g_wake_state.latched = false;
     gpio_init(MOTEUR_GLOBAL_SLEEP_GPIO);
     gpio_put(MOTEUR_GLOBAL_SLEEP_GPIO, false);  // nSLEEP bas : drivers endormis
     gpio_set_dir(MOTEUR_GLOBAL_SLEEP_GPIO, GPIO_OUT);
 }
 
 void solenoid_global_wake(uint32_t now_us) {
-    g_wake_deadline_us = now_us + profile()->wake_delay_us;
+    g_wake_state.latched = false;
+    g_wake_state.deadline_us = now_us + profile()->wake_delay_us;
     gpio_put(MOTEUR_GLOBAL_SLEEP_GPIO, true);
 }
 
 void solenoid_global_sleep(void) {
+    g_wake_state.latched = false;
     gpio_put(MOTEUR_GLOBAL_SLEEP_GPIO, false);
 }
 
@@ -102,8 +106,10 @@ static bool global_awake(void) {
     return gpio_get_out_level(MOTEUR_GLOBAL_SLEEP_GPIO);
 }
 
+// Le réveil est one-shot (ADR-0024) : après le délai, l'état doit rester vrai
+// pour toute la durée de vie du réveil, malgré le rebouclage de time_us_32().
 static bool global_ready(uint32_t now_us) {
-    return global_awake() && (uint32_t)(now_us - g_wake_deadline_us) < 0x80000000u;
+    return solenoid_wake_ready(&g_wake_state, global_awake(), now_us);
 }
 
 // --- Canal ---
@@ -295,13 +301,17 @@ solenoid_result_t solenoid_driver_push_start(solenoid_driver_t *drv, uint32_t no
 }
 
 void solenoid_driver_tick(solenoid_driver_t *drv, uint32_t now_us) {
+    // Évaluer le verrou avant tout retour, y compris FAULT : le réveil est un
+    // état global et ne doit pas dépendre de l'état d'un canal (ADR-0024).
+    const bool ready = global_ready(now_us);
+
     if (drv->state == SOLENOID_STATE_FAULT) {
         return;
     }
     // Surveillance défaut : prioritaire sur toute transition.
     const bool active = drv->state != SOLENOID_STATE_IDLE;
     // NFAULT n'est significatif qu'après le réveil complet des drivers.
-    if (global_ready(now_us) && !gpio_get(drv->fault_gpio)) {
+    if (ready && !gpio_get(drv->fault_gpio)) {
         enter_fault(drv, SOLENOID_FAULT_NFAULT, now_us);
         return;
     }

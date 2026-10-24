@@ -3,22 +3,27 @@
 Document de référence pour le **Codeur** et le **Validateur**, issu des
 [ADR-0013](../adr/adr-0013-profil-activation-solenoides-centralise-clavier.md)
 et [ADR-0014](../adr/adr-0014-limites-activation-pilotees-profil-clavier-derogation-invariant-4.md)
-(statut `Accepted`, 2026-10-21) puis de
+(statut `Accepted`, 2026-10-21), de
 [ADR-0019](../adr/adr-0019-phase-impact-impulsion-courte-avant-pull.md)
 (`Accepted`, 2026-10-22), qui ajoute la phase **IMPACT** et passe le format en
-**v2**.
+**v2**, puis d'[ADR-0023](../adr/adr-0023-synchronisation-profil-reprise-verification-etat.md)
+(`Accepted`, 2026-10-24), qui rend la synchronisation robuste aux pertes
+transitoires, et d'[ADR-0024](../adr/adr-0024-reveil-solenoides-permanent-diagnostic-refus.md)
+(`Accepted`, 2026-10-24), qui rend le réveil initial définitif.
 
-> **Statut de ce document (2026-10-22).** Ce document décrit l'état **implémenté
-> et validé** de la v2 (ADR-0019) : compilation des deux cibles, tests hôte et
-> vérification indépendante du layout binaire (§9). La **validation matérielle**
-> de la v2 reste à faire (campagne `tests/phase3b_profil_tuning.md` §2.4) ; la v1
-> (24 champs, 57 octets) était la version en service jusqu'au 2026-10-22.
+> **Statut de ce document (2026-10-24).** La v2 (ADR-0019), la synchronisation
+> robuste d'ADR-0023 et le verrou de réveil d'ADR-0024 sont **implémentés** et
+> **validés par compilation et tests hôte** ; les **validations matérielles**
+> restent à faire. Voir
+> [`validation-adr-0023-25-2026-10-24.md`](./validation-adr-0023-25-2026-10-24.md).
 
 Il décrit : le fichier unique de réglage, le format du profil, son cycle de vie,
 son transfert, sa persistance et les règles de contrôle. Les trames CAN
 correspondantes sont dans [`CAN.md`](./CAN.md) ; les listes de fichiers à revoir
-sont dans [`impact-adr-0013.md`](./impact-adr-0013.md) et
-[`impact-adr-0019.md`](./impact-adr-0019.md).
+sont dans [`impact-adr-0013.md`](./impact-adr-0013.md),
+[`impact-adr-0019.md`](./impact-adr-0019.md),
+[`impact-adr-0023.md`](./impact-adr-0023.md) et
+[`impact-adr-0024.md`](./impact-adr-0024.md).
 
 ## 1. Propriété et fichier unique
 
@@ -59,6 +64,21 @@ IDLE --(note on)--> IMPACT (impact_duration_us, impact_duty_pct)
 - `impact_duration_us == 0` désactive la phase (Note On → PULL directement).
 - Un Note Off pendant IMPACT va directement en RELEASE (pas de passage par PULL).
 - MAINTENANCE (ADR-0012) et PROBE (ADR-0009) ne passent **pas** par IMPACT.
+
+### 1.c Réveil initial `wake_delay_us` (ADR-0024)
+
+> **ADR-0024 implémentée et validée hôte 2026-10-24 ; validation matérielle en attente.**
+
+`wake_delay_us` est un délai **one-shot** après la levée de nSLEEP, pas une
+fenêtre de validité périodique. Une fois l'échéance franchie, le pilote mémorise
+le réveil (`g_wake_latched`) et reste prêt tant que nSLEEP est haut. Le verrou est
+effacé uniquement par `solenoid_global_wake()`, `solenoid_global_sleep()` ou
+l'initialisation. `solenoid_driver_tick()` évalue ce verrou avant tout retour
+anticipé, y compris l'état FAULT.
+
+Aucun réveil périodique, reset automatique ou rejeu de note n'est associé à ce
+délai. Les valeurs de phases/duty/maxima ne changent pas ; détail :
+[`impact-adr-0024.md`](./impact-adr-0024.md).
 
 ## 2. Payload canonique v2 (66 octets, little-endian)
 
@@ -159,11 +179,23 @@ Un profil qui échoue l'un de ces deux contrôles est refusé avec
         v
 [3] Auto-test IPROPI demandé (bouton Moteur 3 s -> 0x402, ou commande locale)
     start_selftest_request() :
-      a. encode(k_solenoid_profile) -> 66 octets + CRC32 ; transfer_id++ (1..255)
-      b. diffuse PROFILE_BEGIN (0x420), 11 x PROFILE_CHUNK (0x421), PROFILE_COMMIT (0x422)
-      c. attend PROFILE_STATUS de chaque carte présente (timeout ~1000 ms)
-         - toutes OK            -> émet IPROPI_SELFTEST_REQUEST (0x401)
-         - manquante / erreur   -> abandonne, [STATUS] PROFILE_SYNC_FAILED, pas de 0x401
+      a. encode(k_solenoid_profile) -> 66 octets + CRC32 ; tag attendu figé
+      b. jusqu'à 3 tentatives COMPLETES (ADR-0023), timeout 1000 ms avant
+         auto-test / 2000 ms en réglage :
+           - nouveau transfer_id (1..255), même payload et même CRC32
+           - diffuse PROFILE_BEGIN (0x420), 11 x PROFILE_CHUNK (0x421),
+             PROFILE_COMMIT (0x422)
+           - attend PROFILE_STATUS des cartes présentes
+           - toutes confirmées          -> succès, tente 0x401
+           - refus réessayable / timeout -> tentative suivante si reste < 3
+           - refus terminal / divergence -> échec immédiat
+      c. après 3 tentatives non concluantes, UNE requête UID existante vérifie
+         l'état réel (fenêtre 500 ms). Une réponse transfer_id=0, result=OK,
+         source=NVM au tag attendu réconcilie la carte (PROFILE_VERIFIED_NVM)
+      d. verdict final :
+         - toutes confirmées (direct ou NVM) -> émet 0x401
+         - manquante / erreur / divergence   -> [STATUS] PROFILE_SYNC_FAILED,
+                                                 aucun 0x401
         |
         v
 [4] Moteur, réception du profil
@@ -181,6 +213,34 @@ Un profil qui échoue l'un de ces deux contrôles est refusé avec
         v
 [5] Moteur : 0x401 -> sonde PROBE par canal, trames 0x412/0x600/0x601 (inchangé)
 ```
+
+### 4.b Reprises et réconciliation d'état (ADR-0023)
+
+Une commande explicite (`p send`, `p reset`, auto-test) forme une **opération**
+pouvant comporter trois tentatives complètes. Les règles qui doivent rester
+vraies à chaque tentative :
+
+* le payload et le CRC32 sont identiques ; seul `transfer_id` change ;
+* les cartes déjà confirmées ne sont ni oubliées ni réinitialisées, et une carte
+  ayant déjà le tag en NVM ne réécrit pas la flash ;
+* un acquittement direct exige une carte attendue, `result = OK`, le tag attendu
+  et un `transfer_id` appartenant à l'opération ; un acquittement d'une tentative
+  antérieure est accepté s'il arrive avant la confirmation de cette carte ;
+* un refus ne porte pas le tag de la tentative et n'est **jamais** comparé au tag
+  attendu. `NO_TRANSFER`, `BAD_SEQUENCE` et `BAD_CRC` sont réessayables ;
+  `BUSY`, `INVALID_FIELD`, `FLASH_ERROR` et `UNSUPPORTED_VERSION` sont terminaux ;
+* une carte confirmée n'est jamais rétrogradée par un refus ultérieur ; une
+  réponse OK portant un autre tag est une divergence terminale ;
+* après les trois tentatives, une sonde UID unique peut confirmer une carte si
+  elle annonce `result = OK`, `source = NVM` et le tag attendu. Cette
+  réconciliation (`PROFILE_VERIFIED_NVM`) est distincte d'un acquittement ;
+* le profil actif du Clavier n'est promu qu'après confirmation ou réconciliation
+  de toutes les cartes attendues ; sinon `PROFILE_SYNC_FAILED` et aucun `0x401`.
+
+Le détail de la machine d'état, des compteurs et des logs est dans
+[`impact-adr-0023.md`](./impact-adr-0023.md). Les délais existants (1 000 ms
+avant auto-test, 2 000 ms en réglage) et la fenêtre de sonde de 500 ms sont
+conservés.
 
 **Transition v1 → v2 (ADR-0019).** Un Moteur reflashé en v2 ne relit pas les
 enregistrements flash v1 (version et longueur) : au premier boot après reflash,
@@ -253,7 +313,12 @@ Sans matériel :
 * Persistance à travers un flash SWD de la carte Moteur (secteurs réservés).
 * Valeur exacte de `PICO_FLASH_SIZE_BYTES` sur le RP2354B (2 Mio déclaré, non
   vérifié) et donc la position des slots.
-* Latence de l'écriture flash (stall XIP) et son effet sur la réception CAN.
+* Latence de l'écriture flash (stall XIP) et son effet sur la réception CAN ;
+  mesurer la marge entre COMMIT → fin d'écriture → STATUS et la fenêtre de 1 s.
+* Point de perte d'un `PROFILE_STATUS` ou d'une trame de transfert sur le bus,
+  trames d'erreur autour des réponses `0x423` et éventuelle collision entre
+  réponses de même identifiant. ADR-0023 récupère ces pertes mais n'en démontre
+  pas la cause.
 * Valeurs de profil optimales au banc (PULL, HOLD, PROBE, polarités).
 * **Phase IMPACT (ADR-0019)** : effet mécanique et acoustique réel, montée de
   courant mesurée (IPROPI/oscilloscope), valeur utile de `impact_duration_us`,
@@ -305,6 +370,13 @@ Dette et compléments identifiés par la validation (2026-10-21) :
   `solenoid_driver.c` (IMPACT→PULL, Note Off pendant IMPACT, durée 0 → PULL),
   store flash Moteur (rejet d'un slot v1), transfert `0x420`–`0x423` sur
   11 chunks, et effet physique d'IMPACT.
+
+**ADR-0023 (synchronisation robuste, implémentée, validée hôte 2026-10-24).**
+La synchronisation à trois tentatives et la réconciliation NVM sont en place et
+couvertes par `tests/host/test_profile_sync.c`. La **validation matérielle** de
+la campagne
+[`../../tests/procedure_adr0023_sync_profil.md`](../../tests/procedure_adr0023_sync_profil.md)
+reste à exécuter.
 
 Pour forcer la recompilation des unités touchées (Ninja affiche sinon
 `no work to do`), supprimer leurs `.obj` sous `build/<cible>/CMakeFiles/` avant

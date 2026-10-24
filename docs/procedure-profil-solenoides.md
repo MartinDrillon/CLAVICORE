@@ -2,16 +2,19 @@
 
 Procédure à l'usage des humains et des agents (Codeur, Validateur), issue des
 [ADR-0013](../adr/adr-0013-profil-activation-solenoides-centralise-clavier.md),
-[ADR-0014](../adr/adr-0014-limites-activation-pilotees-profil-clavier-derogation-invariant-4.md)
-et [ADR-0019](../adr/adr-0019-phase-impact-impulsion-courte-avant-pull.md)
-(phase IMPACT, format v2).
+[ADR-0014](../adr/adr-0014-limites-activation-pilotees-profil-clavier-derogation-invariant-4.md),
+[ADR-0019](../adr/adr-0019-phase-impact-impulsion-courte-avant-pull.md)
+(phase IMPACT, format v2) et
+[ADR-0023](../adr/adr-0023-synchronisation-profil-reprise-verification-etat.md)
+(synchronisation robuste : implémentée, validée hôte 2026-10-24, matériel en attente).
 Elle couvre : modifier le profil, compiler, flasher, propager aux cartes Moteur,
 régler à chaud, vérifier la persistance, revenir en arrière.
 
 Format et sémantique des champs : [`specs/profil-solenoides.md`](./specs/profil-solenoides.md).
 Trames : [`specs/CAN.md`](./specs/CAN.md). Fichiers à revoir :
-[`specs/impact-adr-0013.md`](./specs/impact-adr-0013.md) et
-[`specs/impact-adr-0019.md`](./specs/impact-adr-0019.md).
+[`specs/impact-adr-0013.md`](./specs/impact-adr-0013.md),
+[`specs/impact-adr-0019.md`](./specs/impact-adr-0019.md) et
+[`specs/impact-adr-0023.md`](./specs/impact-adr-0023.md).
 
 > **Règle d'or** : un seul fichier de réglage,
 > `firmware/clavier/src/solenoid_profile_config.h`. Les cartes Moteur ne sont
@@ -151,7 +154,9 @@ Une carte restée en v1 rejette le profil v2 : `PROFILE_STATUS result=7`
    * `[STATUS] code=PROFILE_FALLBACK_IN_USE` : une carte n'a pas de profil
      persistant valide (flash effacée ou slot v1) et joue avec les valeurs de repli.
 3. Propager : **bouton Moteur maintenu 3 s** (auto-test) ou `p send` (console).
-4. Le Clavier diffuse le profil v2 (66 o, 11 chunks) puis, en auto-test, `0x401`.
+4. Le Clavier diffuse le profil v2 (66 o, 11 chunks), au plus **trois fois** en
+   cas de perte (ADR-0023), puis, en auto-test, `0x401` seulement après
+   confirmation de toutes les cartes attendues.
    Attendu :
    * pas de `PROFILE_SYNC_FAILED` ;
    * les `PROFILE_STATUS` de toutes les cartes présentes sont OK ;
@@ -183,7 +188,8 @@ Une carte restée en v1 rejette le profil v2 : `PROFILE_STATUS result=7`
 
 | Symptôme | Cause probable |
 |---|---|
-| `PROFILE_SYNC_FAILED` au test | un Moteur n'a pas acquitté : ancien firmware, carte absente, bus. Aucun `0x401` n'est émis. |
+| `PROFILE_SYNC_FAILED` au test | après ADR-0023, une perte transitoire est reprise automatiquement ; l'échec final n'intervient qu'après trois tentatives et la sonde (ancien firmware, carte absente, bus durable). Un **refus terminal** (`BUSY`, `INVALID_FIELD`, `FLASH_ERROR`, `UNSUPPORTED_VERSION`) ou une divergence OK échoue immédiatement, sans reprise ni sonde. Aucun `0x401` n'est émis. |
+| `[PROFILE] sync reprise essai=…` | perte transitoire détectée : reprise automatique dans la même commande. Une occurrence isolée n'est pas une panne ; des reprises répétées imposent l'analyse du bus. |
 | `PROFILE_STATUS result=7` | version de profil non supportée : carte Moteur restée en v1 → reflasher (ADR-0019). |
 | `PROFILE_STATUS result=4` | profil incohérent ou incompatible avec la mesure (fenêtre ADC/PROBE). |
 | `PROFILE_STATUS result=6` | échec d'écriture flash Moteur (secteurs réservés ou `__flash_binary_end`). |

@@ -79,7 +79,7 @@
 #define CAN_CARD_EVENT_CHANNEL_NONE 0xFFu
 
 typedef enum {
-    CAN_CARD_EVENT_BUTTON_SHORT_PRESS = 0,  // appui court : test manuel du canal
+    CAN_CARD_EVENT_MANUAL_TEST_STARTED = 0,  // test manuel du canal démarré
     CAN_CARD_EVENT_TRIGGER_PENDING = 1,     // appui long consommé, 0x402 en attente
     CAN_CARD_EVENT_TRIGGER_SENT = 2,        // 0x402 transmis par la carte
     CAN_CARD_EVENT_TRIGGER_BLOCKED = 3,     // un canal empêche l'émission
@@ -123,7 +123,13 @@ typedef enum {
     CAN_CARD_COUNTER_UNOCCUPIED = 10,
     CAN_CARD_COUNTER_REJECTED = 11,
     CAN_CARD_COUNTER_COMMANDS_OK = 12,
-    CAN_CARD_COUNTER_COUNT = 13,
+    // ADR-0024 : ventilation des refus du pilote, sans changer les IDs 0–12.
+    CAN_CARD_COUNTER_REJECT_SLEEP = 13,
+    CAN_CARD_COUNTER_REJECT_REST = 14,
+    CAN_CARD_COUNTER_REJECT_BUSY = 15,
+    CAN_CARD_COUNTER_REJECT_FAULT = 16,
+    CAN_CARD_COUNTER_REJECT_OTHER = 17,
+    CAN_CARD_COUNTER_COUNT = 18,
 } can_card_counter_t;
 
 typedef struct {

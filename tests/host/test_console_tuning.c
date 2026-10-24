@@ -6,6 +6,7 @@
 
 #include "bringup_console.h"
 #include "can_link.h"
+#include "diag_out.h"
 #include "solenoid_profile.h"
 #include "usb_log.h"
 
@@ -66,6 +67,39 @@ void diag_out_printf(const char *format, ...) {
 void diag_out_line(const char *line) {
     (void)line;
 }
+void diag_out_printf_class(diag_class_t category, const char *format, ...) {
+    (void)category;
+    (void)format;
+}
+void diag_out_line_class(diag_class_t category, const char *line) {
+    (void)category;
+    (void)line;
+}
+static uint8_t g_diag_level = 1u;
+static bool g_diag_timestamp = true;
+bool diag_out_set_level(uint8_t level) {
+    if (level > 2u) {
+        return false;
+    }
+    g_diag_level = level;
+    return true;
+}
+uint8_t diag_out_level(void) {
+    return g_diag_level;
+}
+bool diag_out_trace_available(void) {
+    return true;
+}
+bool diag_out_is_enabled(diag_class_t category) {
+    (void)category;
+    return true;
+}
+void diag_out_toggle_timestamp(void) {
+    g_diag_timestamp = !g_diag_timestamp;
+}
+bool diag_out_timestamp_enabled(void) {
+    return g_diag_timestamp;
+}
 uint32_t diag_out_now_ms(void) {
     return 0u;
 }
@@ -76,15 +110,10 @@ const char *diag_out_build_id(void) {
 // Doublures des commandes de diagnostic (ADR-0020) : la console est testée sur
 // ce qu'elle demande, pas sur l'effet côté CAN.
 static int g_stats_request_count;
-static bool g_note_log_state;
 
 can_link_request_result_t can_link_stats_request_start(void) {
     ++g_stats_request_count;
     return CAN_LINK_REQUEST_SENT;
-}
-bool can_link_toggle_note_log(void) {
-    g_note_log_state = !g_note_log_state;
-    return g_note_log_state;
 }
 
 static solenoid_profile_t make_profile(void) {
@@ -127,6 +156,8 @@ static void reset(void) {
     g_send_count = 0;
     g_selftest_count = 0;
     g_send_result = CAN_LINK_REQUEST_SENT;
+    g_diag_level = 1u;
+    g_diag_timestamp = true;
     bringup_console_init();
 }
 
@@ -220,16 +251,24 @@ int main(void) {
     type("p set pull_duty_pct 6x\x7f" "0\n");
     CHECK(g_send_count == 1 && g_last_sent.pull_duty_pct == 60u);
 
-    puts("--- m stats et bascule du journal des notes (ADR-0020)");
+    puts("--- m stats et niveaux de journal (ADR-0025)");
     reset();
     type("m\n");
     CHECK(g_stats_request_count == 0);
     type("m stats\n");
     CHECK(g_stats_request_count == 1);
+    type("l\n");
+    CHECK(g_diag_level == 1u);
+    type("l 2\n");
+    CHECK(g_diag_level == 2u);
+    type("l t\n");
+    CHECK(!g_diag_timestamp);
+    type("l 0\n");
+    CHECK(g_diag_level == 0u);
     type("n\n");
-    CHECK(g_note_log_state);
-    type("n\n");
-    CHECK(!g_note_log_state);
+    CHECK(g_diag_level == 0u);
+    type("l 3\n");
+    CHECK(g_diag_level == 0u);
 
     printf("%d verifications, %d echec(s)\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;

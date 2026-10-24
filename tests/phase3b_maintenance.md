@@ -17,6 +17,9 @@ Références :
    `tests/moteur_phase2a.md` §E–F) : aucun `.uf2` Moteur n'existe (carte sans USB).
 3. Ouvrir **PuTTY** sur le port **CDC** du Clavier.
 4. Vérifier qu'une table de commissioning valide est déjà présente.
+5. **ADR-0025 implémentée, validée hôte 2026-10-24** : taper `l 2` pour voir les
+   lignes `[PUSH] ... start/stop` ; les `[PUSH] ... timeout` et refus restent
+   visibles à `l 0`.
 
 ## Test 1 — Entrée en maintenance
 

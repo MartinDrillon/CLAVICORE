@@ -8,11 +8,14 @@ signalé. Elle dépend d'ADR-0018 pour la trame `CARD_EVENT` (`0x424`).
 
 > **État (2026-10-24) : exécutée et validée en compilation + tests hôte.**
 > Acquittement répété, `0x403`/`0x425`, 13 compteurs, `m stats`, `COMMAND_IGNORED`
-> et bascule `n` sont en place ; 413 vérifications hôte, 0 échec. Trois gardes
+> et bascule `n` sont en place ; 581 vérifications hôte, 0 échec. Trois gardes
 > d'exécution ont été ajoutées après revue du Validateur : refus de `m stats` si
 > une opération est en cours ou si aucune carte n'est attendue, et
 > `[STATUS] code=NO_RESPONSE` nommé pour une carte muette (une fois par
-> balayage). Validation matérielle à faire.
+> Validation matérielle à faire. **ADR-0024 (implémentée, validée hôte
+> 2026-10-24) étend ce contrat à 18 compteurs ; voir §7. ADR-0025 (implémentée,
+> validée hôte 2026-10-24) agrège la présentation et remplace `n` par `l` ;
+> voir §8.**
 
 ## 0. Pourquoi (rappel du constat, pas une hypothèse)
 
@@ -53,7 +56,7 @@ carte qui ne connaît pas l'identifiant (firmware antérieur) : simple silence.
 | Octet | Nom | Valeurs |
 |---|---|---|
 | 0 | `proto_version` | `CAN_PROTO_VERSION` |
-| 1 | `counter_id` | `0..12` (table §2.3) |
+| 1 | `counter_id` | `0..12` dans le lot initial ; `0..17` après extension ADR-0024 (§7) |
 | 2..3 | `reply_to` | `CAN_REQUEST_ID_MIN..MAX` (LE), corrèle la réponse |
 
 ### 2.2 Réponse `CARD_STATS` — ID `0x425`, DLC 8
@@ -105,6 +108,10 @@ Nouvelle sous-commande du Clavier (`m stats`), **à la demande uniquement** :
 `note_sent` est le cumul Clavier (`stats.note_sent`) ; `cartes_ok` la somme des
 `solenoid_commands_ok` reçus. Un écart croissant pendant qu'on joue signifie
 « la carte refuse » : afficher alors les compteurs 3, 4, 5, 10 et 11.
+
+Après ADR-0025, ces lignes sont remplacées par **une ligne `[CARD] pos=N stats …`
+par carte** plus la ligne `[STATS]`. La collecte et les trames restent identiques ;
+seule la présentation est agrégée. Format et règles : `impact-adr-0025.md` §4.
 
 Règles : une requête à la fois ; timeout court (100 ms) ; carte muette →
 `[STATUS] code=NO_RESPONSE` existant, sans bloquer les suivantes ; ne rien
@@ -158,7 +165,42 @@ l'émission `COMMAND_IGNORED`.
   de doublon compté (`acquittements` reste `k/N`, jamais `2k/N`).
 - Une carte dont on coupe l'émission (ou dont on sature la file TX) ne fait plus
   échouer la synchronisation : 3 tentatives dans la fenêtre.
-- `m stats` affiche les 13 compteurs des cartes présentes et la ligne `[STATS]`.
+- `m stats` affiche les 13 compteurs initiaux des cartes présentes et la ligne `[STATS]` ; après ADR-0024, les 18 IDs (0–17) sont disponibles.
 - Presser une touche commissionnée pendant qu'une carte refuse produit, en moins
   d'une seconde, une ligne `[CARD] … event=COMMAND_IGNORED` avec la bonne raison.
 - Aucune régression sur les trames existantes : `CAN_PROTO_VERSION` reste 1.
+
+## 7. Extension additive ADR-0024 (implémentée, validée hôte 2026-10-24)
+
+Les IDs 0–12 et les trames `0x403`/`0x425` restent inchangés. ADR-0024 ajoute :
+
+| Id | Nom | Sens |
+|---|---|---|
+| 13 | `solenoid_reject_sleep` | refus `SOLENOID_ERR_SLEEP` |
+| 14 | `solenoid_reject_rest` | refus `SOLENOID_ERR_REST` |
+| 15 | `solenoid_reject_busy` | refus `SOLENOID_ERR_BUSY` |
+| 16 | `solenoid_reject_fault` | refus `SOLENOID_ERR_FAULT` |
+| 17 | `solenoid_reject_other` | PARAM/PWM/FAULT_PERSISTS ou autre non OK |
+
+`CAN_CARD_COUNTER_COUNT` passe à **18**. Chaque refus pilote d'une commande CAN
+incrémente `solenoid_rejected` **et exactement un** compteur de cause ; la somme
+des IDs 13–17 est donc égale au nombre de refus comptés dans `solenoid_rejected`.
+`CAN_CARD_COUNTER_RX_OVERRUN` (ID 2) doit lire `isr_rx_overrun`, seule source
+alimentée par l'ISR.
+
+Une carte ancienne ne répond qu'aux IDs 0–12. Le Clavier affiche les IDs 13–17
+comme `n/a` si la même carte a répondu à au moins un compteur historique, sans
+émettre `NO_RESPONSE` pour elle. Le détail et les tests sont dans
+[`impact-adr-0024.md`](./impact-adr-0024.md).
+
+## 8. Évolution ADR-0025 (implémentée, validée hôte 2026-10-24)
+
+ADR-0025 modifie uniquement la présentation et le filtrage du journal :
+
+* `m stats` agrège les compteurs par carte (`[CARD] pos=N stats …`) et conserve
+  une ligne `[STATS]` ; voir `impact-adr-0025.md` §4 ;
+* la commande `n` est retirée au profit de `l 0|1|2` ;
+* le tag étranger d'une commande diffusée n'émet plus `COMMAND_IGNORED` ; il
+  continue d'incrémenter `solenoid_ignored_tag` ;
+* les autres refus ciblés restent limités à une ligne par motif et par seconde ;
+* aucun code de trame, DLC, champ ni `CAN_PROTO_VERSION` ne change.

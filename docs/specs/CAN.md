@@ -7,8 +7,14 @@ ADR-0005,
 [ADR-0009](../adr/adr-0009-commissioning-provisoire-bring-up-et-estimation-resistance-bobine.md),
 [ADR-0010](../adr/adr-0010-ancrage-grave-mapping-commissioning.md),
 [ADR-0012](../adr/adr-0012-mode-maintenance-force-inverse-duree-20s.md),
-[ADR-0013](../adr/adr-0013-profil-activation-solenoides-centralise-clavier.md) et
-[ADR-0014](../adr/adr-0014-limites-activation-pilotees-profil-clavier-derogation-invariant-4.md).
+[ADR-0013](../adr/adr-0013-profil-activation-solenoides-centralise-clavier.md),
+[ADR-0014](../adr/adr-0014-limites-activation-pilotees-profil-clavier-derogation-invariant-4.md),
+[ADR-0023](../adr/adr-0023-synchronisation-profil-reprise-verification-etat.md)
+(reprises bornées et réconciliation d'état),
+[ADR-0024](../adr/adr-0024-reveil-solenoides-permanent-diagnostic-refus.md)
+(verrou de réveil et compteurs de refus par cause) et
+[ADR-0025](../adr/adr-0025-journal-diagnostic-niveaux-runtime-agregation.md)
+(niveaux de journal, événement 0 et statistiques agrégées).
 
 **État réel** :
 - **Phase 3a validée sur bus réel** : premier UID relevé de bout en bout
@@ -33,15 +39,29 @@ ADR-0005,
   encore en polarité **PULL** et bornée à **10 s**, et le keycode `MAINT`
   (position 84) est inatteignable. Détail et liste des fichiers :
   [`impact-adr-0012.md`](impact-adr-0012.md).
-- **Profil d'activation (ADR-0013, ADR-0014 ; ADR-0019 : phase IMPACT, format v2 — implémenté et validé 2026-10-22)** :
+- **Profil d'activation (ADR-0013, ADR-0014 ; ADR-0019 : phase IMPACT, format v2 — implémenté et validé 2026-10-22 ; ADR-0023 : synchronisation robuste — implémentée, validée hôte 2026-10-24, matériel en attente)** :
   le profil des solénoïdes est réglé dans un fichier unique côté Clavier,
   transmis aux cartes Moteur par les trames `PROFILE_*` (`0x420`–`0x423`) au
   lancement de l'auto-test IPROPI, puis persisté en flash côté Moteur (deux
   secteurs A/B). Toutes les limites deviennent des données du profil ; plus
   aucune enveloppe thermique n'est figée dans le firmware Moteur (dérogation à
-  l'invariant 4). Détail : [`profil-solenoides.md`](profil-solenoides.md) ;
-  liste des fichiers : [`impact-adr-0013.md`](impact-adr-0013.md),
+  l'invariant 4). ADR-0023 ajoute **trois tentatives complètes au maximum** et
+  une **réconciliation finale sur le tag NVM** ; elle ne change aucune trame.
+  Détail : [`profil-solenoides.md`](profil-solenoides.md) et
+  [`impact-adr-0023.md`](impact-adr-0023.md) ; listes des fichiers :
+  [`impact-adr-0013.md`](impact-adr-0013.md),
   [`impact-adr-0019.md`](impact-adr-0019.md).
+- **Réveil et compteurs (ADR-0024 — implémentée, validée hôte 2026-10-24, matériel en attente)** :
+  le réveil après `wake_delay_us` est **définitif** (verrou one-shot,
+  évalué même en FAULT) et ventile les refus du pilote par les compteurs 13–17,
+  sans changer `0x403`/`0x425` ni `CAN_PROTO_VERSION`. Détail :
+  [`impact-adr-0024.md`](impact-adr-0024.md), validation :
+  [`../tests/procedure_adr0024_reveil_uptime.md`](../tests/procedure_adr0024_reveil_uptime.md).
+- **Journal et événement 0 (ADR-0025 — implémentée, validée hôte 2026-10-24, matériel en attente)** :
+  trois niveaux runtime (`l 0|1|2`), verdicts non masquables, événement 0 renommé
+  `MANUAL_TEST_STARTED` à valeur et payload inchangés, `m stats` agrégé par carte.
+  Détail : [`impact-adr-0025.md`](impact-adr-0025.md), validation :
+  [`../tests/procedure_adr0025_journal_niveaux.md`](../tests/procedure_adr0025_journal_niveaux.md).
 
 **Historique** : avant ADR-0010, l'assignation était **descendante** (bloc aigu
 ancré sur la touche 49, ADR-0004 §6, remplacé) ; une table persistée avant cette
@@ -346,11 +366,31 @@ d'erreur correspondant : aucun écrêtage, aucune application partielle.
 
 Règles :
 - le profil est diffusé **avant** `IPROPI_SELFTEST_REQUEST` ; si toutes les
-  cartes présentes n'acquittent pas `result = OK`, le Clavier **n'émet pas**
-  `0x401` et signale `PROFILE_SYNC_FAILED` ;
+  cartes présentes ne sont pas confirmées, le Clavier **n'émet pas** `0x401` et
+  signale `PROFILE_SYNC_FAILED` ;
+- depuis ADR-0023, une opération comporte au maximum **trois tentatives
+  complètes** (`BEGIN` + 11 `CHUNK` + `COMMIT`), chacune avec un nouveau
+  `transfer_id` mais le même payload et le même CRC32 ;
+- un acquittement direct n'est valide que si `uid_tag` désigne une carte
+  attendue, `result = OK` et `profile_tag32` est le tag attendu. Un
+  acquittement d'une tentative antérieure de la même opération est accepté tant
+  que la carte n'est pas confirmée ; les doublons ne comptent pas ;
+- un refus (`result != OK`) n'est **pas** comparé au tag attendu : il porte le
+  tag de l'ancien profil actif. `NO_TRANSFER`, `BAD_SEQUENCE` et `BAD_CRC` sont
+  réessayables ; `BUSY`, `INVALID_FIELD`, `FLASH_ERROR` et
+  `UNSUPPORTED_VERSION` sont terminaux ;
+- après trois tentatives non concluantes, **une** requête UID existante sert de
+  vérification d'état. Une réponse de sonde `transfer_id = 0` avec `result = OK`,
+  `source = NVM` et le tag attendu confirme la carte (`PROFILE_VERIFIED_NVM`) ;
+  une source `DEFAULTS`, un tag différent ou une absence de réponse ne
+  réconcilient jamais la carte ;
+- le profil actif du Clavier n'est promu qu'après confirmation directe ou
+  réconciliation de **toutes** les cartes attendues ; aucune divergence n'est
+  corrigée en silence ;
 - aucune trame existante n'est modifiée : `CAN_PROTO_VERSION` reste `1` ;
 - le payload canonique (66 octets) et le format flash Moteur sont décrits dans
-  [`profil-solenoides.md`](profil-solenoides.md).
+  [`profil-solenoides.md`](profil-solenoides.md) ; l'état détaillé et les tests
+  sont dans [`impact-adr-0023.md`](impact-adr-0023.md).
 
 #### `SOLENOID_COMMAND` — ID `0x100`, DLC 5
 
@@ -386,9 +426,9 @@ cartes l'ignorent : ce n'est pas une commande. Spécification complète :
 | Octet | Nom | Valeurs / remarques |
 |---|---|---|
 | 0 | `proto_version` | version du protocole |
-| 1 | `event` | `0` appui court (test manuel), `1` déclenchement en attente, `2` déclenchement émis, `3` déclenchement bloqué, `4` défaut de canal, `5` défaut levé, `6` commande ignorée, `7` auto-test avorté |
+| 1 | `event` | `0` `MANUAL_TEST_STARTED` (test manuel démarré, ex-appui court), `1` déclenchement en attente, `2` déclenchement émis, `3` déclenchement bloqué, `4` défaut de canal, `5` défaut levé, `6` commande ignorée, `7` auto-test avorté. Valeur 0 et payload inchangés par ADR-0025. |
 | 2 | `channel` | `0..11`, ou `0xFF` si sans objet |
-| 3 | `state` | `SOLENOID_STATE_*` ; pour l'événement `6` : code de raison (`1` tag, `2` canal, `3` auto-test, `4` non occupé, `5` pilote) |
+| 3 | `state` | `SOLENOID_STATE_*` ; pour l'événement `6` : code de raison (`1` tag — réservé et non émis depuis ADR-0025, `2` canal, `3` auto-test, `4` non occupé, `5` pilote) |
 | 4 | `fault` | `SOLENOID_FAULT_*` ; `0` si sans objet |
 | 5..6 | `uid_tag` | CRC16 LE de la carte émettrice |
 | 7 | `reserved` | **doit être émis à `0`** |
@@ -399,6 +439,9 @@ Règles :
   pas revenu IDLE (canal bloquant nommé) ;
 - ne conditionne aucune exécution : le Clavier journalise (`[CARD] pos=N event=…`)
   et signale `0x38` / `0x39` ;
+- un `uid_tag` étranger à une `SOLENOID_COMMAND` ne produit **aucun**
+  `COMMAND_IGNORED` (routage normal en diffusion) ; les autres refus restent
+  limités à une ligne par motif et par seconde ;
 - un `CARD_EVENT` n'est **jamais** un acquittement de profil ni une réponse d'UID.
 
 #### `CARD_STATS_REQUEST` — ID `0x403`, DLC 4
@@ -409,7 +452,7 @@ Règles :
 | Octet | Nom | Valeurs / remarques |
 |---|---|---|
 | 0 | `proto_version` | version du protocole |
-| 1 | `counter_id` | `0..12` (table des compteurs, note 0020 §2.3) |
+| 1 | `counter_id` | `0..17` (0–12 : note 0020 §2.3 ; 13–17 : note 0024 §3) |
 | 2..3 | `reply_to` | `CAN_REQUEST_ID_MIN..MAX` (LE), traçabilité |
 
 Une seule requête en vol à la fois ; interrogation à la demande, jamais périodique.
@@ -426,11 +469,25 @@ Une seule requête en vol à la fois ; interrogation à la demande, jamais péri
 | 4..7 | `valeur` | u32 LE |
 
 Corrélation par `uid_tag` + `counter_id` (le `reply_to` n'est pas renvoyé, 8
-octets pleins). Compteurs attendus : `can_errors`, `tx_fail`, `rx_overrun`,
-`solenoid_selftest_blocked`, `solenoid_ignored_tag`, `solenoid_bad_channel`,
-`profile_status_lost`, `profile_commits_rejected`, `profile_commits_ok`,
-`rx_ignored`, `solenoid_unoccupied`, `solenoid_rejected`,
+octets pleins). Compteurs 0–12 (ADR-0020) : `can_errors`, `tx_fail`,
+`rx_overrun`, `solenoid_selftest_blocked`, `solenoid_ignored_tag`,
+`solenoid_bad_channel`, `profile_status_lost`, `profile_commits_rejected`,
+`profile_commits_ok`, `rx_ignored`, `solenoid_unoccupied`, `solenoid_rejected`,
 `solenoid_commands_ok`.
+
+Compteurs additifs 13–17 (ADR-0024) : `solenoid_reject_sleep`,
+`solenoid_reject_rest`, `solenoid_reject_busy`, `solenoid_reject_fault`,
+`solenoid_reject_other`. Une carte ancienne répond aux 0–12 mais pas aux 13–17 :
+ces derniers sont affichés `n/a` et ne doivent pas produire
+`NO_RESPONSE pos=N` ; ce statut reste réservé à une carte muette sur tout le
+balayage.
+
+Sortie ADR-0025 : `m stats` agrège les compteurs en **une ligne
+`[CARD] pos=N stats …` par carte** plus une ligne `[STATS]`, au lieu d'une ligne
+par compteur. Le format et les règles d'omission sont dans
+[`impact-adr-0025.md`](impact-adr-0025.md). La trame et ses octets ne changent
+pas. Les IDs 0–12 sont immuables ; `CAN_CARD_COUNTER_COUNT` vaut 18 et le
+format/DLC des trames ne change pas.
 
 ### Format flash de commissioning (Clavier)
 
@@ -501,6 +558,25 @@ canaux IDLE, avec `flash_safe_execute` : effacer le slot au `seq` le plus
 faible, programmer `seq + 1`, relire et vérifier, puis appliquer en RAM. Détail
 complet : [`profil-solenoides.md`](profil-solenoides.md) §5.
 
+### Niveaux du journal CDC (ADR-0025, implémentée)
+
+Le journal est filtré par `l 0|1|2` ; `l` affiche le niveau et `l t` commute
+l'horodatage.
+
+| Niveau | Contenu |
+|---|---|
+| `l 0` | verdicts d'opérations demandées, défauts, divergences, refus, mesures manquantes, réponses console |
+| `l 1` | niveau 0 + boot, UID, table, mapping, résumés par carte, événements ordinaires |
+| `l 2` | niveau 1 + notes, RAW, matrice, PUSH courants |
+
+Les lignes de la décision 2 d'ADR-0025 (divergences, `PROFILE_SYNC_FAILED`,
+`CARD_REBOOTED`, `TRIGGER_BLOCKED`, `CHANNEL_FAULT`, `SELFTEST_ABORTED`,
+`MANUAL_TEST_STARTED`, `NOTE_DROPPED`, warning de courant, `ohm_manquants`) sont
+émises à **tous** les niveaux. Les lignes libres de matrice deviennent une ligne
+taguée `[KEY]` à `l 2` uniquement. La commande `n` est retirée ; `c` reste
+l'acquisition de calibration. Les détails de format, de catégorie par tag et
+d'options de compilation sont dans [`impact-adr-0025.md`](impact-adr-0025.md).
+
 ### Lignes `[STATUS]` (codes `0x20+` d'ADR-0004, `0x31` d'ADR-0009, `0x32+` d'ADR-0013, `0x35+` d'ADR-0016/0017/0018/0020)
 
 Format texte CDC :
@@ -537,6 +613,10 @@ Format texte CDC :
 | `38` | `TRIGGER_BLOCKED` |
 | `39` | `CHANNEL_FAULT_IDLE` |
 
+Niveaux ADR-0025 : seuls `20` `SELFTEST_STARTED` et `23` `TABLE_WRITTEN` sont
+`l 1` (progression normale). Tous les autres codes de cette table sont `ALWAYS`
+et restent visibles à `l 0`.
+
 ### Lignes `[TABLE]`
 
 Formats (existants, complétés par `state`/`flags`) :
@@ -551,7 +631,9 @@ Formats (existants, complétés par `state`/`flags`) :
 
 Règles :
 - la ligne `loaded` est émise au boot après chargement, **et** après chaque
-  écriture ;
+  écriture ; elle est `l 1` et absente à `l 0` ;
+- `invalid`, `diff` et `bitmap conserve` restent visibles à `l 0` ; le détail
+  `pos/uid` n'est pas automatique à `l 0` ; un dump `d` est toujours rendu ;
 - `state=PROVISIONAL` est toujours accompagné de
   `[STATUS] code=TABLE_PROVISIONAL` ;
 - `keys=a-b` donne la plage de touches de la carte ; le détail exact canal →
@@ -567,10 +649,10 @@ Format :
 
 Règles :
 - une ligne par canal **assigné**, émise après chaque écriture de table et à
-  chaque boot ;
-- nommage de note conforme à ADR-0008 (`DO2(36)` … `DO6(84)`) ;
-- sortie contrôlée par la constante `CLAVIER_MAP_LOG` : `1` pendant le bring-up,
-  `0` en configuration finale.
+  chaque boot **à `l 1`/`l 2` seulement** (ADR-0025) ;
+- aucun `[MAP]` automatique à `l 0` ; la commande `d` rend toujours la table et
+  le mapping demandés ;
+- nommage de note conforme à ADR-0008 (`DO2(36)` … `DO6(84)`).
 
 ### Lignes `[MODE]` et `[PUSH]`
 
@@ -579,6 +661,10 @@ Formats :
 - `[PUSH] midi=<36..84> key=<1..49> pos=<0..4> ch=<0..11> start|stop|timeout`
 
 Règles :
+- `[MODE] maintenance=ON|OFF` reste visible à tous les niveaux (changement de
+  mode de sécurité) ;
+- `start` et `stop` sont `l 2` (ADR-0025) ; `timeout` et tout refus de
+  maintenance restent visibles à `l 0` ;
 - aucun MIDI USB n'est envoyé pendant le mode maintenance ;
 - `timeout` correspond à la coupure automatique du profil MAINTENANCE, bornée
   **à 20 s** des deux côtés : `MAINTENANCE_TIMEOUT_MS` côté Clavier (coupure
@@ -593,11 +679,24 @@ Règles :
 ### Ligne `[SELFTEST]`
 
 Format :
-`[SELFTEST] req=<1..127> pos=<0..127> status=<OK|REFUSED_BUSY|ABORTED|UNCALIBRATED> bitmap=0xXYZ faults=0xXYZ tag=XXXX`
+`[SELFTEST] req=<1..127> pos=<0..127> status=<OK|REFUSED_BUSY|ABORTED|UNCALIBRATED> bitmap=0xXYZ faults=0xXYZ tag=XXXX [ohm_manquants=0xXYZ]`
 
 - `bitmap` et `faults` sont sur 12 bits ;
 - `tag` est le `uid_tag` CRC16 sur 4 hex majuscules ;
-- `pos=127` si l'UID n'est pas connu dans `uid_position.h`.
+- `pos=127` si l'UID n'est pas connu dans `uid_position.h` ;
+- `ohm_manquants` agrège par position les canaux dont l'OHM a été demandé mais
+  n'a pas été reçu (ADR-0025) ;
+- une ligne `status=OK` sans OHM manquant est `l 1` ; toute ligne non OK, avec
+  OHM manquant ou avertissement de courant reste visible à `l 0`.
+
+### Ligne `[SUMMARY]`
+
+Format ADR-0025 :
+
+`[SUMMARY] cards_ok=X/Y channels=Z keys=Z/49 missing_keys=... table=WRITTEN|NOT_WRITTEN(...)|UNCHANGED|DIFFERS_WRITTEN calib=ON|OFF`
+
+Émise à `l 0` après tout auto-test explicitement demandé. `calib=OFF` indique que
+l'acquisition OHM n'a pas été demandée ; ce n'est pas un échec de mesure.
 
 ### Lignes `[SELFTEST_RAW]`
 
@@ -606,9 +705,12 @@ Formats :
 - `[SELFTEST_RAW] req=<1..127> pos=<0..127> ch=<0..11> delta=<signé> ohm_est=<Ω|--> i100=<A|-->`
 
 Règles :
-- émises quand le mode diagnostic est actif : option CMake
-  `-DCLAVIER_SELFTEST_CALIBRATION=ON` (défaut **`ON`** pendant le bring-up,
-  ADR-0009 §7) ou bascule `c` de la console CDC (livraison B) ;
+- acquisition active quand l'option CMake `-DCLAVIER_SELFTEST_CALIBRATION=ON`
+  (défaut **`ON`** pendant le bring-up, ADR-0009 §7) et/ou la bascule `c` de la
+  console CDC sont actives ;
+- impression **uniquement à `l 2`** (ADR-0025) ; à `l 0`/`l 1` les valeurs sont
+  collectées et utilisées pour les verdicts, warnings et `ohm_manquants`, mais
+  les RAW ne sont pas imprimés ;
 - `delta = probe - idle` en décimal signé ;
 - la décision d'occupation, elle, utilise `max(delta, 0)` avant comparaison au
   seuil 400 ;
@@ -628,7 +730,9 @@ Règles :
   de la carte, une fois les 12 trames reçues ;
 - `spread = (ohm_max - ohm_min) / moyenne`, en pourcent ;
 - `warn=i100>3.0A` n'apparaît que si au moins un canal occupé dépasse la
-  fenêtre 2–3 A en PULL 100 % ;
+  fenêtre 2–3 A en PULL 100 % ; cette ligne est visible à **tous** les niveaux ;
+- les résumés OHM ordinaires (sans warning) sont `l 1` ; ils ne sont pas émis à
+  `l 0` (ADR-0025) ;
 - ligne de confort de bring-up : elle sert à repérer une bobine hors gabarit.
 
 ## Règle d'assignation des touches

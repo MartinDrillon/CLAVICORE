@@ -29,6 +29,11 @@ typedef struct {
     uint32_t solenoid_bad_channel;
     uint32_t solenoid_unoccupied;
     uint32_t solenoid_rejected;
+    uint32_t solenoid_reject_sleep;
+    uint32_t solenoid_reject_rest;
+    uint32_t solenoid_reject_busy;
+    uint32_t solenoid_reject_fault;
+    uint32_t solenoid_reject_other;
     uint32_t solenoid_selftest_blocked;
     uint32_t profile_begins;
     uint32_t profile_chunks;

@@ -36,6 +36,7 @@ add_custom_target(moteur_pinmap
 )
 
 option(MOTEUR_ENABLE_CLOCK_TEST "Compiler la feature clock-test-mode1 (diagnostic, GPIO41)" ON)
+option(MOTEUR_DIAG_TRACE "Compiler les traces ordinaires, compteurs et repondeur stats" ON)
 
 add_executable(moteur
     src/main.c
@@ -77,6 +78,11 @@ if(MOTEUR_ENABLE_CLOCK_TEST)
     target_compile_definitions(moteur PRIVATE MOTEUR_ENABLE_CLOCK_TEST=1)
 else()
     target_compile_definitions(moteur PRIVATE MOTEUR_ENABLE_CLOCK_TEST=0)
+endif()
+if(MOTEUR_DIAG_TRACE)
+    target_compile_definitions(moteur PRIVATE MOTEUR_DIAG_TRACE=1)
+else()
+    target_compile_definitions(moteur PRIVATE MOTEUR_DIAG_TRACE=0)
 endif()
 
 # Pinmap regeneration is manual; config.h fixe les rôles logiques verrouillés par

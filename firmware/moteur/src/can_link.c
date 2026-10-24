@@ -1,5 +1,9 @@
 #include "can_link.h"
 
+#ifndef MOTEUR_DIAG_TRACE
+#define MOTEUR_DIAG_TRACE 1
+#endif
+
 #include <string.h>
 
 #include "can2040.h"
@@ -9,6 +13,7 @@
 
 #include "config.h"
 #include "ipropi_selftest.h"
+#include "motor_counter_map.h"
 #include "solenoid_profile.h"
 #include "solenoid_profile_store.h"
 
@@ -155,8 +160,9 @@ static void handle_solenoid_command(const struct can2040_msg *msg, uint32_t now_
         return;
     }
     if (command.uid_tag != board_tag) {
+        // Routage normal en diffusion : aucun événement, mais le compteur reste
+        // la trace d'un éventuel mauvais adressage (ADR-0025).
         ++stats.solenoid_ignored_tag;
-        report_ignored_command(command.channel, CAN_CARD_IGNORE_TAG, 0u, now_us);
         return;
     }
     if (command.channel >= board_driver_count || board_drivers == NULL) {
@@ -187,6 +193,13 @@ static void handle_solenoid_command(const struct can2040_msg *msg, uint32_t now_
         ++stats.solenoid_commands_ok;
     } else {
         ++stats.solenoid_rejected;
+        switch (solenoid_reject_counter_id(driver_result)) {
+        case CAN_CARD_COUNTER_REJECT_SLEEP: ++stats.solenoid_reject_sleep; break;
+        case CAN_CARD_COUNTER_REJECT_REST: ++stats.solenoid_reject_rest; break;
+        case CAN_CARD_COUNTER_REJECT_BUSY: ++stats.solenoid_reject_busy; break;
+        case CAN_CARD_COUNTER_REJECT_FAULT: ++stats.solenoid_reject_fault; break;
+        default: ++stats.solenoid_reject_other; break;
+        }
         report_ignored_command(command.channel, CAN_CARD_IGNORE_DRIVER,
                                (uint8_t)solenoid_driver_state(&board_drivers[command.channel]),
                                now_us);
@@ -452,8 +465,10 @@ static void handle_profile_commit(const struct can2040_msg *msg, uint32_t now_us
                 result = CAN_PROFILE_RESULT_FLASH_ERROR;
             }
         }
+        // Seul un COMMIT apparié clôt le staging ; un COMMIT tardif d'une
+        // tentative antérieure ne détruit pas celui de la tentative courante.
+        profile_staging_active = false;
     }
-    profile_staging_active = false;
     if (result == CAN_PROFILE_RESULT_OK) {
         ++stats.profile_commits_ok;
     } else {
@@ -468,14 +483,14 @@ static void send_profile_status_if_due(uint32_t now_us) {
     if (!profile_status_pending || (int32_t)(now_us - profile_status_due_us) < 0) {
         return;
     }
-    if (can_encode_profile_status(data, &profile_status) == CAN_PROTO_OK &&
-        send_frame(CAN_ID_PROFILE_STATUS, CAN_DLC_PROFILE_STATUS, data)) {
+    if (can_encode_profile_status(data, &profile_status) != CAN_PROTO_OK) {
+        ++stats.tx_fail;
+    } else if (send_frame(CAN_ID_PROFILE_STATUS, CAN_DLC_PROFILE_STATUS, data)) {
         // Un acquittement suffit : on s'arrête au premier envoi réussi.
         profile_status_pending = false;
         ++stats.profile_status_sent;
         return;
     }
-    ++stats.tx_fail;
     if (profile_status_attempts > 0u) {
         --profile_status_attempts;
     }
@@ -513,7 +528,8 @@ static uint32_t card_counter_value(can_card_counter_t counter) {
     switch (counter) {
     case CAN_CARD_COUNTER_CAN_ERRORS: return stats.can_errors;
     case CAN_CARD_COUNTER_TX_FAIL: return stats.tx_fail;
-    case CAN_CARD_COUNTER_RX_OVERRUN: return stats.rx_overrun;
+    case CAN_CARD_COUNTER_RX_OVERRUN:
+        return motor_counter_rx_overrun(isr_rx_overrun, stats.rx_overrun);
     case CAN_CARD_COUNTER_SELFTEST_BLOCKED: return stats.solenoid_selftest_blocked;
     case CAN_CARD_COUNTER_IGNORED_TAG: return stats.solenoid_ignored_tag;
     case CAN_CARD_COUNTER_BAD_CHANNEL: return stats.solenoid_bad_channel;
@@ -524,11 +540,20 @@ static uint32_t card_counter_value(can_card_counter_t counter) {
     case CAN_CARD_COUNTER_UNOCCUPIED: return stats.solenoid_unoccupied;
     case CAN_CARD_COUNTER_REJECTED: return stats.solenoid_rejected;
     case CAN_CARD_COUNTER_COMMANDS_OK: return stats.solenoid_commands_ok;
+    case CAN_CARD_COUNTER_REJECT_SLEEP: return stats.solenoid_reject_sleep;
+    case CAN_CARD_COUNTER_REJECT_REST: return stats.solenoid_reject_rest;
+    case CAN_CARD_COUNTER_REJECT_BUSY: return stats.solenoid_reject_busy;
+    case CAN_CARD_COUNTER_REJECT_FAULT: return stats.solenoid_reject_fault;
+    case CAN_CARD_COUNTER_REJECT_OTHER: return stats.solenoid_reject_other;
     default: return 0u;
     }
 }
 
 static void handle_card_stats_request(const struct can2040_msg *msg) {
+#if !MOTEUR_DIAG_TRACE
+    (void)msg;
+    return;
+#else
     can_card_stats_request_t request;
     can_card_stats_t reply = {0};
     uint8_t data[CAN_DLC_CARD_STATS];
@@ -541,12 +566,15 @@ static void handle_card_stats_request(const struct can2040_msg *msg) {
     reply.counter_id = request.counter_id;
     reply.uid_tag = board_tag;
     reply.value = card_counter_value(request.counter_id);
-    if (can_encode_card_stats(data, &reply) != CAN_PROTO_OK ||
-        !send_frame(CAN_ID_CARD_STATS, CAN_DLC_CARD_STATS, data)) {
+    if (can_encode_card_stats(data, &reply) != CAN_PROTO_OK) {
         ++stats.tx_fail;
         return;
     }
+    if (!send_frame(CAN_ID_CARD_STATS, CAN_DLC_CARD_STATS, data)) {
+        return;
+    }
     ++stats.stats_requests_served;
+#endif
 }
 
 static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {

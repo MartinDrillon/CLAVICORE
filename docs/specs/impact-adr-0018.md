@@ -8,9 +8,13 @@ bloqué, défauts de canal, commande ignorée, auto-test avorté.
 
 > **État (2026-10-24) : exécutée et validée en compilation + tests hôte.**
 > Trame `0x424`, énumération des 8 événements, émission Moteur, réception Clavier
-> et codes `0x38`/`0x39` sont en place ; 413 vérifications hôte (390 + 23),
+> et codes `0x38`/`0x39` sont en place ; 581 vérifications hôte,
 > 0 échec. La **validation matérielle** reste à faire (voir
 > `tests/phase3b_bout_en_bout.md`, test 7).
+>
+> **ADR-0025 (implémentée, validée hôte 2026-10-24)** renomme le symbole de
+> l'événement 0 en `MANUAL_TEST_STARTED`. Valeur numérique, payload, DLC et
+> instant d'émission restent inchangés ; ce document décrit le nom réel depuis ADR-0025.
 
 Les chemins de ligne cités sont ceux de l'état du 2026-10-23 : point d'entrée,
 pas référence stable. Les fichiers sous `.kilo/worktrees/` sont des copies de
@@ -55,7 +59,7 @@ n'est pas dans la zone interdite (`>= 0x7F0`).
 
 | Valeur | Nom | `channel` | `state` | `fault` | Émetteur |
 |---|---|---|---|---|---|
-| 0 | `BUTTON_SHORT_PRESS` | canal du test manuel | état après `note_on` | `0` | `main.c` |
+| 0 | `MANUAL_TEST_STARTED` (ex-`BUTTON_SHORT_PRESS`, même valeur 0) | canal du test manuel | état après `note_on` | `0` | `main.c` |
 | 1 | `TRIGGER_PENDING` | `0xFF` | `0` | `0` | `main.c` |
 | 2 | `TRIGGER_SENT` | `0xFF` | `0` | `0` | `main.c` |
 | 3 | `TRIGGER_BLOCKED` | premier canal non `IDLE` | état de ce canal | défaut éventuel | `main.c` |
@@ -63,6 +67,10 @@ n'est pas dans la zone interdite (`>= 0x7F0`).
 | 5 | `CHANNEL_FAULT_CLEARED` | canal | état après reset | `0` | `can_link.c` |
 | 6 | `COMMAND_IGNORED` | canal de la commande (`0xFF` si hors bornes) | **raison** (§4) | défaut si raison = pilote | `can_link.c` (ADR-0020) |
 | 7 | `SELFTEST_ABORTED` | canal en cours de mesure | état | `0` | `ipropi_selftest.c` (ADR-0021) |
+
+Le code de raison `1` (`uid_tag` inconnu) reste défini pour compatibilité mais
+n'est plus émis depuis ADR-0025 : une commande diffusée vers une autre carte est
+un routage normal, pas une anomalie.
 
 Les événements 6 et 7 sont **déclarés ici** mais émis par les lots 0020 et 0021 :
 une seule migration de `shared/protocol/`, trois lots d'émission.
@@ -89,7 +97,7 @@ un refus) :
 
 | Code | Raison | Compteur associé (ADR-0020) |
 |---|---|---|
-| 1 | `uid_tag` inconnu | `solenoid_ignored_tag` |
+| 1 | `uid_tag` inconnu — **réservé, non émis depuis ADR-0025** (routage normal sans événement) | `solenoid_ignored_tag` |
 | 2 | canal hors bornes | `solenoid_bad_channel` |
 | 3 | auto-test en cours | `solenoid_selftest_blocked` |
 | 4 | canal non occupé (bitmap local) | `solenoid_unoccupied` |
@@ -114,7 +122,7 @@ un refus) :
 
 | Fichier | Revue requise |
 |---|---|
-| `shared/protocol/can_protocol.h` | **modifié** : `CAN_ID_CARD_EVENT 0x424u`, `CAN_DLC_CARD_EVENT 8u`, `can_card_event_t` (8 valeurs), `can_card_event_msg_t`. Documenter le plan d'ID. |
+| `shared/protocol/can_protocol.h` | **modifié** : `CAN_ID_CARD_EVENT 0x424u`, `CAN_DLC_CARD_EVENT 8u`, `can_card_event_t` (8 valeurs ; valeur 0 renommée par ADR-0025), `can_card_event_msg_t`. Documenter le plan d'ID. |
 | `shared/protocol/can_protocol.c` | **modifié** : `can_encode_card_event` / `can_decode_card_event` (contrôles §1). |
 | `firmware/moteur/src/can_link.c` | **modifié** : `send_card_event(...)` (encodage + `send_frame`), `rx_ignored` sur réception `0x424`, compteur `card_events_sent`. |
 | `firmware/moteur/src/main.c` | **modifié** : émission 0 → 3 aux transitions du bouton (`:135-152`, `:168-179`), avec le délai de 200 ms du §3. |
@@ -131,7 +139,7 @@ existants (`0x100`, `0x400`–`0x423`, `0x600`, `0x601`) ne changent pas.
 
 - Les deux cibles compilent sans erreur ; `run_host_tests.ps1` passe (les
   vérifications ajoutées couvrent le codec et le formateur).
-- Un appui court sur le bouton Moteur produit `[CARD] pos=N event=BUTTON_SHORT_PRESS ch=…`.
+- Un appui qui démarre le test manuel produit `[CARD] pos=N event=MANUAL_TEST_STARTED ch=…` ; l'appui long l'émet aussi, au même instant de démarrage.
 - Un appui long avec un canal bloqué produit `TRIGGER_PENDING` puis
   `TRIGGER_BLOCKED` (canal nommé) et `[STATUS] code=TRIGGER_BLOCKED pos=N` — le
   `0x402` n'est pas émis.

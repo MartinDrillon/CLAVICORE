@@ -3,6 +3,12 @@
 Vérifie la console PuTTY du Clavier : réception des commandes, modification du
 profil d'activation sans reflash, propagation aux cartes Moteur, compte rendu.
 
+> **ADR-0023 (implémentée, validée hôte 2026-10-24).** Une propagation
+> devient une opération à trois tentatives complètes, suivie d'une sonde de
+> réconciliation NVM si nécessaire. Les logs de §2.3 et §4 sont mis à jour pour
+> cette cible ; la procédure complète, avec injections et 200 alternances, est
+> dans [`procedure_adr0023_sync_profil.md`](./procedure_adr0023_sync_profil.md).
+
 Couvert par les **tests hôte** (`tests\host\run_host_tests.ps1`) : table des champs,
 analyse, atomicité, refus, console (`bringup_console.c` avec doublures). Non
 couvrable sans matériel : tout ce qui suit.
@@ -96,19 +102,21 @@ Règles pratiques :
   ou relâchée depuis moins de 0,5 s, et une carte dont un canal n'est pas au repos
   répond `BUSY`.
 - **Le retour fait foi, pas la saisie.** Après Entrée, vérifier les lignes
-  `[PROFILE]   champ ancien -> nouveau` (ce qui change vraiment) puis
-  `reglage: OK acquittements=N/N`. Une faute de frappe sur un nom de champ donne
+  `[PROFILE]   champ ancien -> nouveau` (ce qui change vraiment) puis le verdict
+  unique `sync ok but=reglage ...` (ADR-0023). Une faute de frappe sur un nom de champ donne
   `champ inconnu`, sur une valeur `valeur invalide`, et **rien n'est envoyé**.
   En cas de doute, `p get <champ>` ou `p show`.
 
 ### 2.3 Essais
 
 1. `p set pull_duration_us 12000` → liste `pull_duration_us 15000 -> 12000`, puis
-   `[PROFILE] sync debut but=reglage ... attendus=N`, puis
-   `[PROFILE] reglage: OK acquittements=N/N tag=0x...`.
-   `attendus=N` doit être le nombre de cartes en ligne ; `attendus=0` donne un
-   avertissement « application NON confirmee » (table invalide ou aucune carte en
-   ligne au dernier scan).
+   **un seul** verdict :
+   `[PROFILE] sync ok but=reglage duree=… tentatives=1/3 acquittements=N/N reconciliees=0 source=console tag=0x…`.
+   `attendus=N` n'apparaît plus comme ligne de début ; le verdict final porte les
+   comptes. Une perte transitoire ajoute une ligne
+   `[PROFILE] sync reprise essai=2/3 restantes=…` puis un verdict `sync ok`.
+   `attendus=0` conserve l'avertissement existant « application NON confirmee »
+   (table invalide ou aucune carte en ligne au dernier scan).
 2. Jouer une note : PULL à 12 ms (oscilloscope sur `PWM_CHANNEL`, durée de la
    phase pleine).
 3. Coller `.pull_duty_pct = 70u, .hold_duty_max_pct = 40u, .hold_duty_pct = 30u,`
@@ -124,7 +132,7 @@ Pré-requis : cartes Moteur reflashées en v2 (format 66 o). Sans ce reflash,
 l'impulsion n'existe pas et le transfert est rejeté (`result=7`).
 
 1. `p set impact_duration_us 1000` → `impact_duration_us 800 -> 1000`, puis
-   `reglage: OK acquittements=N/N`. Jouer une note : à l'oscilloscope sur le
+   `sync ok but=reglage ...` (un seul verdict). Jouer une note : à l'oscilloscope sur le
    canal PWM, impulsion à 100 % pendant 1 ms puis duty PULL.
 2. `p set impact_max_us 4000 impact_duration_us 3000` (une seule ligne) → OK.
    `impact_duration_us = 3000` seul aurait été refusé (`impact_max_us = 2000`).
@@ -148,15 +156,18 @@ l'impulsion n'existe pas et le transfert est rejeté (`result=7`).
 
 ### 4.1 Cas attendu : une carte réellement muette
 
-Couper une carte **après** le scan UID, puis `p set min_rest_ms 12` :
-`[STATUS] PROFILE_SYNC_FAILED`, `[PROFILE] sync echec ... acquittements=k/N`,
-une ligne `sync carte pos=… MANQUANT` par carte muette, et
-`reglage: ECHEC`. Le profil actif ne change pas ; `p send` resynchronise.
+Couper une carte **après** le scan UID, puis `p set min_rest_ms 12` : après
+ADR-0023, le Clavier effectue trois tentatives et une sonde (environ 6,5 s en
+réglage), puis émet `[STATUS] PROFILE_SYNC_FAILED`, un verdict
+`[PROFILE] sync echec ... tentatives=3/3 ...`, une ligne par carte muette et
+aucun `0x401`. Le profil actif ne change pas. Une seule carte momentanément
+muette doit au contraire produire `sync reprise` puis `sync ok`, sans commande
+manuelle supplémentaire.
 
-### 4.2 Cas « carte présente, acquittement manquant »
+### 4.2 Cas « carte présente, acquittement manquant » (historique avant ADR-0023)
 
 Observé le **2026-10-21** (chemin `COMMIT` + `PROFILE_STATUS` du Moteur,
-ADR-0015 NEG-002). Depuis ADR-0016 et ADR-0017, la même panne se lit ainsi
+ADR-0015 NEG-002). Depuis ADR-0016 et ADR-0017, la même panne se lisait ainsi
 (préfixe d'horodatage `[T+… ms]` omis) :
 
 ```text
@@ -168,6 +179,14 @@ ADR-0015 NEG-002). Depuis ADR-0016 et ADR-0017, la même panne se lit ainsi
 [PROFILE] pos=0 detient tag=0x4A0B4C69 source=NVM
 [PROFILE] pos=2 detient tag=0xF1514600 source=NVM
 ```
+
+> **Après ADR-0023**, ce journal n'est plus le résultat attendu d'une perte
+> unique : une première tentative manquante doit déclencher
+> `sync reprise essai=2/3`, puis un `sync ok` avec `tentatives=2/3` ; si tous les
+> acquittements de transfert sont perdus mais que la carte détient le tag NVM,
+> la sonde doit produire `reconciliees=N`. Le journal ci-dessus ne reste attendu
+> que si les trois tentatives **et** la sonde échouent, ou pour un ancien
+> firmware Clavier.
 
 Lecture, champ par champ :
 
@@ -193,10 +212,13 @@ silence (ADR-0016 décision 4).
 
 ### 4.3 Vérifier au besoin que la carte a bien appliqué
 
-Le Clavier le fait désormais **automatiquement** après un échec : les lignes
-`[PROFILE] pos=N detient tag=0x… source=…` (ADR-0017 décision 6) donnent, pour
-chaque carte, le profil qu'elle détient réellement et sa provenance (`NVM` =
-écrit en flash, `DEFAULTS` = valeurs de repli).
+Le Clavier le fait **automatiquement** après l'échec final des trois tentatives :
+les lignes `[PROFILE] pos=N detient tag=0x… source=…` (ADR-0017 décision 6)
+donnent, pour chaque carte, le profil qu'elle détient réellement et sa provenance
+(`NVM` = écrit en flash, `DEFAULTS` = valeurs de repli). Depuis ADR-0023, cette
+même sonde peut **clore l'opération avec succès** si toutes les cartes attendues
+annoncent `OK + NVM + tag attendu` ; elle ne produit alors pas de ligne
+`detient` d'échec mais un verdict `sync ok ... reconciliees=N`.
 
 À lire **avant** toute resynchronisation (`p send`, `p reset`, auto-test) : une
 fois les deux côtés d'accord, la trace disparaît.

@@ -17,6 +17,9 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 option(CLAVIER_SELFTEST_CALIBRATION "Emet la calibration IPROPI_RAW/OHM lors des auto-tests demandes" ON)
 # Console de bring-up sur CDC (t/c/d/m/?) : ADR-0009 §9 livraison B.
 option(CLAVIER_CDC_CONSOLE "Active la console de bring-up sur le port CDC" ON)
+# Journal ADR-0025 : niveau initial (0 verdicts, 1 bring-up, 2 trace) et traces.
+set(CLAVIER_DIAG_DEFAULT_LEVEL "1" CACHE STRING "Niveau initial du journal (0|1|2)")
+option(CLAVIER_DIAG_TRACE "Compile le niveau 2 (notes, RAW, matrice, PUSH)" ON)
 
 set(PINMAP_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/../../Netlist/netlist_to_pinmap.py)
 set(PINMAP_NETLIST ${CMAKE_CURRENT_LIST_DIR}/../../Électrique/Clavier/Clavier_drive_1/Clavier_drive_1.xml)
@@ -85,6 +88,12 @@ if(CLAVIER_CDC_CONSOLE)
     target_compile_definitions(clavier PRIVATE CLAVIER_CDC_CONSOLE=1)
 else()
     target_compile_definitions(clavier PRIVATE CLAVIER_CDC_CONSOLE=0)
+endif()
+target_compile_definitions(clavier PRIVATE CLAVIER_DIAG_DEFAULT_LEVEL=${CLAVIER_DIAG_DEFAULT_LEVEL})
+if(CLAVIER_DIAG_TRACE)
+    target_compile_definitions(clavier PRIVATE CLAVIER_DIAG_TRACE=1)
+else()
+    target_compile_definitions(clavier PRIVATE CLAVIER_DIAG_TRACE=0)
 endif()
 
 pico_enable_stdio_uart(clavier 0)

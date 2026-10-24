@@ -17,6 +17,12 @@ pour les journées d'assemblage. Décisions de référence :
 - [docs/specs/impact-adr-0009.md](../docs/specs/impact-adr-0009.md) et
   [impact-adr-0010.md](../docs/specs/impact-adr-0010.md) (fichiers à revoir)
 
+> **Journal (ADR-0025 implémentée, validée hôte 2026-10-24)** : après
+> implémentation, taper `l 2` avant les étapes qui attendent `[SELFTEST_RAW]`.
+> À `l 0`/`l 1`, les calculs et warnings restent actifs, mais les RAW ne sont
+> pas imprimés ; `[SELFTEST_OHM] warn` et `ohm_manquants` restent visibles à
+> `l 0`. Sur le firmware actuel, les RAW sont émis sans commande `l`.
+
 ## 1. Objectif
 
 Mettre en service le système **sans** exiger un autotest complet des 5 cartes, en
