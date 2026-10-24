@@ -256,6 +256,97 @@ static void put_u32_le(uint8_t *out, uint32_t value) {
     out[3] = (uint8_t)((value >> 24u) & 0xFFu);
 }
 
+// ADR-0018 / ADR-0020 : trame CARD_EVENT, compteurs de carte, ligne de journal.
+static void test_card_event_and_stats_codecs(void) {
+    uint8_t data[CAN_DLC_CARD_EVENT];
+    can_card_event_msg_t event = {CAN_PROTO_VERSION, CAN_CARD_EVENT_TRIGGER_BLOCKED, 3u, 2u, 0u,
+                                  0x29B1u, 0u};
+    can_card_event_msg_t out = {0};
+    char line[DIAG_LOG_LINE_MAX];
+    uint8_t req_data[CAN_DLC_CARD_STATS_REQUEST];
+    uint8_t stats_data[CAN_DLC_CARD_STATS];
+    can_card_stats_request_t request = {CAN_PROTO_VERSION, CAN_CARD_COUNTER_COMMANDS_OK, 7u};
+    can_card_stats_request_t request_out = {0};
+    can_card_stats_t stats = {CAN_PROTO_VERSION, CAN_CARD_COUNTER_COMMANDS_OK, 0x29B1u, 123456u};
+    can_card_stats_t stats_out = {0};
+
+    CHECK(can_encode_card_event(data, &event) == CAN_PROTO_OK);
+    CHECK(can_decode_card_event(data, CAN_DLC_CARD_EVENT, &out) == CAN_PROTO_OK);
+    CHECK(out.event == event.event && out.channel == event.channel && out.state == event.state);
+    CHECK(out.uid_tag == event.uid_tag && out.reserved == 0u);
+
+    CHECK(can_decode_card_event(data, CAN_DLC_CARD_EVENT - 1u, &out) == CAN_PROTO_BAD_DLC);
+    data[1] = 9u;  // événement inconnu
+    CHECK(can_decode_card_event(data, CAN_DLC_CARD_EVENT, &out) == CAN_PROTO_BAD_VALUE);
+    data[1] = (uint8_t)CAN_CARD_EVENT_TRIGGER_SENT;
+    data[2] = 12u;  // canal hors bornes
+    CHECK(can_decode_card_event(data, CAN_DLC_CARD_EVENT, &out) == CAN_PROTO_BAD_VALUE);
+    data[2] = 0u;
+    data[7] = 1u;  // reserved non nul
+    CHECK(can_decode_card_event(data, CAN_DLC_CARD_EVENT, &out) == CAN_PROTO_BAD_VALUE);
+
+    event.channel = CAN_CARD_EVENT_CHANNEL_NONE;
+    event.state = 0u;
+    CHECK(diag_format_card_event_line(line, sizeof(line), 2u, &event) > 0u);
+    CHECK(strcmp(line, "[CARD] pos=2 event=TRIGGER_BLOCKED ch=- state=0 fault=0x000") == 0);
+    event.event = CAN_CARD_EVENT_COMMAND_IGNORED;
+    event.channel = 3u;
+    event.state = (uint8_t)CAN_CARD_IGNORE_UNOCCUPIED;
+    CHECK(diag_format_card_event_line(line, sizeof(line), 2u, &event) > 0u);
+    CHECK(strcmp(line, "[CARD] pos=2 event=COMMAND_IGNORED ch=3 raison=NON_OCCUPE") == 0);
+    event.state = 9u;  // raison inconnue
+    CHECK(diag_format_card_event_line(line, sizeof(line), 2u, &event) == 0u);
+
+    CHECK(can_encode_card_stats_request(req_data, &request) == CAN_PROTO_OK);
+    CHECK(can_decode_card_stats_request(req_data, CAN_DLC_CARD_STATS_REQUEST, &request_out) ==
+          CAN_PROTO_OK);
+    CHECK(request_out.counter_id == request.counter_id);
+    CHECK(request_out.reply_to == request.reply_to);
+    CHECK(can_decode_card_stats_request(req_data, 3u, &request_out) == CAN_PROTO_BAD_DLC);
+    CHECK(can_encode_card_stats(stats_data, &stats) == CAN_PROTO_OK);
+    CHECK(can_decode_card_stats(stats_data, CAN_DLC_CARD_STATS, &stats_out) == CAN_PROTO_OK);
+    CHECK(stats_out.value == stats.value && stats_out.uid_tag == stats.uid_tag);
+    stats_data[1] = (uint8_t)CAN_CARD_COUNTER_COUNT;  // compteur inconnu
+    CHECK(can_decode_card_stats(stats_data, CAN_DLC_CARD_STATS, &stats_out) == CAN_PROTO_BAD_VALUE);
+}
+
+// ADR-0021 : conserver le bitmap d'une entrée déjà mesurée (même position ET
+// même UID) quand la mesure n'est pas concluante.
+static void test_commissioning_previous_bitmap(void) {
+    commissioning_runtime_t runtime;
+    commissioning_entry_t entries[] = {
+        make_entry(UID_A, 0u, 0x009u),
+        make_entry(UID_B, 2u, 0x000u),
+    };
+    uint16_t bitmap = 0xFFFFu;
+    char out[DIAG_LOG_LINE_MAX];
+
+    CHECK(commissioning_build_runtime(entries, 2u, &runtime) == COMMISSIONING_OK);
+
+    // (a) même position, même UID : bitmap conservé
+    CHECK(commissioning_previous_bitmap(&runtime, 0u, UID_A, &bitmap));
+    CHECK(bitmap == 0x009u);
+
+    // (b) même position, UID différent (carte remplacée) : rien
+    bitmap = 0xFFFFu;
+    CHECK(!commissioning_previous_bitmap(&runtime, 0u, UID_B, &bitmap));
+    CHECK(bitmap == 0xFFFFu);
+
+    // (c) position absente : rien
+    CHECK(!commissioning_previous_bitmap(&runtime, 4u, UID_A, &bitmap));
+
+    // (d) arguments invalides
+    CHECK(!commissioning_previous_bitmap(NULL, 0u, UID_A, &bitmap));
+    CHECK(!commissioning_previous_bitmap(&runtime, 0u, NULL, &bitmap));
+    CHECK(!commissioning_previous_bitmap(&runtime, 0u, UID_A, NULL));
+
+    // (e) ligne de journal, jamais silencieuse
+    CHECK(diag_format_table_bitmap_kept_line(out, sizeof(out), 0u, 0x009u, "ABORTED") ==
+          strlen("[TABLE] pos=0 bitmap conserve=0x009 (mesure non concluante: ABORTED)"));
+    CHECK(strcmp(out, "[TABLE] pos=0 bitmap conserve=0x009 (mesure non concluante: ABORTED)") == 0);
+    CHECK(diag_format_table_bitmap_kept_line(out, sizeof(out), 0u, 0x009u, NULL) == 0u);
+}
+
 static void test_commissioning_flash_crc_and_header(void) {
     commissioning_entry_t decoded[UID_POSITION_COUNT];
     commissioning_table_state_t state = COMMISSIONING_TABLE_STATE_PROVISIONAL;
@@ -891,6 +982,8 @@ static void test_profile_tuning(void) {
 }
 
 int main(void) {
+    test_commissioning_previous_bitmap();
+    test_card_event_and_stats_codecs();
     test_profile_tuning();
     test_crc_and_ids();
     test_solenoid_command_codec();

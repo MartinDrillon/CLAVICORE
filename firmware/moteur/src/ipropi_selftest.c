@@ -76,6 +76,8 @@ static bool g_button_prev_pressed;
 static bool g_button_consumed;
 static uint32_t g_button_since_us;
 static bool g_result_ready;
+// ADR-0018 : canal en cours de mesure si le test a été avorté.
+static uint8_t g_aborted_channel = CAN_CARD_EVENT_CHANNEL_NONE;
 static bool g_calibration_mode;
 static uint16_t g_idle_avg;
 static can_announce_status_t g_result;
@@ -158,6 +160,9 @@ static uint16_t non_idle_bits(void) {
 static void finish_now(can_selftest_status_t status) {
     g_result.uid_tag = g_uid_tag;
     g_result.test_status = status;
+    // ADR-0018 : mémoriser le canal en cours de mesure si le test avorte.
+    g_aborted_channel = (status == CAN_SELFTEST_STATUS_ABORTED) ? g_channel
+                                                               : CAN_CARD_EVENT_CHANNEL_NONE;
     g_result_ready = true;
     g_state = SELFTEST_IDLE;
     mux_disable();
@@ -365,6 +370,8 @@ bool ipropi_selftest_take_result(ipropi_selftest_result_t *out) {
     }
     out->report_ready = true;
     out->report = g_result;
+    out->aborted_channel = g_aborted_channel;
+    g_aborted_channel = CAN_CARD_EVENT_CHANNEL_NONE;
     out->raw_count = g_raw_count;
     out->ohm_count = g_ohm_count;
     for (uint8_t i = 0u; i < CAN_IPROPI_CHANNEL_COUNT; ++i) {

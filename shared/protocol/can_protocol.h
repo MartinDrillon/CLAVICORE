@@ -64,6 +64,81 @@
 #define CAN_DLC_PROFILE_COMMIT 8u
 #define CAN_DLC_PROFILE_STATUS 8u
 
+// --- Événements et compteurs de carte (ADR-0018, ADR-0020) ------------------
+
+// CARD_EVENT (ID 0x424) : compte rendu d'une action locale du Moteur.
+#define CAN_ID_CARD_EVENT 0x424u
+#define CAN_DLC_CARD_EVENT 8u
+// CARD_STATS_REQUEST / CARD_STATS (ADR-0020) : compteurs lus à la demande.
+#define CAN_ID_CARD_STATS_REQUEST 0x403u
+#define CAN_DLC_CARD_STATS_REQUEST 4u
+#define CAN_ID_CARD_STATS 0x425u
+#define CAN_DLC_CARD_STATS 8u
+
+// Valeur de `channel` quand l'événement ne concerne aucun canal.
+#define CAN_CARD_EVENT_CHANNEL_NONE 0xFFu
+
+typedef enum {
+    CAN_CARD_EVENT_BUTTON_SHORT_PRESS = 0,  // appui court : test manuel du canal
+    CAN_CARD_EVENT_TRIGGER_PENDING = 1,     // appui long consommé, 0x402 en attente
+    CAN_CARD_EVENT_TRIGGER_SENT = 2,        // 0x402 transmis par la carte
+    CAN_CARD_EVENT_TRIGGER_BLOCKED = 3,     // un canal empêche l'émission
+    CAN_CARD_EVENT_CHANNEL_FAULT = 4,       // défaut verrouillé hors auto-test
+    CAN_CARD_EVENT_CHANNEL_FAULT_CLEARED = 5,
+    CAN_CARD_EVENT_COMMAND_IGNORED = 6,     // commande reçue et non exécutée
+    CAN_CARD_EVENT_SELFTEST_ABORTED = 7,    // mesure d'occupation non concluante
+} can_card_event_t;
+
+// Pour COMMAND_IGNORED, l'octet `state` porte la raison (ADR-0020 §3).
+typedef enum {
+    CAN_CARD_IGNORE_TAG = 1,
+    CAN_CARD_IGNORE_CHANNEL = 2,
+    CAN_CARD_IGNORE_SELFTEST = 3,
+    CAN_CARD_IGNORE_UNOCCUPIED = 4,
+    CAN_CARD_IGNORE_DRIVER = 5,
+} can_card_ignore_reason_t;
+
+typedef struct {
+    uint8_t proto_version;
+    can_card_event_t event;
+    uint8_t channel;
+    uint8_t state;
+    uint8_t fault;
+    uint16_t uid_tag;
+    uint8_t reserved;
+} can_card_event_msg_t;
+
+// Compteurs lisibles à la demande (ADR-0020 §2.3).
+typedef enum {
+    CAN_CARD_COUNTER_CAN_ERRORS = 0,
+    CAN_CARD_COUNTER_TX_FAIL = 1,
+    CAN_CARD_COUNTER_RX_OVERRUN = 2,
+    CAN_CARD_COUNTER_SELFTEST_BLOCKED = 3,
+    CAN_CARD_COUNTER_IGNORED_TAG = 4,
+    CAN_CARD_COUNTER_BAD_CHANNEL = 5,
+    CAN_CARD_COUNTER_PROFILE_STATUS_LOST = 6,
+    CAN_CARD_COUNTER_PROFILE_COMMITS_REJECTED = 7,
+    CAN_CARD_COUNTER_PROFILE_COMMITS_OK = 8,
+    CAN_CARD_COUNTER_RX_IGNORED = 9,
+    CAN_CARD_COUNTER_UNOCCUPIED = 10,
+    CAN_CARD_COUNTER_REJECTED = 11,
+    CAN_CARD_COUNTER_COMMANDS_OK = 12,
+    CAN_CARD_COUNTER_COUNT = 13,
+} can_card_counter_t;
+
+typedef struct {
+    uint8_t proto_version;
+    can_card_counter_t counter_id;
+    uint16_t reply_to;
+} can_card_stats_request_t;
+
+typedef struct {
+    uint8_t proto_version;
+    can_card_counter_t counter_id;
+    uint16_t uid_tag;
+    uint32_t value;
+} can_card_stats_t;
+
 // --- Transfert de profil (ADR-0013, ADR-0014) -------------------------------
 
 // Octets de payload par PROFILE_CHUNK : [transfer_id][seq][data[6]].
@@ -338,5 +413,22 @@ can_proto_result_t can_encode_profile_status(uint8_t out[CAN_DLC_PROFILE_STATUS]
                                              const can_profile_status_t *status);
 can_proto_result_t can_decode_profile_status(const uint8_t *data, uint8_t dlc,
                                              can_profile_status_t *status);
+
+// CARD_EVENT (ID 0x424, DLC 8) — ADR-0018. Octet 3 = `state`, sauf pour
+// COMMAND_IGNORED où il porte la raison (`can_card_ignore_reason_t`).
+can_proto_result_t can_encode_card_event(uint8_t out[CAN_DLC_CARD_EVENT],
+                                         const can_card_event_msg_t *event);
+can_proto_result_t can_decode_card_event(const uint8_t *data, uint8_t dlc,
+                                         can_card_event_msg_t *event);
+
+// CARD_STATS_REQUEST (ID 0x403, DLC 4) / CARD_STATS (ID 0x425, DLC 8) — ADR-0020.
+can_proto_result_t can_encode_card_stats_request(uint8_t out[CAN_DLC_CARD_STATS_REQUEST],
+                                                 const can_card_stats_request_t *request);
+can_proto_result_t can_decode_card_stats_request(const uint8_t *data, uint8_t dlc,
+                                                 can_card_stats_request_t *request);
+can_proto_result_t can_encode_card_stats(uint8_t out[CAN_DLC_CARD_STATS],
+                                         const can_card_stats_t *stats);
+can_proto_result_t can_decode_card_stats(const uint8_t *data, uint8_t dlc,
+                                         can_card_stats_t *stats);
 
 #endif  // CLAVICORE_CAN_PROTOCOL_H

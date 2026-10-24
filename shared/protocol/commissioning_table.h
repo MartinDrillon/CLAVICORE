@@ -98,6 +98,13 @@ uint32_t commissioning_crc32(const uint8_t *data, size_t length);
 bool commissioning_entry_equal(const commissioning_entry_t *a, const commissioning_entry_t *b);
 const commissioning_entry_t *commissioning_find_entry_by_position(const commissioning_entry_t *entries,
                                                                   size_t count, uint8_t position);
+// ADR-0021 : bitmap de la table courante pour une position ET un UID donnés.
+// Renvoie false si aucune entrée ne correspond (position absente, UID différent,
+// table vide ou arguments invalides) ; `*bitmap` n'est alors pas modifié.
+// Sert à conserver une assignation déjà mesurée quand un auto-test ne conclut
+// pas (ABORTED / REFUSED_BUSY / UNCALIBRATED), au lieu de forcer 0.
+bool commissioning_previous_bitmap(const commissioning_runtime_t *table, uint8_t position,
+                                   const uint8_t uid[CAN_UID_SIZE], uint16_t *bitmap);
 commissioning_result_t commissioning_validate_entries(const commissioning_entry_t *entries,
                                                       size_t count);
 commissioning_result_t commissioning_build_runtime(const commissioning_entry_t *entries, size_t count,

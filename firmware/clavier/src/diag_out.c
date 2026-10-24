@@ -27,6 +27,7 @@ void diag_out_printf(const char *format, ...) {
     char buffer[DIAG_OUT_LINE_MAX];
     va_list args;
     int written;
+    size_t length;
 
     if (format == NULL) {
         return;
@@ -37,6 +38,14 @@ void diag_out_printf(const char *format, ...) {
     if (written < 0) {
         return;
     }
+    // `diag_out_line` ajoute le saut de ligne : les formats convertis depuis
+    // `printf("...\n")` en portent déjà un, qui produirait une ligne vide après
+    // chaque ligne de journal. On retire les fins de ligne du tampon.
+    length = ((size_t)written >= sizeof(buffer)) ? (sizeof(buffer) - 1u) : (size_t)written;
+    while (length > 0u && (buffer[length - 1u] == '\n' || buffer[length - 1u] == '\r')) {
+        --length;
+    }
+    buffer[length] = '\0';
     diag_out_line(buffer);
 }
 

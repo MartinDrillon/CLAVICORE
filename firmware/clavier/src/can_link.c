@@ -47,6 +47,10 @@
 #define CLAVIER_NOTE_LOG 0
 #endif
 
+// ADR-0020 §4 : affichage des notes à l'exécution, basculable par la console
+// (`n`). La constante de compilation ne fixe que l'état initial.
+static bool note_log_enabled = (CLAVIER_NOTE_LOG != 0);
+
 typedef enum {
     SLOT_FREE = 0,
     SLOT_PENDING,
@@ -606,20 +610,18 @@ static bool build_missing_keys_text(const bool assigned[COMMISSIONING_KEY_COUNT]
 }
 
 static void emit_note(uint8_t midi_note, uint8_t key, uint8_t position, uint8_t channel) {
-#if CLAVIER_NOTE_LOG
     char line[DIAG_LOG_LINE_MAX];
 
+    // ADR-0020 §4 : affichage des notes à l'exécution, activable par la console
+    // (`n`) — sans quoi une note jouée et une note refusée se ressemblent.
+    if (!note_log_enabled) {
+        return;
+    }
     if (diag_format_note_line(line, sizeof(line), midi_note, key, position, channel) == 0u) {
         ++stats.events_dropped;
         return;
     }
     emit_line(line);
-#else
-    (void)midi_note;
-    (void)key;
-    (void)position;
-    (void)channel;
-#endif
 }
 
 static void emit_push(uint8_t midi_note, uint8_t key, uint8_t position, uint8_t channel,
@@ -1066,6 +1068,35 @@ static void print_profile_sync_cards(void) {
                         (unsigned)uid_position_table[i].position,
                         (unsigned)can_uid_tag(uid_position_table[i].uid.id),
                         profile_card_motive_name(i));
+    }
+}
+
+// ADR-0018 : compte rendu d'une action locale d'une carte Moteur. Informe, ne
+// commande rien : jamais compté comme acquittement de profil ni comme réponse
+// d'UID.
+static void handle_card_event(const can_card_event_msg_t *event) {
+    char line[DIAG_LOG_LINE_MAX];
+    const int seed_index = profile_seed_index_for_tag(event->uid_tag);
+    const uint8_t position = seed_index >= 0 ? uid_position_table[(size_t)seed_index].position
+                                             : UID_POSITION_UNKNOWN_REPORTED;
+
+    if (diag_format_card_event_line(line, sizeof(line), position, event) == 0u) {
+        ++stats.events_dropped;
+    } else {
+        emit_line(line);
+        ++stats.card_events;
+    }
+    if (seed_index < 0) {
+        // Tag non attribuable : signalé, jamais assimilé à un acquittement.
+        emit_status_position(DIAG_STATUS_UID_NOT_IN_TABLE, UID_POSITION_UNKNOWN_REPORTED);
+        return;
+    }
+    if (event->event == CAN_CARD_EVENT_TRIGGER_BLOCKED) {
+        emit_status_position(DIAG_STATUS_TRIGGER_BLOCKED, position);
+        ++stats.trigger_blocked;
+    } else if (event->event == CAN_CARD_EVENT_CHANNEL_FAULT) {
+        emit_status_position(DIAG_STATUS_CHANNEL_FAULT_IDLE, position);
+        ++stats.channel_fault_idle;
     }
 }
 
@@ -1608,6 +1639,18 @@ static void log_table_diff(const commissioning_entry_t *old_entry,
                    new_entry != NULL ? new_entry->occupation_bitmap : 0u);
 }
 
+// ADR-0021 : une entrée conservée est toujours signalée.
+static void emit_table_bitmap_kept_line(uint8_t position, uint16_t bitmap,
+                                        const char *status_name) {
+    char line[DIAG_LOG_LINE_MAX];
+
+    if (diag_format_table_bitmap_kept_line(line, sizeof(line), position, bitmap, status_name) == 0u) {
+        ++stats.events_dropped;
+        return;
+    }
+    emit_line(line);
+}
+
 static void finish_selftest_session(void) {
     commissioning_entry_t new_entries[UID_POSITION_COUNT];
     commissioning_runtime_t preview;
@@ -1655,12 +1698,25 @@ static void finish_selftest_session(void) {
         new_entries[new_count].identity.position = position;
         memcpy(new_entries[new_count].identity.uid.id, selftest_session.uid[position],
                CAN_UID_SIZE);
-        // Carte répondante en échec : bitmap inconnu, aucun canal activable —
-        // jamais un bitmap partiel deviné.
-        new_entries[new_count].occupation_bitmap =
-            (selftest_session.status[position].test_status == CAN_SELFTEST_STATUS_OK)
-                ? selftest_session.status[position].occupation_bits
-                : 0u;
+        // ADR-0021 : une mesure non concluante ne détruit plus une assignation
+        // déjà validée. Le bitmap conservé est une valeur MESURÉE auparavant
+        // (même position ET même UID), jamais un bitmap partiel deviné.
+        {
+            const can_selftest_status_t test_status = selftest_session.status[position].test_status;
+            uint16_t bitmap = 0u;
+
+            if (test_status == CAN_SELFTEST_STATUS_OK) {
+                bitmap = selftest_session.status[position].occupation_bits;
+            } else if (commissioning.valid &&
+                       commissioning_previous_bitmap(&commissioning.runtime, position,
+                                                     selftest_session.uid[position], &bitmap)) {
+                const char *status_name = diag_selftest_status_name(test_status);
+
+                emit_table_bitmap_kept_line(position, bitmap,
+                                            status_name != NULL ? status_name : "?");
+            }
+            new_entries[new_count].occupation_bitmap = bitmap;
+        }
         new_entries[new_count].reserved = 0u;
         if (selftest_session.status[position].fault_bits != 0u) {
             flags |= COMMISSIONING_FLAG_FAULT_DURING_TEST;
@@ -1942,6 +1998,160 @@ static void handle_selftest_trigger(uint8_t dlc, const uint8_t *data) {
     }
 }
 
+// ADR-0020 §2 : balayage des compteurs de carte à la demande (console `m stats`).
+#define CAN_LINK_STATS_PROBE_TIMEOUT_MS 100u
+
+static bool stats_probe_active;
+static uint8_t stats_probe_counter;
+static uint8_t stats_probe_received;
+static uint8_t stats_probe_expected;
+static uint8_t stats_probe_request_id;
+static uint32_t stats_probe_sent_ms;
+static bool stats_probe_seen[UID_POSITION_COUNT];
+static bool stats_probe_silent[UID_POSITION_COUNT];
+static uint32_t stats_probe_value[UID_POSITION_COUNT];
+static uint32_t stats_probe_commands_ok;
+
+static const char *card_counter_name(can_card_counter_t counter) {
+    switch (counter) {
+    case CAN_CARD_COUNTER_CAN_ERRORS: return "can_errors";
+    case CAN_CARD_COUNTER_TX_FAIL: return "tx_fail";
+    case CAN_CARD_COUNTER_RX_OVERRUN: return "rx_overrun";
+    case CAN_CARD_COUNTER_SELFTEST_BLOCKED: return "selftest_blocked";
+    case CAN_CARD_COUNTER_IGNORED_TAG: return "ignored_tag";
+    case CAN_CARD_COUNTER_BAD_CHANNEL: return "bad_channel";
+    case CAN_CARD_COUNTER_PROFILE_STATUS_LOST: return "profile_status_lost";
+    case CAN_CARD_COUNTER_PROFILE_COMMITS_REJECTED: return "profile_commits_rejected";
+    case CAN_CARD_COUNTER_PROFILE_COMMITS_OK: return "profile_commits_ok";
+    case CAN_CARD_COUNTER_RX_IGNORED: return "rx_ignored";
+    case CAN_CARD_COUNTER_UNOCCUPIED: return "unoccupied";
+    case CAN_CARD_COUNTER_REJECTED: return "rejected";
+    case CAN_CARD_COUNTER_COMMANDS_OK: return "commands_ok";
+    default: return NULL;
+    }
+}
+
+// Cartes attendues : mêmes entrées que la synchronisation de profil (ADR-0016).
+static uint8_t stats_probe_expected_count(void) {
+    uint8_t count = 0u;
+
+    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        if (uid_position_table[i].position != UID_POSITION_EMPTY && profile_seed_online[i]) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+static void stats_probe_send(uint32_t first_ms) {
+    can_card_stats_request_t request = {0};
+    uint8_t data[CAN_DLC_CARD_STATS_REQUEST];
+
+    request.proto_version = CAN_PROTO_VERSION;
+    request.counter_id = (can_card_counter_t)stats_probe_counter;
+    request.reply_to = stats_probe_request_id;
+    if (can_encode_card_stats_request(data, &request) != CAN_PROTO_OK ||
+        !send_frame(CAN_ID_CARD_STATS_REQUEST, CAN_DLC_CARD_STATS_REQUEST, data)) {
+        ++stats.tx_fail;
+    }
+    stats_probe_sent_ms = first_ms;
+}
+
+static void stats_probe_advance(uint32_t first_ms) {
+    // ADR-0020 §2.4 : une carte attendue qui ne répond pas est NOMMÉE, une seule
+    // fois par balayage (pas une ligne de statut par compteur).
+    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        if (uid_position_table[i].position == UID_POSITION_EMPTY || !profile_seed_online[i] ||
+            stats_probe_seen[i] || stats_probe_silent[i]) {
+            continue;
+        }
+        stats_probe_silent[i] = true;
+        emit_status_position(DIAG_STATUS_NO_RESPONSE, uid_position_table[i].position);
+    }
+    if ((can_card_counter_t)stats_probe_counter == CAN_CARD_COUNTER_COMMANDS_OK) {
+        stats_probe_commands_ok = 0u;
+        for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+            if (stats_probe_seen[i]) {
+                stats_probe_commands_ok += stats_probe_value[i];
+            }
+        }
+    }
+    ++stats_probe_counter;
+    if (stats_probe_counter >= (uint8_t)CAN_CARD_COUNTER_COUNT) {
+        // Compte rendu de cohérence : « transmis » (Clavier) contre « exécuté »
+        // (cartes). Un écart qui grandit pendant qu'on joue = la carte refuse.
+        diag_out_printf("[STATS] note_sent=%lu cartes_ok=%lu ecart=%ld\n",
+                        (unsigned long)stats.note_sent, (unsigned long)stats_probe_commands_ok,
+                        (long)((int32_t)stats.note_sent - (int32_t)stats_probe_commands_ok));
+        stats_probe_active = false;
+        return;
+    }
+    memset(stats_probe_seen, 0, sizeof(stats_probe_seen));
+    stats_probe_received = 0u;
+    stats_probe_expected = stats_probe_expected_count();
+    stats_probe_send(first_ms);
+}
+
+bool can_link_toggle_note_log(void) {
+    note_log_enabled = !note_log_enabled;
+    return note_log_enabled;
+}
+
+can_link_request_result_t can_link_stats_request_start(void) {
+    // ADR-0020 §2.4 : mêmes refus que la requête d'UID, plus le cas « aucune
+    // carte attendue » — sinon on émettrait une rafale de requêtes sans objet.
+    if (!started) {
+        ++stats.tx_fail;
+        emit_status(DIAG_STATUS_CAN_TX_FAIL);
+        return CAN_LINK_REQUEST_TX_FAIL;
+    }
+    if (uid_inflight || selftest_session.active) {
+        emit_status(DIAG_STATUS_BUSY);
+        return CAN_LINK_REQUEST_BUSY;
+    }
+    if (control_tx_inflight) {
+        ++stats.tx_unacked_refused;
+        emit_status(DIAG_STATUS_CAN_TX_FAIL);
+        return CAN_LINK_REQUEST_TX_FAIL;
+    }
+    stats_probe_expected = stats_probe_expected_count();
+    if (stats_probe_active || stats_probe_expected == 0u) {
+        emit_status(DIAG_STATUS_BUSY);
+        return CAN_LINK_REQUEST_BUSY;
+    }
+    memset(stats_probe_seen, 0, sizeof(stats_probe_seen));
+    memset(stats_probe_silent, 0, sizeof(stats_probe_silent));
+    memset(stats_probe_value, 0, sizeof(stats_probe_value));
+    stats_probe_active = true;
+    stats_probe_counter = 0u;
+    stats_probe_received = 0u;
+    stats_probe_commands_ok = 0u;
+    ++stats_probe_request_id;
+    if (stats_probe_request_id == 0u || stats_probe_request_id > CAN_REQUEST_ID_MAX) {
+        stats_probe_request_id = CAN_REQUEST_ID_MIN;
+    }
+    stats_probe_sent_ms = 0u;  // la première requête part au prochain poll
+    return CAN_LINK_REQUEST_SENT;
+}
+
+static void handle_card_stats(const can_card_stats_t *message) {
+    const int seed_index = profile_seed_index_for_tag(message->uid_tag);
+    const uint8_t position = seed_index >= 0 ? uid_position_table[(size_t)seed_index].position
+                                             : UID_POSITION_UNKNOWN_REPORTED;
+    const char *name = card_counter_name(message->counter_id);
+
+    if (stats_probe_active && (uint8_t)message->counter_id == stats_probe_counter &&
+        seed_index >= 0 && !stats_probe_seen[(size_t)seed_index]) {
+        stats_probe_seen[(size_t)seed_index] = true;
+        stats_probe_value[(size_t)seed_index] = message->value;
+        ++stats_probe_received;
+    }
+    if (name != NULL) {
+        diag_out_printf("[CARD] pos=%u stats %s=%lu\n", (unsigned)position, name,
+                        (unsigned long)message->value);
+    }
+}
+
 static void handle_frame(const struct can2040_msg *msg, uint32_t first_ms) {
     can_proto_result_t result;
     const uint8_t dlc = (uint8_t)msg->dlc;
@@ -2014,12 +2224,33 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t first_ms) {
         }
         break;
     }
+    case CAN_ID_CARD_EVENT: {
+        can_card_event_msg_t event;
+
+        result = can_decode_card_event(msg->data, dlc, &event);
+        if (result == CAN_PROTO_OK) {
+            handle_card_event(&event);
+            return;
+        }
+        break;
+    }
+    case CAN_ID_CARD_STATS: {
+        can_card_stats_t message;
+
+        result = can_decode_card_stats(msg->data, dlc, &message);
+        if (result == CAN_PROTO_OK) {
+            handle_card_stats(&message);
+            return;
+        }
+        break;
+    }
     case CAN_ID_UID_REQUEST:
     case CAN_ID_IPROPI_SELFTEST_REQUEST:
     case CAN_ID_SOLENOID_COMMAND:
     case CAN_ID_PROFILE_BEGIN:
     case CAN_ID_PROFILE_CHUNK:
     case CAN_ID_PROFILE_COMMIT:
+    case CAN_ID_CARD_STATS_REQUEST:
         ++stats.rx_ignored;
         return;
     default:
@@ -2158,6 +2389,16 @@ void can_link_poll(void) {
         // Fin de la re-requête post-échec (ADR-0017 décision 6) : les annonces
         // suivantes retrouvent le compte rendu de divergence habituel.
         profile_probe_pending = false;
+    }
+
+    // ADR-0020 §2 : balayage des compteurs, une requête en vol à la fois.
+    if (stats_probe_active) {
+        if (stats_probe_sent_ms == 0u) {
+            stats_probe_send(first_ms);
+        } else if (stats_probe_received >= stats_probe_expected ||
+                   (uint32_t)(first_ms - stats_probe_sent_ms) >= CAN_LINK_STATS_PROBE_TIMEOUT_MS) {
+            stats_probe_advance(first_ms);
+        }
     }
 
     if (selftest_session.active &&

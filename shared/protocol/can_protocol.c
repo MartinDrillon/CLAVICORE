@@ -561,3 +561,130 @@ can_proto_result_t can_decode_profile_status(const uint8_t *data, uint8_t dlc,
     }
     return CAN_PROTO_OK;
 }
+
+// --- CARD_EVENT (ID 0x424, DLC 8) — ADR-0018 -------------------------------
+
+static bool card_event_is_valid(can_card_event_t event) {
+    return (unsigned)event <= (unsigned)CAN_CARD_EVENT_SELFTEST_ABORTED;
+}
+
+static bool card_event_channel_is_valid(uint8_t channel) {
+    return channel < CAN_IPROPI_CHANNEL_COUNT || channel == CAN_CARD_EVENT_CHANNEL_NONE;
+}
+
+can_proto_result_t can_encode_card_event(uint8_t out[CAN_DLC_CARD_EVENT],
+                                         const can_card_event_msg_t *event) {
+    if (out == NULL || event == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (!card_event_is_valid(event->event) || !card_event_channel_is_valid(event->channel) ||
+        event->reserved != 0u) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    out[0] = event->proto_version;
+    out[1] = (uint8_t)event->event;
+    out[2] = event->channel;
+    out[3] = event->state;
+    out[4] = event->fault;
+    can_put_u16_le(&out[5], event->uid_tag);
+    out[7] = 0u;
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_card_event(const uint8_t *data, uint8_t dlc,
+                                         can_card_event_msg_t *event) {
+    if (data == NULL || event == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_CARD_EVENT) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    event->proto_version = data[0];
+    event->event = (can_card_event_t)data[1];
+    event->channel = data[2];
+    event->state = data[3];
+    event->fault = data[4];
+    event->uid_tag = can_get_u16_le(&data[5]);
+    event->reserved = data[7];
+    if (!card_event_is_valid(event->event) || !card_event_channel_is_valid(event->channel) ||
+        event->reserved != 0u) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    return CAN_PROTO_OK;
+}
+
+// --- CARD_STATS_REQUEST (0x403) / CARD_STATS (0x425) — ADR-0020 ------------
+
+static bool card_counter_is_valid(can_card_counter_t counter) {
+    return (unsigned)counter < (unsigned)CAN_CARD_COUNTER_COUNT;
+}
+
+can_proto_result_t can_encode_card_stats_request(uint8_t out[CAN_DLC_CARD_STATS_REQUEST],
+                                                 const can_card_stats_request_t *request) {
+    if (out == NULL || request == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (!card_counter_is_valid(request->counter_id) || request->reply_to == 0u ||
+        request->reply_to > CAN_REQUEST_ID_MAX) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    out[0] = request->proto_version;
+    out[1] = (uint8_t)request->counter_id;
+    can_put_u16_le(&out[2], request->reply_to);
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_card_stats_request(const uint8_t *data, uint8_t dlc,
+                                                 can_card_stats_request_t *request) {
+    if (data == NULL || request == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_CARD_STATS_REQUEST) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    request->proto_version = data[0];
+    request->counter_id = (can_card_counter_t)data[1];
+    request->reply_to = can_get_u16_le(&data[2]);
+    if (!card_counter_is_valid(request->counter_id) || request->reply_to == 0u ||
+        request->reply_to > CAN_REQUEST_ID_MAX) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_encode_card_stats(uint8_t out[CAN_DLC_CARD_STATS],
+                                         const can_card_stats_t *stats) {
+    if (out == NULL || stats == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (!card_counter_is_valid(stats->counter_id)) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    out[0] = stats->proto_version;
+    out[1] = (uint8_t)stats->counter_id;
+    can_put_u16_le(&out[2], stats->uid_tag);
+    out[4] = (uint8_t)(stats->value & 0xFFu);
+    out[5] = (uint8_t)((stats->value >> 8u) & 0xFFu);
+    out[6] = (uint8_t)((stats->value >> 16u) & 0xFFu);
+    out[7] = (uint8_t)((stats->value >> 24u) & 0xFFu);
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_card_stats(const uint8_t *data, uint8_t dlc,
+                                         can_card_stats_t *stats) {
+    if (data == NULL || stats == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_CARD_STATS) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    stats->proto_version = data[0];
+    stats->counter_id = (can_card_counter_t)data[1];
+    stats->uid_tag = can_get_u16_le(&data[2]);
+    stats->value = (uint32_t)data[4] | ((uint32_t)data[5] << 8u) |
+                   ((uint32_t)data[6] << 16u) | ((uint32_t)data[7] << 24u);
+    if (!card_counter_is_valid(stats->counter_id)) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    return CAN_PROTO_OK;
+}

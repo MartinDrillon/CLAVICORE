@@ -244,11 +244,14 @@ Sortie complète de `p set ...` jusqu'à `reglage: ...`, lignes `[PROFILE] refus
 - `[STATUS] code=PROFILE_ACK_UNATTRIBUTED` : acquittement reçu mais non
   attribuable (ADR-0016 décision 4).
 
+Depuis ADR-0020, `m stats` répond directement à la question « la carte a-t-elle
+exécuté ? » : comparer `note_sent` (Clavier) et `cartes_ok` (somme des
+`solenoid_commands_ok`). Écart stable ⇒ tout est exécuté ; écart qui grandit
+pendant qu'on joue ⇒ la carte refuse (lire alors `unoccupied`, `ignored_tag`,
+`selftest_blocked`, `rejected`) ; `can_errors` qui grandit ⇒ perte sur le bus.
+
 Points non tranchés à ce jour (décision Architecte, pas de correctif ici) :
 
-- l'acquittement `PROFILE_STATUS` est émis **une seule fois**, sans répétition
-  (`send_profile_status_if_due` libère le drapeau avant l'unique tentative) : une
-  file TX momentanément pleine perd l'acquittement définitivement ;
 - la fenêtre de 2000 ms (réglage) / 1000 ms (auto-test) n'est pas comparée au pire
   cas d'écriture flash (effacement + programmation + vérification) ;
 - un débordement de la file RX du Clavier pendant une **synchronisation de profil**
@@ -257,3 +260,8 @@ Points non tranchés à ce jour (décision Architecte, pas de correctif ici) :
 - D2 (transfert volatil, ADR-0015, **non implémentée — validation humaine
   requise**) retirerait l'écriture flash de ce chemin de réglage, mais pas la
   possibilité de perdre un acquittement.
+
+Points **résolus** le 2026-10-24 : l'acquittement `PROFILE_STATUS` n'est plus
+émis une seule fois — il est répété jusqu'à **3 fois à 20 ms** d'intervalle, avec
+arrêt au premier succès et compteur `profile_status_lost` au-delà (ADR-0020
+décision 1, validé en compilation + tests hôte).

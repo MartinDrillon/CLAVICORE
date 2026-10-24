@@ -92,6 +92,26 @@ const commissioning_entry_t *commissioning_find_entry_by_position(const commissi
     return NULL;
 }
 
+bool commissioning_previous_bitmap(const commissioning_runtime_t *table, uint8_t position,
+                                   const uint8_t uid[CAN_UID_SIZE], uint16_t *bitmap) {
+    if (table == NULL || uid == NULL || bitmap == NULL) {
+        return false;
+    }
+    for (uint16_t i = 0u; i < table->entry_count && i < UID_POSITION_COUNT; ++i) {
+        const commissioning_entry_t *entry = &table->entries[i];
+
+        if (entry->identity.position != position) {
+            continue;
+        }
+        if (memcmp(entry->identity.uid.id, uid, CAN_UID_SIZE) != 0) {
+            continue;
+        }
+        *bitmap = entry->occupation_bitmap;
+        return true;
+    }
+    return false;
+}
+
 commissioning_result_t commissioning_validate_entries(const commissioning_entry_t *entries,
                                                       size_t count) {
     if (entries == NULL) {

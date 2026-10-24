@@ -37,6 +37,10 @@ typedef struct {
     uint32_t profile_ack_unattributed;
     // ADR-0017 décision 4 : annonces de boot spontanées (redémarrages de carte).
     uint32_t card_rebooted;
+    // ADR-0018 : événements de carte reçus et cas signalés.
+    uint32_t card_events;
+    uint32_t trigger_blocked;
+    uint32_t channel_fault_idle;
 } can_link_stats_t;
 
 void can_link_init(void);
@@ -66,5 +70,11 @@ bool can_link_maintenance_push_start(uint8_t midi_note);
 bool can_link_maintenance_push_stop(uint8_t midi_note, bool timed_out);
 void can_link_set_note_activity(bool any_note_active, uint32_t last_note_event_ms);
 can_link_stats_t can_link_stats(void);
+// ADR-0020 §2 : demande le balayage des compteurs des cartes présentes
+// (`m stats`). Mêmes refus que la requête d'UID ; refuse aussi si aucune carte
+// n'est attendue. Sans effet si un balayage est déjà en cours.
+can_link_request_result_t can_link_stats_request_start(void);
+// ADR-0020 §4 : bascule l'affichage des lignes `[NOTE]` à l'exécution (`n`).
+bool can_link_toggle_note_log(void);
 
 #endif

@@ -52,6 +52,10 @@ typedef enum {
     DIAG_STATUS_PROFILE_UNSUPPORTED = 0x36,
     // ADR-0017 : annonce de boot spontanée hors scan de boot = redémarrage.
     DIAG_STATUS_CARD_REBOOTED = 0x37,
+    // ADR-0018 : déclenchement impossible (un canal n'est pas IDLE).
+    DIAG_STATUS_TRIGGER_BLOCKED = 0x38,
+    // ADR-0018 : défaut de canal verrouillé hors auto-test.
+    DIAG_STATUS_CHANNEL_FAULT_IDLE = 0x39,
 } diag_status_code_t;
 
 typedef enum {
@@ -202,6 +206,14 @@ size_t diag_format_map_line(char *out, size_t capacity, uint8_t position, uint8_
 size_t diag_format_table_entry_line(char *out, size_t capacity, const diag_table_entry_t *entry);
 size_t diag_format_table_diff_line(char *out, size_t capacity, uint8_t position, uint16_t old_bitmap,
                                    uint16_t new_bitmap);
+// ADR-0021 : bitmap précédent conservé parce que la mesure n'est pas concluante.
+size_t diag_format_table_bitmap_kept_line(char *out, size_t capacity, uint8_t position,
+                                          uint16_t bitmap, const char *status_name);
+// ADR-0018 : compte rendu d'un événement de carte Moteur.
+const char *diag_card_event_name(can_card_event_t event);
+const char *diag_card_ignore_reason_name(can_card_ignore_reason_t reason);
+size_t diag_format_card_event_line(char *out, size_t capacity, uint8_t position,
+                                   const can_card_event_msg_t *event);
 size_t diag_format_diff_line(char *out, size_t capacity, uint8_t position, uint16_t old_bitmap,
                              uint16_t new_bitmap);
 bool diag_format_note_name_fr(char *out, size_t capacity, uint8_t midi_note);

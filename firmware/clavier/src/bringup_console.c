@@ -22,7 +22,7 @@ static uint8_t g_length;
 static bool g_overflow;  // ligne trop longue : tout ignorer jusqu'à la fin de ligne
 
 static void print_help(void) {
-    diag_out_printf("[CONSOLE] t=auto-test c=mode_diagnostic d=table m=etat ?=aide p=profil (p ?)\n");
+    diag_out_printf("[CONSOLE] t=auto-test c=mode_diagnostic d=table m=etat m stats=compteurs cartes n=journal notes ?=aide p=profil (p ?)\n");
     diag_out_printf("[CONSOLE] aucune commande n'ecrit ni n'efface la table\n");
 }
 
@@ -219,9 +219,31 @@ static void execute_line(const char *line) {
         can_link_dump_table();
         break;
     case 'm':
-    case 'M':
-        diag_out_printf("[CONSOLE] m -> etat\n");
-        can_link_dump_status();
+    case 'M': {
+        const char *rest = skip_ws(text + 1);
+
+        if (take_word(rest, "stats", &rest)) {
+            switch (can_link_stats_request_start()) {
+            case CAN_LINK_REQUEST_SENT:
+                diag_out_printf("[CONSOLE] m stats -> lecture des compteurs des cartes\n");
+                break;
+            case CAN_LINK_REQUEST_BUSY:
+                diag_out_printf("[CONSOLE] m stats -> refuse (occupe, voir [STATUS])\n");
+                break;
+            default:
+                diag_out_printf("[CONSOLE] m stats -> echec d'emission CAN\n");
+                break;
+            }
+        } else {
+            diag_out_printf("[CONSOLE] m -> etat\n");
+            can_link_dump_status();
+        }
+        break;
+    }
+    case 'n':
+    case 'N':
+        diag_out_printf("[CONSOLE] n -> journal des notes %s\n",
+                        can_link_toggle_note_log() ? "ON" : "OFF");
         break;
     case '?':
         print_help();

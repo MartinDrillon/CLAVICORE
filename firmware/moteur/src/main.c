@@ -94,6 +94,9 @@ int main(void) {
     bool ignore_until_release = false;
     bool selftest_trigger_pending = false;
     bool selftest_logged = false;
+    // ADR-0018 : détection bornée du blocage du déclenchement.
+    uint32_t selftest_trigger_pending_since_us = 0u;
+    bool trigger_blocked_reported = false;
     solenoid_state_t last_state = solenoid_driver_state(&drivers[0]);
     solenoid_fault_t last_fault = SOLENOID_FAULT_NONE;
     bool last_timeout = false;
@@ -141,14 +144,23 @@ int main(void) {
                 report_result(manual_test_active_channel, "note_on",
                               solenoid_driver_note_on(&drivers[manual_test_active_channel], 0u, now_us));
             }
+            // ADR-0018 : action locale jusqu'ici invisible côté Clavier.
+            (void)can_link_send_card_event(
+                CAN_CARD_EVENT_BUTTON_SHORT_PRESS, manual_test_active_channel,
+                (uint8_t)solenoid_driver_state(&drivers[manual_test_active_channel]),
+                (uint8_t)solenoid_driver_fault(&drivers[manual_test_active_channel]));
         }
 
         if (ipropi_selftest_button_update(stable_pressed, now_us)) {
             report_result(manual_test_active_channel, "note_off (declenchement selftest)",
                           solenoid_driver_note_off(&drivers[manual_test_active_channel], now_us));
             selftest_trigger_pending = true;
+            selftest_trigger_pending_since_us = now_us;
+            trigger_blocked_reported = false;
             ignore_until_release = true;
             selftest_logged = false;
+            (void)can_link_send_card_event(CAN_CARD_EVENT_TRIGGER_PENDING,
+                                           CAN_CARD_EVENT_CHANNEL_NONE, 0u, 0u);
         }
 
         if (falling) {
@@ -165,9 +177,34 @@ int main(void) {
             solenoid_driver_tick(&drivers[i], now_us);
         }
 
+        // ADR-0018 : transitions de défaut de canal, hors auto-test (pendant un
+        // test, les défauts sont déjà rapportés par le compte rendu du test).
+        if (!ipropi_selftest_is_running()) {
+            static uint8_t last_fault_code[MOTEUR_CHANNEL_COUNT];
+
+            for (uint8_t i = 0u; i < MOTEUR_CHANNEL_COUNT; ++i) {
+                const uint8_t fault_code = (uint8_t)solenoid_driver_fault(&drivers[i]);
+
+                if (fault_code == last_fault_code[i]) {
+                    continue;
+                }
+                if (fault_code != (uint8_t)SOLENOID_FAULT_NONE) {
+                    (void)can_link_send_card_event(CAN_CARD_EVENT_CHANNEL_FAULT, i,
+                                                   (uint8_t)solenoid_driver_state(&drivers[i]),
+                                                   fault_code);
+                } else {
+                    (void)can_link_send_card_event(CAN_CARD_EVENT_CHANNEL_FAULT_CLEARED, i,
+                                                   (uint8_t)solenoid_driver_state(&drivers[i]), 0u);
+                }
+                last_fault_code[i] = fault_code;
+            }
+        }
+
         if (selftest_trigger_pending && all_channels_idle(drivers)) {
             if (can_link_send_selftest_trigger()) {
                 printf("[moteur] selftest trigger 0x402 emis apres appui long\n");
+                (void)can_link_send_card_event(CAN_CARD_EVENT_TRIGGER_SENT,
+                                               CAN_CARD_EVENT_CHANNEL_NONE, 0u, 0u);
             } else {
                 printf("[moteur] echec emission selftest trigger 0x402\n");
             }
@@ -176,6 +213,29 @@ int main(void) {
         } else if (selftest_trigger_pending && !selftest_logged) {
             printf("[moteur] attente retour IDLE avant emission 0x402\n");
             selftest_logged = true;
+        } else if (selftest_trigger_pending) {
+            // ADR-0018 : le blocage est nommé, avec le canal fautif, après un
+            // délai borné — sans quoi l'opérateur ne voit qu'un silence.
+            if (!trigger_blocked_reported &&
+                (uint32_t)(now_us - selftest_trigger_pending_since_us) >= 200000u) {
+                uint8_t blocker = CAN_CARD_EVENT_CHANNEL_NONE;
+
+                for (uint8_t i = 0u; i < MOTEUR_CHANNEL_COUNT; ++i) {
+                    if (solenoid_driver_state(&drivers[i]) != SOLENOID_STATE_IDLE) {
+                        blocker = i;
+                        break;
+                    }
+                }
+                trigger_blocked_reported = true;
+                (void)can_link_send_card_event(
+                    CAN_CARD_EVENT_TRIGGER_BLOCKED, blocker,
+                    blocker != CAN_CARD_EVENT_CHANNEL_NONE
+                        ? (uint8_t)solenoid_driver_state(&drivers[blocker])
+                        : 0u,
+                    blocker != CAN_CARD_EVENT_CHANNEL_NONE
+                        ? (uint8_t)solenoid_driver_fault(&drivers[blocker])
+                        : 0u);
+            }
         }
 
         can_link_poll(now_us);

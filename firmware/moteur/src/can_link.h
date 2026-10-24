@@ -36,12 +36,21 @@ typedef struct {
     uint32_t profile_commits_rejected;
     uint32_t profile_status_sent;
     uint32_t profile_bad_sequence;
+    // ADR-0020 : acquittements perdus après répétition, événements émis,
+    // requêtes de compteurs servies.
+    uint32_t profile_status_lost;
+    uint32_t card_events_sent;
+    uint32_t card_events_dropped;
+    uint32_t stats_requests_served;
 } can_link_stats_t;
 
 void can_link_init(const uint8_t uid[BOARD_IDENTITY_UID_SIZE], solenoid_driver_t *drivers,
                    uint8_t driver_count, uint32_t now_us);
 void can_link_poll(uint32_t now_us);
 bool can_link_send_selftest_trigger(void);
+// ADR-0018 : compte rendu d'une action locale (bouton, canal, commande ignorée).
+// Best-effort : ne bloque jamais, ne réessaie pas.
+bool can_link_send_card_event(can_card_event_t event, uint8_t channel, uint8_t state, uint8_t fault);
 can_link_stats_t can_link_stats(void);
 
 #endif

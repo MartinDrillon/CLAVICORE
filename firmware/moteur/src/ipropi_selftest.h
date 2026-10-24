@@ -30,6 +30,9 @@
 typedef struct {
     bool report_ready;
     can_announce_status_t report;
+    // ADR-0018 : canal en cours de mesure quand le test a été avorté
+    // (`CAN_CARD_EVENT_CHANNEL_NONE` sinon).
+    uint8_t aborted_channel;
     uint8_t raw_count;
     can_ipropi_raw_t raw_reports[CAN_IPROPI_CHANNEL_COUNT];
     // Diagnostic ADR-0009 §5/§6 : résistance et courant estimés par canal.

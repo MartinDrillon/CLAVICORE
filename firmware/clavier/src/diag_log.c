@@ -77,6 +77,8 @@ const char *diag_status_code_name(diag_status_code_t code) {
     case DIAG_STATUS_PROFILE_ACK_UNATTRIBUTED: return "PROFILE_ACK_UNATTRIBUTED";
     case DIAG_STATUS_PROFILE_UNSUPPORTED: return "PROFILE_UNSUPPORTED";
     case DIAG_STATUS_CARD_REBOOTED: return "CARD_REBOOTED";
+    case DIAG_STATUS_TRIGGER_BLOCKED: return "TRIGGER_BLOCKED";
+    case DIAG_STATUS_CHANNEL_FAULT_IDLE: return "CHANNEL_FAULT_IDLE";
     default: return NULL;
     }
 }
@@ -89,6 +91,65 @@ const char *diag_selftest_status_name(can_selftest_status_t status) {
     case CAN_SELFTEST_STATUS_UNCALIBRATED: return "UNCALIBRATED";
     default: return NULL;
     }
+}
+
+const char *diag_card_event_name(can_card_event_t event) {
+    switch (event) {
+    case CAN_CARD_EVENT_BUTTON_SHORT_PRESS: return "BUTTON_SHORT_PRESS";
+    case CAN_CARD_EVENT_TRIGGER_PENDING: return "TRIGGER_PENDING";
+    case CAN_CARD_EVENT_TRIGGER_SENT: return "TRIGGER_SENT";
+    case CAN_CARD_EVENT_TRIGGER_BLOCKED: return "TRIGGER_BLOCKED";
+    case CAN_CARD_EVENT_CHANNEL_FAULT: return "CHANNEL_FAULT";
+    case CAN_CARD_EVENT_CHANNEL_FAULT_CLEARED: return "CHANNEL_FAULT_CLEARED";
+    case CAN_CARD_EVENT_COMMAND_IGNORED: return "COMMAND_IGNORED";
+    case CAN_CARD_EVENT_SELFTEST_ABORTED: return "SELFTEST_ABORTED";
+    default: return NULL;
+    }
+}
+
+const char *diag_card_ignore_reason_name(can_card_ignore_reason_t reason) {
+    switch (reason) {
+    case CAN_CARD_IGNORE_TAG: return "TAG";
+    case CAN_CARD_IGNORE_CHANNEL: return "CANAL";
+    case CAN_CARD_IGNORE_SELFTEST: return "AUTOTEST";
+    case CAN_CARD_IGNORE_UNOCCUPIED: return "NON_OCCUPE";
+    case CAN_CARD_IGNORE_DRIVER: return "PILOTE";
+    default: return NULL;
+    }
+}
+
+size_t diag_format_card_event_line(char *out, size_t capacity, uint8_t position,
+                                   const can_card_event_msg_t *event) {
+    char channel_text[4];
+    const char *name;
+    int written;
+
+    if (event == NULL) {
+        return 0u;
+    }
+    name = diag_card_event_name(event->event);
+    if (name == NULL) {
+        return 0u;
+    }
+    if (event->channel == CAN_CARD_EVENT_CHANNEL_NONE) {
+        strcpy(channel_text, "-");
+    } else {
+        (void)snprintf(channel_text, sizeof(channel_text), "%u", (unsigned)event->channel);
+    }
+    if (event->event == CAN_CARD_EVENT_COMMAND_IGNORED) {
+        const char *reason = diag_card_ignore_reason_name((can_card_ignore_reason_t)event->state);
+
+        if (reason == NULL) {
+            return 0u;
+        }
+        written = write_line(out, capacity, "[CARD] pos=%u event=%s ch=%s raison=%s",
+                             (unsigned)position, name, channel_text, reason);
+    } else {
+        written = write_line(out, capacity, "[CARD] pos=%u event=%s ch=%s state=%u fault=0x%03X",
+                             (unsigned)position, name, channel_text, (unsigned)event->state,
+                             (unsigned)event->fault);
+    }
+    return (written < 0) ? 0u : (size_t)written;
 }
 
 const char *diag_note_dropped_reason_name(diag_note_dropped_reason_t reason) {
@@ -414,6 +475,21 @@ size_t diag_format_table_diff_line(char *out, size_t capacity, uint8_t position,
     }
     written = write_line(out, capacity, "[TABLE] diff pos=%u old=0x%03X new=0x%03X",
                          (unsigned)position, (unsigned)old_bitmap, (unsigned)new_bitmap);
+    return (written < 0) ? 0u : (size_t)written;
+}
+
+// ADR-0021 : une entrée conservée n'est jamais silencieuse.
+size_t diag_format_table_bitmap_kept_line(char *out, size_t capacity, uint8_t position,
+                                          uint16_t bitmap, const char *status_name) {
+    int written;
+
+    if (status_name == NULL || status_name[0] == '\0' ||
+        !can_selftest_bits_are_valid(bitmap)) {
+        return 0u;
+    }
+    written = write_line(out, capacity,
+                         "[TABLE] pos=%u bitmap conserve=0x%03X (mesure non concluante: %s)",
+                         (unsigned)position, (unsigned)bitmap, status_name);
     return (written < 0) ? 0u : (size_t)written;
 }
 

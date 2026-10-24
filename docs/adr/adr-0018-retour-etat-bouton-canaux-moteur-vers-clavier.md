@@ -1,6 +1,6 @@
 ---
 title: "ADR-0018: Retour d'état du bouton et des canaux Moteur vers le Clavier — trame CARD_EVENT (0x424)"
-status: "Proposed"
+status: "Accepted"
 date: "2026-10-22"
 authors: "Agent Architecte"
 tags: ["architecture", "firmware", "protocol", "diagnostic"]
@@ -9,7 +9,7 @@ superseded_by: ""
 ---
 
 ### Status
-**Proposed**
+**Accepted**
 
 > **Interface partagée modifiée — validation humaine requise.** Cette ADR ajoute
 > une trame à `shared/protocol/` (`0x424`, DLC 8). L'invariant 5 est respecté en

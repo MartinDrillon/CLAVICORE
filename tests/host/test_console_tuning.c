@@ -73,6 +73,20 @@ const char *diag_out_build_id(void) {
     return "test";
 }
 
+// Doublures des commandes de diagnostic (ADR-0020) : la console est testée sur
+// ce qu'elle demande, pas sur l'effet côté CAN.
+static int g_stats_request_count;
+static bool g_note_log_state;
+
+can_link_request_result_t can_link_stats_request_start(void) {
+    ++g_stats_request_count;
+    return CAN_LINK_REQUEST_SENT;
+}
+bool can_link_toggle_note_log(void) {
+    g_note_log_state = !g_note_log_state;
+    return g_note_log_state;
+}
+
 static solenoid_profile_t make_profile(void) {
     solenoid_profile_t p = {0};
 
@@ -205,6 +219,17 @@ int main(void) {
     reset();
     type("p set pull_duty_pct 6x\x7f" "0\n");
     CHECK(g_send_count == 1 && g_last_sent.pull_duty_pct == 60u);
+
+    puts("--- m stats et bascule du journal des notes (ADR-0020)");
+    reset();
+    type("m\n");
+    CHECK(g_stats_request_count == 0);
+    type("m stats\n");
+    CHECK(g_stats_request_count == 1);
+    type("n\n");
+    CHECK(g_note_log_state);
+    type("n\n");
+    CHECK(!g_note_log_state);
 
     printf("%d verifications, %d echec(s)\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;

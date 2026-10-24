@@ -158,6 +158,87 @@ attendu. Un `duree` proche de `delai` désigne au contraire un vrai timeout, don
 une autre cause (`motif=` le dira : `ACK_TIMEOUT` carte qui ne répond pas,
 `NO_PROFILE_STATUS` carte qui ne parle pas le protocole de profil).
 
+## Test 7 — Événements de carte, compteurs et mesure avortée (ADR-0018/0020/0021)
+
+Objectif : vérifier au banc que les causes de « rien ne se passe » sont désormais
+**distinguables** dans le journal, et qu'un auto-test avorté ne rend plus le
+clavier muet. Préfixe `[T+… ms]` omis dans les extraits.
+
+Pré-requis : cartes **et** Clavier reflashés (les trames `0x424`/`0x425` n'existent
+pas dans un firmware antérieur — une absence d'événement ne prouve alors rien).
+
+### 7.1 Appui court sur le bouton Moteur
+
+Appui bref (< 3 s) sur le bouton d'une carte.
+
+```text
+[CARD] pos=N event=BUTTON_SHORT_PRESS ch=<0|11> state=<...> fault=0x000
+```
+
+Le solénoïde du canal de test peut bouger : c'est le test manuel de la carte, il
+est désormais **rapporté** (il ne l'était pas).
+
+### 7.2 Appui long avec un canal non IDLE
+
+Laisser un canal actif (note maintenue, ou test manuel en cours), puis maintenir
+le bouton 3 s.
+
+```text
+[CARD] pos=N event=TRIGGER_PENDING ch=- state=0 fault=0x000
+[CARD] pos=N event=TRIGGER_BLOCKED ch=<canal bloquant> state=<...> fault=0x...
+[STATUS] code=TRIGGER_BLOCKED pos=N
+```
+
+et **aucun** `[PROFILE] sync debut` (le `0x402` n'est pas émis). Une fois le canal
+revenu IDLE, un nouvel appui long doit produire `TRIGGER_SENT` puis
+`[PROFILE] sync debut … source=bouton`.
+
+### 7.3 Commande reçue et ignorée
+
+Provoquer un refus côté carte (carte coupée **après** le scan de boot et touche
+qui lui est assignée, par exemple).
+
+```text
+[CARD] pos=N event=COMMAND_IGNORED ch=<canal> raison=NON_OCCUPE|TAG|CANAL|AUTOTEST|PILOTE
+```
+
+Attendu en moins d'une seconde ; au plus une ligne par seconde et par raison (le
+compteur, lui, compte tout).
+
+### 7.4 `m stats` (console)
+
+Taper `m stats` au repos : 13 lignes `[CARD] pos=N stats <nom>=<valeur>` par carte
+présente, puis `[STATS] note_sent=<n> cartes_ok=<m> ecart=<n-m>`.
+
+Contrôles :
+- `m stats` pendant un auto-test ou une requête d'UID → **refusé**
+  (`[CONSOLE] m stats -> refuse (occupe, voir [STATUS])`), sans trafic ;
+- `m stats` sans aucune carte vue en ligne → refusé ;
+- une carte muette est nommée **une fois** : `[STATUS] code=NO_RESPONSE pos=N` ;
+- jouer quelques notes puis relancer : `ecart` reste stable ; s'il augmente, la
+  carte refuse (voir 7.3) ; si `can_errors` augmente, c'est le bus.
+
+### 7.5 Bascule du journal des notes
+
+`n` → `[CONSOLE] n -> journal des notes ON` ; jouer une touche commissionnée fait
+apparaître une ligne `[NOTE] …`. `n` à nouveau : plus de ligne. Aucun autre effet
+sur les commandes CAN.
+
+### 7.6 Auto-test avorté (ADR-0021)
+
+Provoquer un `ABORTED` (maintenir un canal non IDLE pendant le test, ou relancer
+le test pendant l'attente).
+
+```text
+[SELFTEST] req=R pos=N status=ABORTED ...
+[CARD] pos=N event=SELFTEST_ABORTED ch=<canal>
+[TABLE] pos=N bitmap conserve=0xNNN (mesure non concluante: ABORTED)
+```
+
+Et surtout : **les touches déjà validées continuent de jouer** (`[SUMMARY]`
+conserve `keys` pour cette carte). Une carte **remplacée** (UID différent) donne
+`bitmap=0x000` **sans** ligne `conserve` ; une carte **absente** reste absente.
+
 ## Addendum — exemples de session PuTTY
 
 Les exemples ci-dessous **s'ajoutent** aux lignes existantes `[STATUS]`,

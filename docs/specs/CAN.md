@@ -377,6 +377,61 @@ Règles :
 - pas d'acquittement applicatif en Phase 3b/Livraison 2 ;
 - la coupure de sécurité côté driver reste la dernière barrière.
 
+#### `CARD_EVENT` — ID `0x424`, DLC 8
+
+Émetteur : **Moteur** vers le Clavier, sur transition (ADR-0018). Les autres
+cartes l'ignorent : ce n'est pas une commande. Spécification complète :
+[`impact-adr-0018.md`](./impact-adr-0018.md).
+
+| Octet | Nom | Valeurs / remarques |
+|---|---|---|
+| 0 | `proto_version` | version du protocole |
+| 1 | `event` | `0` appui court (test manuel), `1` déclenchement en attente, `2` déclenchement émis, `3` déclenchement bloqué, `4` défaut de canal, `5` défaut levé, `6` commande ignorée, `7` auto-test avorté |
+| 2 | `channel` | `0..11`, ou `0xFF` si sans objet |
+| 3 | `state` | `SOLENOID_STATE_*` ; pour l'événement `6` : code de raison (`1` tag, `2` canal, `3` auto-test, `4` non occupé, `5` pilote) |
+| 4 | `fault` | `SOLENOID_FAULT_*` ; `0` si sans objet |
+| 5..6 | `uid_tag` | CRC16 LE de la carte émettrice |
+| 7 | `reserved` | **doit être émis à `0`** |
+
+Règles :
+- une émission par transition, jamais périodique ;
+- `TRIGGER_BLOCKED` émis une fois, 200 ms après « en attente » si un canal n'est
+  pas revenu IDLE (canal bloquant nommé) ;
+- ne conditionne aucune exécution : le Clavier journalise (`[CARD] pos=N event=…`)
+  et signale `0x38` / `0x39` ;
+- un `CARD_EVENT` n'est **jamais** un acquittement de profil ni une réponse d'UID.
+
+#### `CARD_STATS_REQUEST` — ID `0x403`, DLC 4
+
+Émetteur : **Clavier** vers diffusion (ADR-0020). Spécification complète :
+[`impact-adr-0020.md`](./impact-adr-0020.md).
+
+| Octet | Nom | Valeurs / remarques |
+|---|---|---|
+| 0 | `proto_version` | version du protocole |
+| 1 | `counter_id` | `0..12` (table des compteurs, note 0020 §2.3) |
+| 2..3 | `reply_to` | `CAN_REQUEST_ID_MIN..MAX` (LE), traçabilité |
+
+Une seule requête en vol à la fois ; interrogation à la demande, jamais périodique.
+
+#### `CARD_STATS` — ID `0x425`, DLC 8
+
+Émetteur : **Moteur** vers le Clavier, une trame par requête reçue.
+
+| Octet | Nom | Valeurs / remarques |
+|---|---|---|
+| 0 | `proto_version` | version du protocole |
+| 1 | `counter_id` | recopie de la requête |
+| 2..3 | `uid_tag` | CRC16 LE de la carte |
+| 4..7 | `valeur` | u32 LE |
+
+Corrélation par `uid_tag` + `counter_id` (le `reply_to` n'est pas renvoyé, 8
+octets pleins). Compteurs attendus : `can_errors`, `tx_fail`, `rx_overrun`,
+`solenoid_selftest_blocked`, `solenoid_ignored_tag`, `solenoid_bad_channel`,
+`profile_status_lost`, `profile_commits_rejected`, `profile_commits_ok`,
+`rx_ignored`, `solenoid_unoccupied`, `solenoid_rejected`,
+`solenoid_commands_ok`.
+
 ### Format flash de commissioning (Clavier)
 
 * **1 secteur 4 Kio en fin de flash** :
@@ -446,7 +501,7 @@ canaux IDLE, avec `flash_safe_execute` : effacer le slot au `seq` le plus
 faible, programmer `seq + 1`, relire et vérifier, puis appliquer en RAM. Détail
 complet : [`profil-solenoides.md`](profil-solenoides.md) §5.
 
-### Lignes `[STATUS]` (codes `0x20+` d'ADR-0004, `0x31` d'ADR-0009, `0x32+` d'ADR-0013)
+### Lignes `[STATUS]` (codes `0x20+` d'ADR-0004, `0x31` d'ADR-0009, `0x32+` d'ADR-0013, `0x35+` d'ADR-0016/0017/0018/0020)
 
 Format texte CDC :
 - par défaut : `[STATUS] code=NOM pos=N`
@@ -476,6 +531,11 @@ Format texte CDC :
 | `32` | `PROFILE_SYNC_FAILED` |
 | `33` | `PROFILE_DIVERGENT` |
 | `34` | `PROFILE_FALLBACK_IN_USE` |
+| `35` | `PROFILE_ACK_UNATTRIBUTED` |
+| `36` | `PROFILE_UNSUPPORTED` |
+| `37` | `CARD_REBOOTED` |
+| `38` | `TRIGGER_BLOCKED` |
+| `39` | `CHANNEL_FAULT_IDLE` |
 
 ### Lignes `[TABLE]`
 
@@ -484,6 +544,10 @@ Formats (existants, complétés par `state`/`flags`) :
 - `[TABLE] invalid ...`
 - `[TABLE] pos=<0..4> uid=<16 hex> bitmap=0xXYZ keys=<a>-<b>`
 - `[TABLE] diff pos=<0..4> old=0xXYZ new=0xXYZ`
+- `[TABLE] pos=<0..4> bitmap conserve=0xXYZ (mesure non concluante: ABORTED|REFUSED_BUSY|UNCALIBRATED)`
+  — ADR-0021 : la carte a répondu mais la mesure n'est pas concluante ; son
+  bitmap précédent (même position **et** même UID) est conservé. Émise une fois
+  par entrée conservée, avant la ligne `loaded` de fin de session.
 
 Règles :
 - la ligne `loaded` est émise au boot après chargement, **et** après chaque

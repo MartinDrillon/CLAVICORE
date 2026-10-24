@@ -70,6 +70,8 @@ static uint32_t profile_staging_start_us;
 static bool profile_status_pending;
 static can_profile_status_t profile_status;
 static uint32_t profile_status_due_us;
+// ADR-0020 §1 : tentatives restantes pour l'acquittement en cours.
+static uint8_t profile_status_attempts;
 
 static void can_rx_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg) {
     (void)cd;
@@ -120,6 +122,24 @@ static bool channel_is_locally_occupied(uint8_t channel) {
            (local_occupation_bitmap & ((uint16_t)1u << channel)) != 0u;
 }
 
+// ADR-0020 §3 : une commande reçue et non exécutée est signalée, jamais muette.
+// Limitée à un événement par seconde et par raison pour ne pas noyer le bus.
+static void report_ignored_command(uint8_t channel, can_card_ignore_reason_t reason, uint8_t fault,
+                                   uint32_t now_us) {
+    static uint32_t last_us[6];
+    uint32_t *slot;
+
+    if ((unsigned)reason > 5u) {
+        return;
+    }
+    slot = &last_us[reason];
+    if (*slot != 0u && (uint32_t)(now_us - *slot) < 1000000u) {
+        return;
+    }
+    *slot = (now_us != 0u) ? now_us : 1u;
+    (void)can_link_send_card_event(CAN_CARD_EVENT_COMMAND_IGNORED, channel, (uint8_t)reason, fault);
+}
+
 static void handle_solenoid_command(const struct can2040_msg *msg, uint32_t now_us) {
     can_solenoid_command_t command;
     const can_proto_result_t result =
@@ -136,18 +156,22 @@ static void handle_solenoid_command(const struct can2040_msg *msg, uint32_t now_
     }
     if (command.uid_tag != board_tag) {
         ++stats.solenoid_ignored_tag;
+        report_ignored_command(command.channel, CAN_CARD_IGNORE_TAG, 0u, now_us);
         return;
     }
     if (command.channel >= board_driver_count || board_drivers == NULL) {
         ++stats.solenoid_bad_channel;
+        report_ignored_command(command.channel, CAN_CARD_IGNORE_CHANNEL, 0u, now_us);
         return;
     }
     if (ipropi_selftest_is_running()) {
         ++stats.solenoid_selftest_blocked;
+        report_ignored_command(command.channel, CAN_CARD_IGNORE_SELFTEST, 0u, now_us);
         return;
     }
     if (!channel_is_locally_occupied(command.channel)) {
         ++stats.solenoid_unoccupied;
+        report_ignored_command(command.channel, CAN_CARD_IGNORE_UNOCCUPIED, 0u, now_us);
         return;
     }
 
@@ -163,6 +187,9 @@ static void handle_solenoid_command(const struct can2040_msg *msg, uint32_t now_
         ++stats.solenoid_commands_ok;
     } else {
         ++stats.solenoid_rejected;
+        report_ignored_command(command.channel, CAN_CARD_IGNORE_DRIVER,
+                               (uint8_t)solenoid_driver_state(&board_drivers[command.channel]),
+                               now_us);
     }
 }
 
@@ -321,6 +348,12 @@ static bool all_channels_idle(void) {
     return true;
 }
 
+// ADR-0020 §1 : l'acquittement de profil est répété, borné, dans la fenêtre
+// d'acquittement du Clavier (1 000 / 2 000 ms). Un refus momentané de
+// `can2040_transmit` ne doit plus perdre l'information pour toujours.
+#define PROFILE_STATUS_MAX_ATTEMPTS 3u
+#define PROFILE_STATUS_RETRY_US 20000u
+
 static void arm_profile_status(can_profile_result_t result, uint8_t transfer_id, uint32_t now_us) {
     profile_status.uid_tag = board_tag;
     profile_status.transfer_id = transfer_id;
@@ -328,6 +361,7 @@ static void arm_profile_status(can_profile_result_t result, uint8_t transfer_id,
     profile_status.source = solenoid_profile_active_source();
     profile_status.profile_tag32 = solenoid_profile_active_tag();
     profile_status_pending = true;
+    profile_status_attempts = PROFILE_STATUS_MAX_ATTEMPTS;
     profile_status_due_us = now_us + PROFILE_STATUS_SPACING_US;
 }
 
@@ -434,13 +468,85 @@ static void send_profile_status_if_due(uint32_t now_us) {
     if (!profile_status_pending || (int32_t)(now_us - profile_status_due_us) < 0) {
         return;
     }
-    profile_status_pending = false;
-    if (can_encode_profile_status(data, &profile_status) != CAN_PROTO_OK ||
-        !send_frame(CAN_ID_PROFILE_STATUS, CAN_DLC_PROFILE_STATUS, data)) {
+    if (can_encode_profile_status(data, &profile_status) == CAN_PROTO_OK &&
+        send_frame(CAN_ID_PROFILE_STATUS, CAN_DLC_PROFILE_STATUS, data)) {
+        // Un acquittement suffit : on s'arrête au premier envoi réussi.
+        profile_status_pending = false;
+        ++stats.profile_status_sent;
+        return;
+    }
+    ++stats.tx_fail;
+    if (profile_status_attempts > 0u) {
+        --profile_status_attempts;
+    }
+    if (profile_status_attempts == 0u) {
+        // Trois tentatives épuisées : l'information est perdue, mais comptée.
+        profile_status_pending = false;
+        ++stats.profile_status_lost;
+        return;
+    }
+    profile_status_due_us = now_us + PROFILE_STATUS_RETRY_US;
+}
+
+bool can_link_send_card_event(can_card_event_t event, uint8_t channel, uint8_t state, uint8_t fault) {
+    can_card_event_msg_t message = {0};
+    uint8_t data[CAN_DLC_CARD_EVENT];
+
+    message.proto_version = CAN_PROTO_VERSION;
+    message.event = event;
+    message.channel = channel;
+    message.state = state;
+    message.fault = fault;
+    message.uid_tag = board_tag;
+    if (can_encode_card_event(data, &message) != CAN_PROTO_OK ||
+        !send_frame(CAN_ID_CARD_EVENT, CAN_DLC_CARD_EVENT, data)) {
+        // Best-effort : jamais de boucle de réémission ; le compteur reste la trace.
+        ++stats.card_events_dropped;
+        return false;
+    }
+    ++stats.card_events_sent;
+    return true;
+}
+
+// ADR-0020 §2 : valeur d'un compteur demandé par le Clavier.
+static uint32_t card_counter_value(can_card_counter_t counter) {
+    switch (counter) {
+    case CAN_CARD_COUNTER_CAN_ERRORS: return stats.can_errors;
+    case CAN_CARD_COUNTER_TX_FAIL: return stats.tx_fail;
+    case CAN_CARD_COUNTER_RX_OVERRUN: return stats.rx_overrun;
+    case CAN_CARD_COUNTER_SELFTEST_BLOCKED: return stats.solenoid_selftest_blocked;
+    case CAN_CARD_COUNTER_IGNORED_TAG: return stats.solenoid_ignored_tag;
+    case CAN_CARD_COUNTER_BAD_CHANNEL: return stats.solenoid_bad_channel;
+    case CAN_CARD_COUNTER_PROFILE_STATUS_LOST: return stats.profile_status_lost;
+    case CAN_CARD_COUNTER_PROFILE_COMMITS_REJECTED: return stats.profile_commits_rejected;
+    case CAN_CARD_COUNTER_PROFILE_COMMITS_OK: return stats.profile_commits_ok;
+    case CAN_CARD_COUNTER_RX_IGNORED: return stats.rx_ignored;
+    case CAN_CARD_COUNTER_UNOCCUPIED: return stats.solenoid_unoccupied;
+    case CAN_CARD_COUNTER_REJECTED: return stats.solenoid_rejected;
+    case CAN_CARD_COUNTER_COMMANDS_OK: return stats.solenoid_commands_ok;
+    default: return 0u;
+    }
+}
+
+static void handle_card_stats_request(const struct can2040_msg *msg) {
+    can_card_stats_request_t request;
+    can_card_stats_t reply = {0};
+    uint8_t data[CAN_DLC_CARD_STATS];
+
+    if (can_decode_card_stats_request(msg->data, (uint8_t)msg->dlc, &request) != CAN_PROTO_OK) {
+        ++stats.rx_bad_value;
+        return;
+    }
+    reply.proto_version = CAN_PROTO_VERSION;
+    reply.counter_id = request.counter_id;
+    reply.uid_tag = board_tag;
+    reply.value = card_counter_value(request.counter_id);
+    if (can_encode_card_stats(data, &reply) != CAN_PROTO_OK ||
+        !send_frame(CAN_ID_CARD_STATS, CAN_DLC_CARD_STATS, data)) {
         ++stats.tx_fail;
         return;
     }
-    ++stats.profile_status_sent;
+    ++stats.stats_requests_served;
 }
 
 static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {
@@ -496,7 +602,12 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {
     case CAN_ID_IPROPI_RAW:
     case CAN_ID_IPROPI_OHM:
     case CAN_ID_PROFILE_STATUS:
+    case CAN_ID_CARD_EVENT:
+    case CAN_ID_CARD_STATS:
         ++stats.rx_ignored;
+        return;
+    case CAN_ID_CARD_STATS_REQUEST:
+        handle_card_stats_request(msg);
         return;
     case CAN_ID_PROFILE_BEGIN:
         handle_profile_begin(msg, now_us);
@@ -584,9 +695,14 @@ void can_link_poll(uint32_t now_us) {
     }
 
     ipropi_selftest_tick(now_us);
-    if (ipropi_selftest_take_result(&selftest_result) &&
-        selftest_result.report.test_status == CAN_SELFTEST_STATUS_OK) {
-        local_occupation_bitmap = selftest_result.report.occupation_bits;
+    if (ipropi_selftest_take_result(&selftest_result)) {
+        if (selftest_result.report.test_status == CAN_SELFTEST_STATUS_OK) {
+            local_occupation_bitmap = selftest_result.report.occupation_bits;
+        } else if (selftest_result.report.test_status == CAN_SELFTEST_STATUS_ABORTED) {
+            // ADR-0018 / ADR-0021 : la cause de l'avortement devient visible.
+            (void)can_link_send_card_event(CAN_CARD_EVENT_SELFTEST_ABORTED,
+                                           selftest_result.aborted_channel, 0u, 0u);
+        }
     }
 
     if (announce_pending && announce_kind == ANNOUNCE_KIND_SELFTEST_REPLY && !selftest_result.report_ready) {
