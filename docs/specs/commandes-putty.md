@@ -94,6 +94,34 @@ Règles de `p set` :
 | `dir_level_release` | polarité non réécrite à l'arrêt (fichier) |
 | `dir_level_maint` | polarité non réécrite à l'arrêt (fichier) |
 
+## Diagnostiquer un refus de `t`
+
+`[STATUS] code=SELFTEST_REFUSED_PLAYING` est émis par plusieurs gardes : auto-test
+déjà en cours, requête UID/contrôle ou synchronisation de profil en cours, ou
+jeu depuis moins de 0,5 s. Le code seul ne dit pas laquelle.
+
+1. `m` — état principal :
+   - `valid=oui|non`, `state=FINAL|PROVISIONAL|INVALID|…` (table) ;
+   - `selftest=en_cours|repos` ;
+   - `calib=ON|OFF`.
+   Si `selftest=en_cours`, attendre la fin.
+2. `l 1` — affiche les opérations en cours et terminées (`[PROFILE]`, `[UID]`,
+   `[TRIGGER]`, `[STATUS]`). Un `[PROFILE] sync ok/echec` ou une séquence UID
+   récente explique souvent le refus.
+3. Attendre au moins **1 s** après la dernière touche ou le dernier échange, puis
+   retaper `t`. Après un reflash, le boot et la synchronisation de profil
+   peuvent légitimement refuser pendant quelques centaines de millisecondes.
+4. Si le refus persiste, `p send` donne une raison explicite :
+   - `operation CAN en cours` → requête UID/contrôle ou synchronisation active ;
+   - `jeu en cours` → une touche a été jouée il y a moins de 0,5 s ;
+   - `CAN non demarre` → lien CAN non initialisé.
+   Ne pas utiliser `p send` juste pour observer si un jeu est en cours : il
+   déclenche une diffusion de profil s’il est accepté.
+
+`m` ne montre pas directement `profile_sync_active`, `uid_inflight`,
+`control_tx_inflight` ni l’instant du dernier jeu : c’est le `l 1`/`p send`
+ci-dessus qui les révèle indirectement.
+
 ## Notes d'usage
 
 - `p send` et `p reset` n'écrivent pas la flash Clavier : le réglage chaud vit en
