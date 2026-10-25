@@ -12,8 +12,8 @@ ADR, triées par numéro.
 ## Tenue de l'index
 
 - **Architecte** : ajoute la ligne à la création de l'ADR (statut `Proposed`).
-- **Documentaliste** : met à jour le statut quand l'ADR est acceptée (Mode A), ou
-  reconstruit/contrôle l'index (Mode C).
+- **doc-aval** : met à jour le statut quand l'ADR est acceptée, ou
+  reconstruit/contrôle l'index.
 - En cas de divergence, le frontmatter de l'ADR fait foi.
 - Colonne « Relations » : `remplace 0003`, `remplacée par 0009`, ou `—`.
 - Colonne « Résumé » : 20 mots maximum, avec les termes de l'ADR. Si l'ADR

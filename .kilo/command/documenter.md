@@ -1,10 +1,9 @@
 ---
-description: Documenter une ADR acceptée (ou un rapport de validation) avec le Documentaliste
-agent: documentaliste
+description: Produire la fiche de lot d'une ADR acceptée (doc-amont), à la main
+agent: doc-amont
 ---
-Détermine le mode à partir de l'entrée ci-dessous : mode A si c'est une ADR
-(vérifie son statut `Accepted` avant toute modification), mode B si c'est un
-rapport de validation. Applique ta procédure, puis termine par les fichiers à
-lire pour l'agent suivant :
+Vérifie le statut `Accepted` de l'ADR ci-dessous avant toute modification, puis
+produis la fiche de lot pour le Codeur (40 lignes au plus ; fichier
+`docs/specs/impact-adr-NNNN.md` seulement si c'est plus long) :
 
 $ARGUMENTS

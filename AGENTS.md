@@ -33,13 +33,15 @@ devrait en enfreindre un s'arrête et demande confirmation humaine.
    Clavier.
 3. **La table de commissioning est persistante et côté Clavier.** C'est la
    seule source de vérité sur « quel solénoïde joue quelle touche ».
-4. **Les limites électriques sont appliquées dans la couche pilote**, pas dans
-   la couche métier. Un solénoïde ne doit jamais pouvoir être activé hors de sa
-   fenêtre de courant/durée (2–3 A, bobine sur mesure) sans coupure matérielle
-   ou logicielle explicite, **sauf deux dérogations bornées dans la couche
-   pilote** : le profil **MAINTENANCE** d'ADR-0006 (push-only, coupure à 10 s)
-   et la phase **HOLD** du jeu normal d'ADR-0007 (coupure autonome à 20 s, duty
-   HOLD plafonné à 25 %). DEPRECATED : dérogation à l'invariant 4 est validée par ADR-0014.
+4. **Les limites d'activation des solénoïdes sont celles du profil défini par
+   l'humain** (ADR-0014 : toutes les limites sont des données du profil Clavier,
+   appliquées par la couche pilote Moteur, jamais figées dans le firmware).
+   **Aucun agent n'ajoute, ne durcit ni ne retire une limite électrique de sa
+   propre initiative** (bridage, plafond, coupure, budget thermique). En cas de
+   doute de sécurité, l'agent le signale à l'humain (« Question sécurité »)
+   *avant* de rédiger une ADR ou d'implémenter, et attend sa réponse. Reformulé
+   le 2026-10-25 sur demande humaine ; l'ancien texte (fenêtre 2–3 A, dérogations
+   MAINTENANCE/HOLD d'ADR-0006/0007) est remplacé par ADR-0014.
 5. **Un changement d'interface partagée** (structure d'un message CAN, format
    de la table de commissioning, contrat d'une HAL) nécessite une ADR
    (`docs/adr/`) *avant* l'implémentation. Jamais après, jamais en même temps
@@ -87,47 +89,68 @@ permet, c'est un signal pour écrire une ADR, pas pour dupliquer.
 
 ## Répartition des rôles (voir `.kilo/agent/`)
 
-- **Architecte** (`architecte`) : décide, écrit les ADR (`Proposed`) et leur
-  ligne dans `docs/adr/INDEX.md`. Pas de code d'implémentation.
-- **Documentaliste** (`documentaliste`) : specs issues des ADR acceptées
-  (schémas CAN, docs de module), procédures de build/test, index des ADR,
-  `docs/specs/Detail_architecture.md`.
-- **Codeur** (`codeur`) : implémente contre `shared/protocol/` et les docs du
-  Documentaliste.
-- **Validateur** (`validateur`) : compile, teste, identifie l'erreur et
-  l'oriente vers l'agent adapté.
-- **Maître** (`maitre`) : dernier recours, lancé seul quand le cycle est bloqué.
+- **Architecte** (`architecte`) : interlocuteur principal. Décide, écrit une ADR
+  (`Proposed`, humain valide) **seulement** pour une décision d'architecture du
+  firmware, un changement d'interface partagée, une fonction majeure ou une
+  dérogation à un invariant ; sinon une fiche de tâche. Après validation, il
+  lance seul la chaîne par sous-agents. Pas de code d'implémentation.
+- **Maître** (`maitre`) : même rôle que l'Architecte, modèle le plus puissant,
+  diagnostic en profondeur. Lancé par l'humain (`/maitre`) en cas de blocage ;
+  il orchestre alors la chaîne.
+- **doc-amont** (`doc-amont`) : sous-agent. ADR acceptée → fiche de lot pour le
+  Codeur. Sauté s'il n'y a pas d'ADR.
+- **Codeur** (`codeur`) : sous-agent. Implémente contre `shared/protocol/` et la
+  fiche.
+- **Validateur** (`validateur`) : sous-agent. Compile, teste à la profondeur
+  N0/N1/N2 (`docs/harness/niveaux-validation.md`), diagnostique.
+- **doc-aval** (`doc-aval`) : sous-agent. Met la documentation en phase avec ce
+  qui est réellement validé.
 - **Explorateur** (`explorateur`) : sous-agent de recherche en lecture seule,
   modèle économique.
+- **Harness** (`harness`) : hors chaîne. Fait évoluer agents, commandes, skills,
+  `AGENTS.md`, `kilo.json` à la demande de l'humain. Ne touche ni au firmware ni
+  aux ADR.
 
 ## Workflow d'agents sous Kilo
 
-Configuration : agents dans `.kilo/agent/`, commandes dans `.kilo/command/`.
-La chaîne reste pilotée par l'humain :
+Configuration : agents dans `.kilo/agent/`, commandes dans `.kilo/command/`,
+procédure de chaîne dans le skill `.kilo/skill/chaine/SKILL.md` (source unique,
+partagée par l'Architecte et le Maître).
 
 ```
-Architecte (ADR Proposed) → validation humaine (Accepted) → Documentaliste
-→ Codeur → Validateur → Documentaliste (mode B)
+Humain ⇄ Architecte ── ADR ? ── validation humaine ──┐
+                                                     ▼
+   (automatique, sous-agents)  doc-amont* → codeur → validateur ⟲ codeur
+                                                     → doc-aval → rapport
+   * sauté sans ADR.   Blocage → l'humain lance /maitre
 ```
 
-- `/adr <besoin>` : Agent Architecte.
-- `/documenter <adr|rapport>` : Agent Documentaliste.
-- `/implementer <tâche>` : Agent Codeur.
-- `/valider` : Agent Validateur.
-- `/debloquer <incident>` : Agent Maître, seul, hors chaîne.
-- `/explorer <question>` : Agent Explorateur, en sous-tâche lecture seule.
+Règles de la chaîne : fiche de tâche avec niveau de validation minimal ; deux
+allers-retours codeur↔validateur au plus ; retour des sous-agents au format
+`STATUT: OK|ECHEC|BLOQUE` (30 lignes au plus) ; un sous-agent ne pose pas de
+question à l'humain (`BLOQUE`, l'orchestrateur relaie) ; aucun commit
+automatique.
 
-Les boutons de relais de Copilot n'existent pas sous Kilo : un agent ne
-déclenche pas lui-même un agent primaire. L'humain change d'agent avec
-`/agents` (ou Tab) ou lance la commande correspondante. Seul l'Explorateur,
-sous-agent, s'invoque depuis une session avec l'outil `task`.
+Commandes :
 
-Permissions posées dans les agents : Architecte, Documentaliste et Explorateur
-sont sans terminal (`bash: deny`) ; le Codeur demande confirmation pour toute
-commande ; le Validateur et le Maître exécutent les builds et tests librement.
-Chaque agent fixe aussi son modèle dans son frontmatter (`model:`) ; le Maître
-est le seul sur un modèle premium, à réserver aux incidents bloqués.
+- `/adr <besoin>` : Architecte (ADR ou fiche de tâche, puis chaîne).
+- `/maitre <incident>` : Maître (diagnostic et orchestration, modèle puissant).
+- `/harness <demande>` : agent Harness, hors chaîne.
+- `/documenter <adr>`, `/implementer <tâche>`, `/valider`,
+  `/documenter-aval <rapport>` : sous-agents appelés à la main (hors
+  orchestration).
+- `/explorer <question>` : Explorateur, en sous-tâche lecture seule.
 
+Un agent primaire ne s'invoque pas depuis une autre session : l'humain change
+d'agent avec `/agents` (ou Tab) ou lance la commande. Seuls les sous-agents
+s'invoquent avec l'outil `task`.
+
+Permissions : l'Architecte n'écrit que dans `docs/adr/` et n'a pas de terminal ;
+le Maître, le Codeur et le Validateur ont un terminal sans `commit`, `push`,
+`reset`, `stash`, `clean`, ni flash ; le Validateur n'édite pas ; doc-amont et
+doc-aval n'ont pas de terminal ; le Harness n'écrit que dans le harness.
+Chaque agent fixe son modèle dans son frontmatter (`model:`) : le Maître est le
+seul sur le modèle le plus puissant.
 Agent Manager : `.kilo/setup-script.ps1` initialise le sous-module can2040 dans
 les worktrees. Les caches CMake de `build/` contiennent des chemins absolus :
 dans un worktree, reconfigurer dans un dossier de build propre plutôt que

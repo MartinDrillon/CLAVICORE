@@ -1,10 +1,10 @@
 ---
-description: Compiler, tester et diagnostiquer avec le Validateur
+description: Compiler, tester et diagnostiquer avec le Validateur, à la main
 agent: validateur
 ---
-Compile et teste en suivant la procédure connue (récapitulatif du Codeur,
-procédure du Documentaliste, sinon `tests/build_clavier_windows.md` et
-`tests/host/run_host_tests.ps1`). Garde les logs hors de la conversation et rends
-le rapport de diagnostic avec l'agent suivant :
+Détermine le niveau de validation (grille `docs/harness/niveaux-validation.md`
+depuis le diff, plancher éventuel indiqué ci-dessous), compile et teste en suivant
+la procédure connue. Garde les logs hors de la conversation et rends le rapport
+au format du Validateur :
 
 $ARGUMENTS

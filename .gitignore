@@ -13,6 +13,7 @@
 # Configuration des agents Kilo (l'état d'Agent Manager reste ignoré)
 !.kilo/agent/**
 !.kilo/command/**
+!.kilo/skill/**
 !.kilo/setup-script.ps1
 
 !3D/Instrument.3dm
