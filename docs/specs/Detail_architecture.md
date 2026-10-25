@@ -5,6 +5,8 @@ Simple matrice de 80 touches géré par un pico 2. Les évènements “touches p
 8 switch de la matrice permettent de gérer la transposition et d’autres actions de contôle. 30 leds RGB indiquent diverses informations relative à ce qui se passe. 
 Possibilité d’envoyer du midi (usb et midi din), et d’en recevoir (à interpréter puis à transférer à la moitié "moteur"). Le Clavier expose aussi un journal diagnostic texte sur le port série virtuel USB CDC du périphérique composite, à lire avec PuTTY.
 
+**Keycodes et altérations (ADR-0026).** Les touches de contrôle du Clavier portent des keycodes : transpositions `T_*`, modificateurs d'altération maintenus `A_b` (position 74) et `A_d` (position 75), `UNTRANSPOSE` (73), `MAINT` (84), `GET_UID` (sans position). L'altération ne bascule la racine de la note pressée qu'à l'appui d'une note alors que le modificateur est maintenu ; un appui seul du modificateur n'émet rien. La liste complète, avec effets, positions et ADR, est dans `docs/specs/keycodes.md`.
+
 Moitié “Moteur” 
 
 24 Volt IN - 20 A max avec le HLG-480 Routé aux 49 solénoïdes, 2A à 3A (à définir avec les prototypes), 24V par unité, bobine confectionnée sur mesure et aimant 

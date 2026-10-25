@@ -21,16 +21,15 @@ typedef enum {
     KEYCODE_UNTRANSPOSE,
 } keycode_kind_t;
 
+// ADR-0026 : deux directions d'altération, portées par des modificateurs
+// maintenus (bémol / dièse). Les cinq anciens codes par racine disparaissent.
 typedef enum {
-    KEYCODE_ALTERATION_DO = 0,
-    KEYCODE_ALTERATION_RE,
-    KEYCODE_ALTERATION_MI,
-    KEYCODE_ALTERATION_FA,
-    KEYCODE_ALTERATION_SOL,
-    KEYCODE_ALTERATION_LA,
-    KEYCODE_ALTERATION_SI,
-    KEYCODE_ALTERATION_COUNT,
+    KEYCODE_ALTERATION_B = 0,
+    KEYCODE_ALTERATION_D = 1,
 } keycode_alteration_t;
+
+// Nombre de racines naturelles : l'état d'altération est indexé par racine.
+#define KEYCODE_ALTERATION_ROOT_COUNT 7u
 
 typedef struct {
     keycode_kind_t kind;
@@ -41,8 +40,8 @@ typedef struct {
     int16_t global_semitones;
     int16_t left_octaves;
     int16_t right_octaves;
-    uint8_t alteration_state[KEYCODE_ALTERATION_COUNT];
-    uint32_t alteration_change[KEYCODE_ALTERATION_COUNT];
+    uint8_t alteration_state[KEYCODE_ALTERATION_ROOT_COUNT];
+    uint32_t alteration_change[KEYCODE_ALTERATION_ROOT_COUNT];
     uint32_t change_counter;
 } keycode_state_t;
 
@@ -230,7 +229,12 @@ bool keycode_is_behavior(keycode_t keycode);
 void keycode_press(keycode_state_t *state, keycode_t keycode);
 int16_t keycode_transposition_for_position(const keycode_state_t *state, uint8_t position);
 int8_t keycode_alteration_for_note(const keycode_state_t *state, uint8_t base_midi_note);
-uint8_t keycode_alteration_state(const keycode_state_t *state, keycode_t keycode);
+// ADR-0026 : bascule l'état d'altération de la racine dérivée de la note.
+// direction = KEYCODE_ALTERATION_B ou _D ; root_index = index de la racine
+// naturelle dans la table ; new_state = nouvel état (0, 1 ou 2).
+bool keycode_alteration_toggle(keycode_state_t *state, uint8_t direction,
+                               uint8_t base_midi_note, uint8_t *root_index,
+                               uint8_t *new_state);
 const char *keycode_name(keycode_t keycode);
 
 #endif

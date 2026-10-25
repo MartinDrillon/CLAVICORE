@@ -72,3 +72,17 @@ if ($LASTEXITCODE -ne 0) { throw "Compilation hote (diag_out) en echec" }
 
 & $exe5
 if ($LASTEXITCODE -ne 0) { throw "Tests hote (diag_out) en echec" }
+
+# Resolution d'alteration a deux modificateurs maintenus (ADR-0026).
+$exe6 = Join-Path $out "test_keycode_alteration.exe"
+& gcc -std=c11 -Wall -Wextra -Werror -pedantic `
+    -I (Join-Path $root "firmware\clavier\src") `
+    (Join-Path $PSScriptRoot "test_keycode_alteration.c") `
+    (Join-Path $root "firmware\clavier\src\keycode.c") `
+    (Join-Path $root "firmware\clavier\src\keymap.c") `
+    (Join-Path $root "firmware\clavier\src\note_state.c") `
+    -o $exe6
+if ($LASTEXITCODE -ne 0) { throw "Compilation hote (alteration) en echec" }
+
+& $exe6
+if ($LASTEXITCODE -ne 0) { throw "Tests hote (alteration) en echec" }
