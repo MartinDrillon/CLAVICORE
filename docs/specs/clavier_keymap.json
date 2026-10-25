@@ -5,10 +5,14 @@
     "position_id": "Identifiant canonique 1-84 utilisé partout (electrical_matrix, physical_layout, keymap). C'est la clé de jonction entre le scan matriciel et le keymap.",
     "unused_positions": [
       61,
-      72
+      72,
+      81,
+      82,
+      83
     ],
     "corrections_appliquees_a_la_generation": [
-      "T_OctupD / T_OctdownD : la position 72 (listée dans le .txt source comme affectée) a été retirée de leur scope, car le tableau POSITION PHYSIQUE mis à jour la marque XX (inutilisée). A corriger également dans le .txt source pour rester cohérent."
+      "T_OctupD / T_OctdownD : la position 72 (listee dans le .txt source comme affectee) a ete retiree de leur scope, car le tableau POSITION PHYSIQUE mis a jour la marque XX (inutilisee). A corriger egalement dans le .txt source pour rester coherent.",
+      "ADR-0026 : la position 73 porte UNTRANSPOSE (la base_layer listait par derive A_do). Les positions 81, 82, 83 (anciens A_si/A_la/A_sol) sont desormais libres ; le .txt source est mis a jour en consequence."
     ],
     "decisions_validees": [
       "Les bornes MIDI [0,127] sont appliquées par clamp après les altérations (A_) et les transpositions (T_).",
@@ -17,7 +21,7 @@
       "Une note déjà active n'est pas modifiée rétroactivement par un changement d'état T_/A_ ; seules les prochaines pressions utilisent le nouvel état.",
       "T_GlobUp et T_GlobDown existent comme comportements mais ne sont pas assignés dans le keymap actuel.",
       "La position 84 porte le code MAINT (mode maintenance), pas une alteration : la poussee maintenance est en polarite inverse du jeu normal, tenue jusqu'au relachement et coupee a 20 s (ADR-0006, ADR-0012).",
-      "L'alteration A_fa n'est plus assignee a aucune position : elle n'a pas ete deplacee (ADR-0006 s1)."
+      "ADR-0026 : l'alteration est portee par deux modificateurs maintenus, A_b (bemol) en 74 et A_d (diese) en 75. Les cinq anciens codes par racine (A_do/A_re/A_mi/A_fa/A_sol/A_la/A_si) disparaissent."
     ]
   },
   "gpio": {
@@ -746,17 +750,14 @@
       "69": "N_la3",
       "70": "N_si3",
       "71": "N_dod3",
-      "73": "A_do",
-      "74": "A_re",
-      "75": "A_mi",
+      "73": "UNTRANSPOSE",
+      "74": "A_b",
+      "75": "A_d",
       "76": "T_GlobUp",
       "77": "T_OctdownG",
       "78": "T_OctupG",
       "79": "T_OctupD",
       "80": "T_OctdownD",
-      "81": "A_si",
-      "82": "A_la",
-      "83": "A_sol",
       "84": "MAINT"
     }
   },
@@ -963,7 +964,7 @@
       }
     },
     "alteration": {
-      "description": "Codes A_. Cycle a 3 etats par code (0=base,1,2,retour a 0). L'etat 2 se calcule TOUJOURS depuis l'etat de base (pas depuis l'etat 1). Conflit entre codes actifs sur une meme note : dernier changement d'etat prime.",
+      "description": "ADR-0026 : deux modificateurs maintenus, A_b (bemol, -1 demi-ton) et A_d (diese, +1 demi-ton). L'appui ou le relachement du modificateur seul ne produit ni note MIDI ni changement d'alteration ; la bascule a lieu a l'appui d'une touche NOTE alors que le modificateur est deja enfonce. Une note deja tenue n'est ni modifiee ni rejouee ; son Note Off reste la note memorisee a l'appui.",
       "pitch_classes": {
         "do": 0,
         "dod": 1,
@@ -978,46 +979,33 @@
         "lad": 10,
         "si": 11
       },
-      "cycle_length": 3,
       "bounds_midi": [
         0,
         127
       ],
-      "rule_by_state": {
+      "root_resolution": {
+        "natural": "Si p (classe de hauteur de la note) est naturelle {do,re,mi,fa,sol,la,si} : racine r = p.",
+        "diese": "A_d : touche noire p -> r = p - 1 (mod 12), la naturelle sous la note.",
+        "bemol": "A_b : touche noire p -> r = p + 1 (mod 12), la naturelle au-dessus."
+      },
+      "state_toggle": {
         "0": "Keymap de base, aucune modification.",
-        "1": "becarre(root) -> +1 demi-ton (devient diese) ; diese(root+1) -> -1 demi-ton (devient becarre) ; bemol(root-1) -> inchange.",
-        "2": "Calcule depuis l'etat de base : becarre(root) -> -1 demi-ton (devient bemol) ; bemol(root-1) -> +1 demi-ton (devient becarre) ; diese(root+1) -> inchange.",
-        "3": "= etat 0 (le cycle boucle)."
+        "1": "Echange diese {r, r+1} : becarre(root) -> +1 demi-ton ; diese(root+1) -> -1 demi-ton.",
+        "2": "Echange bemol {r, r-1} : becarre(root) -> -1 demi-ton ; bemol(root-1) -> +1 demi-ton.",
+        "rule": "Bascule a deux etats : un appui applique l'etat cible (1 pour A_d, 2 pour A_b) ; un appui sur la meme cible ramene la racine a 0. L'horodatage est actualise a chaque appui, meme lors du retour a 0."
       },
       "conflict_resolution": "last_state_change_wins",
+      "resolution_order": "La note est calculee apres la bascule, puis la transposition est appliquee, puis bornage [0,127].",
       "codes": {
-        "A_do": {
-          "root_pitch_class": "do",
-          "keymap_position": 73
-        },
-        "A_re": {
-          "root_pitch_class": "re",
+        "A_b": {
+          "direction": "bemol",
+          "semitone": -1,
           "keymap_position": 74
         },
-        "A_mi": {
-          "root_pitch_class": "mi",
+        "A_d": {
+          "direction": "diese",
+          "semitone": 1,
           "keymap_position": 75
-        },
-        "A_fa": {
-          "root_pitch_class": "fa",
-          "keymap_position": null
-        },
-        "A_sol": {
-          "root_pitch_class": "sol",
-          "keymap_position": 83
-        },
-        "A_la": {
-          "root_pitch_class": "la",
-          "keymap_position": 82
-        },
-        "A_si": {
-          "root_pitch_class": "si",
-          "keymap_position": 81
         }
       }
     },

@@ -18,6 +18,11 @@
 #include "usb_log.h"
 
 typedef struct {
+    uint8_t position;
+    bool pressed;
+} matrix_event_t;
+
+typedef struct {
     keycode_state_t keycode;
     note_state_t notes;
     uint32_t last_note_event_ms;
@@ -27,6 +32,15 @@ typedef struct {
     uint8_t maintenance_position;
     uint8_t maintenance_midi_note;
     uint32_t maintenance_started_ms;
+    // ADR-0026 : modificateurs d'altération maintenus (hors keycode_state_t,
+    // que UNTRANSPOSE remet à zéro). seq départage B et D : le dernier appui
+    // encore enfoncé gagne.
+    bool alteration_modifier_held[2];
+    uint32_t alteration_modifier_seq[2];
+    uint32_t alteration_modifier_counter;
+    // File d'un lot de scan, vidée après le poll (≤ MATRIX_KEY_COUNT).
+    matrix_event_t matrix_events[MATRIX_KEY_COUNT];
+    uint8_t matrix_event_count;
 } clavier_state_t;
 
 // Borne de la coupure EXPLICITE de la poussée maintenance envoyée par le Clavier
@@ -198,8 +212,57 @@ static void handle_maintenance_transition(clavier_state_t *state, uint8_t positi
     }
 }
 
+// ADR-0026 : le handler matriciel ne fait que mettre l'événement en file. Le
+// contrat matrix_scan_event_handler_t reste inchangé ; le lot est traité après
+// le poll dans un ordre déterministe (voir process_event_queue).
 static void handle_matrix_transition(uint8_t position, bool pressed, void *context) {
     clavier_state_t *state = context;
+
+    if (state == NULL || state->matrix_event_count >= MATRIX_KEY_COUNT) {
+        return;
+    }
+
+    state->matrix_events[state->matrix_event_count].position = position;
+    state->matrix_events[state->matrix_event_count].pressed = pressed;
+    ++state->matrix_event_count;
+}
+
+// Suivi de l'état maintenu d'un modificateur (B=0, D=1).
+static void update_alteration_modifier(clavier_state_t *state, uint8_t direction, bool pressed) {
+    if (state == NULL || direction >= 2u) {
+        return;
+    }
+
+    if (pressed) {
+        state->alteration_modifier_held[direction] = true;
+        state->alteration_modifier_seq[direction] = ++state->alteration_modifier_counter;
+    } else {
+        state->alteration_modifier_held[direction] = false;
+    }
+}
+
+// Direction active : parmi les modificateurs encore enfoncés, le dernier appuyé.
+static bool active_alteration_modifier(const clavier_state_t *state, uint8_t *direction) {
+    bool found = false;
+    uint32_t latest = 0u;
+
+    if (state == NULL || direction == NULL) {
+        return false;
+    }
+
+    for (uint8_t modifier = 0u; modifier < 2u; ++modifier) {
+        if (state->alteration_modifier_held[modifier] &&
+            state->alteration_modifier_seq[modifier] > latest) {
+            latest = state->alteration_modifier_seq[modifier];
+            *direction = modifier;
+            found = true;
+        }
+    }
+
+    return found;
+}
+
+static void process_matrix_event(clavier_state_t *state, uint8_t position, bool pressed) {
     const keycode_t keycode = keymap_keycode_for_position(position);
 
     if (keycode.kind == KEYCODE_NONE) {
@@ -207,6 +270,18 @@ static void handle_matrix_transition(uint8_t position, bool pressed, void *conte
         diag_out_printf_class(DIAG_CLASS_TRACE,
                               "[KEY] pos=%u behavior=unused state=%s\n", position,
                               pressed ? "pressed" : "released");
+#endif
+        return;
+    }
+
+    // ADR-0026 : les modificateurs B/D sont suivis dans tous les modes, mais
+    // aucune bascule d'altération n'a lieu en mode maintenance.
+    if (keycode.kind == KEYCODE_ALTERATION) {
+        update_alteration_modifier(state, keycode.value, pressed);
+#if CLAVIER_DIAG_TRACE
+        diag_out_printf_class(DIAG_CLASS_TRACE,
+                              "[KEY] pos=%u behavior=%s event=%s\n", position,
+                              keycode_name(keycode), pressed ? "pressed" : "released");
 #endif
         return;
     }
@@ -220,12 +295,40 @@ static void handle_matrix_transition(uint8_t position, bool pressed, void *conte
         uint8_t midi_note;
 
         if (pressed) {
+            uint8_t direction = 0u;
+            uint8_t root_index = 0u;
+            uint8_t new_state = 0u;
+#if CLAVIER_DIAG_TRACE
+            bool altered = false;
+#endif
+
+            // ADR-0026 §3 : la bascule a lieu AVANT la résolution de la note.
+            if (active_alteration_modifier(state, &direction)) {
+                if (!keycode_alteration_toggle(&state->keycode, direction, keycode.value,
+                                               &root_index, &new_state)) {
+                    diag_out_printf_class(DIAG_CLASS_ALWAYS,
+                                          "[KEY] pos=%u error=alteration_resolution\n", position);
+                    return;
+                }
+#if CLAVIER_DIAG_TRACE
+                altered = true;
+#endif
+            }
+
             if (!note_state_press(&state->notes, &state->keycode, position,
                                   keycode.value, &midi_note)) {
                 diag_out_printf_class(DIAG_CLASS_ALWAYS,
                                       "[KEY] pos=%u error=note_resolution\n", position);
                 return;
             }
+#if CLAVIER_DIAG_TRACE
+            if (altered) {
+                diag_out_printf_class(DIAG_CLASS_TRACE,
+                                      "[KEY] pos=%u mod=%s root=%u state=%u note=%u\n",
+                                      position, keycode_name(KEYCODE_ALTERATION_VALUE(direction)),
+                                      root_index, new_state, midi_note);
+            }
+#endif
             state->last_note_event_ms = to_ms_since_boot(get_absolute_time());
             (void)can_link_note_on(midi_note, MIDI_NOTE_VELOCITY);
             if (!midi_note_on(midi_note, MIDI_NOTE_VELOCITY)) {
@@ -257,8 +360,6 @@ static void handle_matrix_transition(uint8_t position, bool pressed, void *conte
     }
 
     // ADR-0006 §2 / ADR-0012 : bascule du mode maintenance, à l'appui seulement.
-    // Test au même niveau que GET_UID : imbriqué dans le bloc précédent, il était
-    // inatteignable et le mode maintenance ne pouvait jamais être activé.
     if (keycode.kind == KEYCODE_MAINTENANCE_TOGGLE) {
         if (pressed) {
             handle_maintenance_toggle(state);
@@ -269,21 +370,50 @@ static void handle_matrix_transition(uint8_t position, bool pressed, void *conte
     if (pressed) {
         keycode_press(&state->keycode, keycode);
     }
-    if (keycode.kind == KEYCODE_ALTERATION) {
-#if CLAVIER_DIAG_TRACE
-        diag_out_printf_class(DIAG_CLASS_TRACE,
-                              "[KEY] pos=%u behavior=%s state=%u event=%s\n", position,
-                              keycode_name(keycode),
-                              keycode_alteration_state(&state->keycode, keycode),
-                              pressed ? "pressed" : "released");
-#endif
-        return;
-    }
 #if CLAVIER_DIAG_TRACE
     diag_out_printf_class(DIAG_CLASS_TRACE,
                           "[KEY] pos=%u behavior=%s event=%s\n", position,
                           keycode_name(keycode), pressed ? "pressed" : "released");
 #endif
+}
+
+// Catégorie de tri d'un événement dans un lot (ADR-0026 §5) : 0 = appui
+// modificateur, 1 = autre appui, 2 = relâchement.
+static bool matrix_event_in_pass(const clavier_state_t *state, uint8_t index, uint8_t pass) {
+    const matrix_event_t *event = &state->matrix_events[index];
+
+    if (pass == 0u) {
+        return event->pressed &&
+               keymap_keycode_for_position(event->position).kind == KEYCODE_ALTERATION;
+    }
+    if (pass == 1u) {
+        return event->pressed &&
+               keymap_keycode_for_position(event->position).kind != KEYCODE_ALTERATION;
+    }
+    return !event->pressed;
+}
+
+// Vide la file du lot : modificateurs, autres appuis, relâchements, chacun par
+// position croissante. Un modificateur relâché dans le lot compte donc encore
+// comme maintenu pour les notes appuyées dans ce même lot.
+static void process_event_queue(clavier_state_t *state) {
+    if (state == NULL) {
+        return;
+    }
+
+    for (uint8_t pass = 0u; pass < 3u; ++pass) {
+        for (uint8_t position = 1u; position <= KEYMAP_POSITION_COUNT; ++position) {
+            for (uint8_t index = 0u; index < state->matrix_event_count; ++index) {
+                if (state->matrix_events[index].position != position ||
+                    !matrix_event_in_pass(state, index, pass)) {
+                    continue;
+                }
+                process_matrix_event(state, position, state->matrix_events[index].pressed);
+            }
+        }
+    }
+
+    state->matrix_event_count = 0u;
 }
 
 int main(void) {
@@ -314,6 +444,7 @@ int main(void) {
         midi_task();
         usb_log_task();
         matrix_scan_poll(handle_matrix_transition, &state);
+        process_event_queue(&state);
         sleep_us(215);
     }
 }
