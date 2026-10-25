@@ -5,14 +5,15 @@ Document de référence pour le **Codeur** et le **Validateur**, issu des
 et [ADR-0014](../adr/adr-0014-limites-activation-pilotees-profil-clavier-derogation-invariant-4.md)
 (statut `Accepted`, 2026-10-21), de
 [ADR-0019](../adr/adr-0019-phase-impact-impulsion-courte-avant-pull.md)
-(`Accepted`, 2026-10-22), qui ajoute la phase **IMPACT** et passe le format en
-**v2**, puis d'[ADR-0023](../adr/adr-0023-synchronisation-profil-reprise-verification-etat.md)
+(`Accepted`, 2026-10-22), qui ajoute la phase **IMPACT**, d'[ADR-0023](../adr/adr-0023-synchronisation-profil-reprise-verification-etat.md)
 (`Accepted`, 2026-10-24), qui rend la synchronisation robuste aux pertes
 transitoires, et d'[ADR-0024](../adr/adr-0024-reveil-solenoides-permanent-diagnostic-refus.md)
-(`Accepted`, 2026-10-24), qui rend le réveil initial définitif.
+(`Accepted`, 2026-10-24), qui rend le réveil initial définitif. L'amendement
+ADR-0014 du 2026-10-25 supprime les maxima de durée `*_max_us` : format **v3**.
 
-> **Statut de ce document (2026-10-24).** La v2 (ADR-0019), la synchronisation
-> robuste d'ADR-0023 et le verrou de réveil d'ADR-0024 sont **implémentés** et
+> **Statut de ce document (2026-10-25).** Format **v3** (54 octets) : la durée
+> de chaque phase est seule autorité, sans plafond de durée. Les synchronisations
+> d'ADR-0023 et le verrou de réveil d'ADR-0024 sont **implémentés** et
 > **validés par compilation et tests hôte** ; les **validations matérielles**
 > restent à faire. Voir
 > [`validation-adr-0023-25-2026-10-24.md`](./validation-adr-0023-25-2026-10-24.md).
@@ -59,8 +60,7 @@ IDLE --(note on)--> IMPACT (impact_duration_us, impact_duty_pct)
   montée de courant ; elle est suivie du PULL à duty réduit.
 - `pull_duration_us` conserve sa sémantique : durée du **seul** segment PULL, dont
   le timer redémarre à la fin d'IMPACT. La durée totale à courant élevé est
-  `impact_duration_us + pull_duration_us` (bornée par
-  `impact_max_us + pull_max_us`).
+  `impact_duration_us + pull_duration_us`, sans plafond.
 - `impact_duration_us == 0` désactive la phase (Note On → PULL directement).
 - Un Note Off pendant IMPACT va directement en RELEASE (pas de passage par PULL).
 - MAINTENANCE (ADR-0012) et PROBE (ADR-0009) ne passent **pas** par IMPACT.
@@ -80,45 +80,44 @@ Aucun réveil périodique, reset automatique ou rejeu de note n'est associé à 
 délai. Les valeurs de phases/duty/maxima ne changent pas ; détail :
 [`impact-adr-0024.md`](./impact-adr-0024.md).
 
-## 2. Payload canonique v2 (66 octets, little-endian)
+## 2. Payload canonique v3 (54 octets, little-endian)
 
 Sérialisation champ par champ, sans `memcpy` de structure. Offsets du payload
-tel qu'il circule dans les `PROFILE_CHUNK` et tel qu'il est stocké en flash. La
-v2 insère les trois champs `impact_*` **après `pwm_freq_hz`**, ce qui décale de
-9 octets tous les champs suivants par rapport à la v1.
+tel qu'il circule dans les `PROFILE_CHUNK` et tel qu'il est stocké en flash.
+24 champs ; `format_version` est en tête.
 
 | Off. | Champ | Type | Unité | Valeur initiale |
 |---|---|---|---|---|
-| 0 | `format_version` | u8 | — | 2 |
+| 0 | `format_version` | u8 | — | 3 |
 | 1 | `pwm_freq_hz` | u32 | Hz | 20 000 |
 | 5 | `impact_duration_us` | u32 | µs | 800 |
 | 9 | `impact_duty_pct` | u8 | % | 100 |
-| 10 | `impact_max_us` | u32 | µs | 2 000 |
-| 14 | `pull_duration_us` | u32 | µs | 15 000 |
-| 18 | `pull_duty_pct` | u8 | % | 50 |
-| 19 | `pull_max_us` | u32 | µs | 50 000 |
-| 23 | `hold_duty_pct` | u8 | % | 25 |
-| 24 | `hold_duty_max_pct` | u8 | % | 25 |
-| 25 | `hold_max_ms` | u32 | ms | 20 000 |
-| 29 | `release_duration_us` | u32 | µs | 5 000 |
-| 33 | `release_duty_pct` | u8 | % | 50 |
-| 34 | `probe_duration_us` | u32 | µs | 5 000 |
-| 38 | `probe_duty_pct` | u8 | % | 20 |
-| 39 | `probe_max_us` | u32 | µs | 10 000 |
-| 43 | `probe_duty_max_pct` | u8 | % | 20 |
-| 44 | `maint_duty_pct` | u8 | % | 50 |
-| 45 | `maint_duty_max_pct` | u8 | % | 100 |
-| 46 | `maint_max_ms` | u32 | ms | 20 000 |
-| 50 | `maint_min_rest_ms` | u32 | ms | 2 000 |
-| 54 | `min_rest_ms` | u32 | ms | 10 |
-| 58 | `dir_safety_delay_us` | u16 | µs | 200 |
-| 60 | `wake_delay_us` | u16 | µs | 2 000 |
-| 62 | `dir_level_pull` | u8 | 0/1 | 0 |
-| 63 | `dir_level_release` | u8 | 0/1 | 1 |
-| 64 | `dir_level_maint` | u8 | 0/1 | 1 (`= dir_level_release`) |
-| 65 | `duty_max_pct` | u8 | % | 100 |
+| 10 | `pull_duration_us` | u32 | µs | 15 000 |
+| 14 | `pull_duty_pct` | u8 | % | 50 |
+| 15 | `hold_duty_pct` | u8 | % | 25 |
+| 16 | `hold_duty_max_pct` | u8 | % | 25 |
+| 17 | `hold_max_ms` | u32 | ms | 20 000 |
+| 21 | `release_duration_us` | u32 | µs | 5 000 |
+| 25 | `release_duty_pct` | u8 | % | 50 |
+| 26 | `probe_duration_us` | u32 | µs | 5 000 |
+| 30 | `probe_duty_pct` | u8 | % | 20 |
+| 31 | `probe_duty_max_pct` | u8 | % | 20 |
+| 32 | `maint_duty_pct` | u8 | % | 50 |
+| 33 | `maint_duty_max_pct` | u8 | % | 100 |
+| 34 | `maint_max_ms` | u32 | ms | 20 000 |
+| 38 | `maint_min_rest_ms` | u32 | ms | 2 000 |
+| 42 | `min_rest_ms` | u32 | ms | 10 |
+| 46 | `dir_safety_delay_us` | u16 | µs | 200 |
+| 48 | `wake_delay_us` | u16 | µs | 2 000 |
+| 50 | `dir_level_pull` | u8 | 0/1 | 0 |
+| 51 | `dir_level_release` | u8 | 0/1 | 1 |
+| 52 | `dir_level_maint` | u8 | 0/1 | 1 (`= dir_level_release`) |
+| 53 | `duty_max_pct` | u8 | % | 100 |
 
-Identité du profil : `profile_tag32` = CRC32 du payload (66 octets), polynôme
+Les durées de phase (`impact_`, `pull_`, `release_`, `probe_duration_us`) n'ont
+pas de maximum associé : la valeur du profil est appliquée telle quelle.
+
+Identité du profil : `profile_tag32` = CRC32 du payload (54 octets), polynôme
 `0xEDB88320`, init `0xFFFFFFFF`, xorout `0xFFFFFFFF`.
 
 > **Valeurs initiales** : ce tableau donne les valeurs du **fichier Clavier**
@@ -136,16 +135,18 @@ rejette le profil **en bloc** ; l'ancien profil reste actif ; jamais d'écrêtag
 | Règle | Code d'erreur |
 |---|---|
 | duties `0..100 %` ; `hold_duty_pct <= hold_duty_max_pct` ; `maint_duty_pct <= maint_duty_max_pct` ; `probe_duty_pct <= probe_duty_max_pct` ; `duty_max_pct >=` chaque duty de phase (y compris `impact_duty_pct`) | `SOLENOID_PROFILE_ERR_DUTY` |
-| `pull_duration_us <= pull_max_us` ; `probe_duration_us <= probe_max_us` ; `impact_duration_us <= impact_max_us` | `SOLENOID_PROFILE_ERR_CONSISTENCY` |
 | `dir_level_pull != dir_level_release` ; niveaux ∈ {0,1} | `SOLENOID_PROFILE_ERR_DIR` |
 | `pwm_freq_hz ∈ [1, 100 000]` | `SOLENOID_PROFILE_ERR_PWM` |
 | durées en ms `<= 4 000 000` (conversion µs `u32`) | `SOLENOID_PROFILE_ERR_DURATION` |
-| version connue et longueur exacte (66) | `SOLENOID_PROFILE_ERR_VERSION` / `ERR_LENGTH` |
+| version connue et longueur exacte (54) | `SOLENOID_PROFILE_ERR_VERSION` / `ERR_LENGTH` |
+
+`SOLENOID_PROFILE_ERR_CONSISTENCY` (code 5) n'est plus émis : il ne subsiste
+dans l'énumération que pour compatibilité de numérotation. Aucune durée de phase
+n'est comparée à un maximum.
 
 `impact_duration_us == 0` est **valide** : il désactive la phase. Il n'y a pas de
 plafond de duty de phase propre à IMPACT (le plafond global `duty_max_pct`
-s'applique, comme pour PULL et RELEASE). `impact_max_us` est un plafond de
-**cohérence**, pas une limite de sécurité (ADR-0014).
+s'applique, comme pour PULL et RELEASE).
 
 Deux contrôles **fonctionnels de mesure** restent côté Moteur, car ils dépendent
 de la fenêtre d'échantillonnage ADC (`firmware/moteur/src/ipropi_selftest.h`) :
@@ -179,11 +180,11 @@ Un profil qui échoue l'un de ces deux contrôles est refusé avec
         v
 [3] Auto-test IPROPI demandé (bouton Moteur 3 s -> 0x402, ou commande locale)
     start_selftest_request() :
-      a. encode(k_solenoid_profile) -> 66 octets + CRC32 ; tag attendu figé
+      a. encode(k_solenoid_profile) -> 54 octets + CRC32 ; tag attendu figé
       b. jusqu'à 3 tentatives COMPLETES (ADR-0023), timeout 1000 ms avant
          auto-test / 2000 ms en réglage :
            - nouveau transfer_id (1..255), même payload et même CRC32
-           - diffuse PROFILE_BEGIN (0x420), 11 x PROFILE_CHUNK (0x421),
+           - diffuse PROFILE_BEGIN (0x420), 9 x PROFILE_CHUNK (0x421),
              PROFILE_COMMIT (0x422)
            - attend PROFILE_STATUS des cartes présentes
            - toutes confirmées          -> succès, tente 0x401
@@ -242,12 +243,17 @@ Le détail de la machine d'état, des compteurs et des logs est dans
 avant auto-test, 2 000 ms en réglage) et la fenêtre de sonde de 500 ms sont
 conservés.
 
-**Transition v1 → v2 (ADR-0019).** Un Moteur reflashé en v2 ne relit pas les
-enregistrements flash v1 (version et longueur) : au premier boot après reflash,
-il joue avec les **valeurs de repli** (`source = DEFAULTS`, IMPACT désactivé) et
-le Clavier le signale `PROFILE_FALLBACK_IN_USE`. Le premier transfert explicite
-(auto-test ou `p send`) écrit un enregistrement v2 et active la phase IMPACT. Un
-Moteur resté en v1 rejette un profil v2 avec `UNSUPPORTED_VERSION` (7).
+**Transition vers v3 (amendement ADR-0014, 2026-10-25).** Un Moteur reflashé en
+v3 ne relit pas les enregistrements flash v1 ni v2 (version, longueur) : au premier
+boot, il joue avec les **valeurs de repli** (`source = DEFAULTS`) et le Clavier
+le signale `PROFILE_FALLBACK_IN_USE`. Le premier transfert explicite (auto-test
+ou `p send`) écrit un enregistrement v3. Un Moteur resté en v2 répond
+`UNSUPPORTED_VERSION` (7) au COMMIT, et le Clavier journalise « version de profil
+non supportee … (profil v3 requis) ».
+Le Clavier décode uniquement le v3 : un payload v2 (66 octets, `data[0] = 2`)
+est refusé au décodage. Le journal CDC affiche `fmt=` sur la ligne de profil
+actif (Moteur `[moteur] profil actif fmt=…`, Clavier `[PROFILE] actif fmt=…`) et
+sur `[PROFILE] sync ok … fmt=…` : `fmt=3` attendu partout.
 
 ## 5. Persistance flash (Moteur)
 
@@ -259,18 +265,18 @@ Moteur resté en v1 rejette un profil v2 avec `UNSUPPORTED_VERSION` (7).
   | Off. | Champ | Type | Remarque |
   |---|---|---|---|
   | 0..3 | `magic` | u32 | `'CVPF'` (`0x46505643`) |
-  | 4..5 | `format_version` | u16 | 2 (ADR-0019 ; 1 avant) |
-  | 6..7 | `header_size` | u16 | 32 |
-  | 8..9 | `payload_len` | u16 | 66 |
+   | 4..5 | `format_version` | u16 | 3 (ADR-0014 amendée ; 2 avant, 1 avant) |
+   | 6..7 | `header_size` | u16 | 32 |
+   | 8..9 | `payload_len` | u16 | 54 |
   | 10..11 | `reserved` | u16 | 0 |
   | 12..15 | `seq` | u32 | monotone croissant |
   | 16..19 | `crc32` | u32 | CRC32 du payload seul |
   | 20..31 | `reserved` | — | 0 |
 
-* Le payload (66 octets) suit l'en-tête. Au boot, le Moteur lit les deux slots,
-  ignore ceux dont le magic, la version, la longueur ou le CRC sont invalides,
-  et applique le `seq` le plus élevé. Aucun slot valide -> valeurs de repli
-  (`source = DEFAULTS`).
+* Le payload (54 octets) suit l'en-tête. Au boot, le Moteur lit les deux slots,
+  ignore ceux dont le magic, la version (`SOLENOID_PROFILE_FLASH_VERSION` = 3), la
+  longueur ou le CRC sont invalides, et applique le `seq` le plus élevé. Aucun
+  slot valide -> valeurs de repli (`source = DEFAULTS`).
 * Écriture : toujours **hors IRQ**, depuis la boucle principale, tous canaux
   IDLE. Effacer le slot au `seq` le plus faible, programmer `seq + 1`, relire et
   vérifier, puis appliquer en RAM. Le slot au `seq` le plus élevé reste intact
@@ -297,9 +303,9 @@ auto-test (ou un `p send`, ADR-0015).
 
 Le firmware Moteur n'impose plus aucune fenêtre thermique : les coupures HOLD et
 MAINTENANCE, les plafonds de duty et les repos utilisent les valeurs du profil.
-Un profil cohérent mais dangereux est obéi. Depuis ADR-0019, la fenêtre à pleine
-puissance du jeu normal s'allonge de `impact_max_us` : la même règle s'applique,
-aucune borne fixe n'est ajoutée. La sécurité repose sur la relecture humaine du
+Un profil cohérent mais dangereux est obéi. Les durées de phase (IMPACT, PULL,
+RELEASE, PROBE) ne sont plafonnées par aucun champ : la durée du profil fait foi
+et est appliquée telle quelle. La sécurité repose sur la relecture humaine du
 fichier de réglage, les essais au banc et la trace du profil actif
 (`profile_tag32`, journal CDC). Une protection matérielle de dernier recours
 (fusible, limitation de courant du DRV8874) est recommandée mais hors périmètre
@@ -322,8 +328,7 @@ Sans matériel :
 * Valeurs de profil optimales au banc (PULL, HOLD, PROBE, polarités).
 * **Phase IMPACT (ADR-0019)** : effet mécanique et acoustique réel, montée de
   courant mesurée (IPROPI/oscilloscope), valeur utile de `impact_duration_us`,
-  et intérêt de `impact_max_us` au-delà de 2 000 µs. Aucune validation
-  matérielle.
+  et la valeur utile de `impact_duration_us`. Aucune validation matérielle.
 
 Dette et compléments identifiés par la validation (2026-10-21) :
 
@@ -335,41 +340,26 @@ Dette et compléments identifiés par la validation (2026-10-21) :
 
 ## 9. État validé
 
-* **v1 (ADR-0013/ADR-0014) — validée le 2026-10-21**, compilation + tests hôte
-  (260 vérifications, 0 échec), aucune validation matérielle :
+* **v3 (amendement ADR-0014, 2026-10-25) — validée par compilation et tests hôte**
+  (575 vérifications, 0 échec ; aucune validation matérielle) :
 
-  ```powershell
-  powershell -File tests\host\run_host_tests.ps1     # 260 verifications, 0 echec (exit 0)
-  cmake --build "build/moteur"                        # -> build/moteur/moteur.elf, exit 0
-  cmake --build "build/clavier"                       # -> build/clavier/clavier.uf2, exit 0
-  ```
-
-  Empreinte : Moteur text 37 800 o / bss 6 612 o ; Clavier text 72 200 o /
-  bss 11 088 o ; `__flash_binary_end` = `0x100083A8` (≈ 33,6 Ko).
+  - Moteur : text 39 396 o / bss 6 680 o ; Clavier : text 89 992 o / bss 11 940 o.
+  - Contrôle d'entrée : les champs `impact_max_us`, `pull_max_us` et
+    `probe_max_us` n'existent plus dans le profil, le format partagé ni la
+    console (`p set impact_max_us|pull_max_us|probe_max_us` : champ inconnu).
+    La table de réglage compte **24** champs ; `p set pull_duration_us 60000`
+    est accepté.
+  - Valeurs `hold_max_ms`, `maint_max_ms`, `min_rest_ms`, `maint_min_rest_ms`,
+    `*_duty_max_pct` et `duty_max_pct` inchangées.
 
 * **v2 (ADR-0019) — implémentée et validée le 2026-10-22** (compilation + tests
-  hôte, aucune validation matérielle) :
-
-  ```powershell
-  powershell -File tests\host\run_host_tests.ps1   # 356 + 19 verifications, 0 echec (exit 0)
-  cmake --build "build/moteur"                     # -> build/moteur/moteur.elf, exit 0
-  cmake --build "build/clavier"                    # -> build/clavier/clavier.uf2, exit 0
-  ```
-
-  Contrôles complémentaires : recompilation **forcée** des unités modifiées
-  (suppression des `.obj`) → 0 erreur / 0 avertissement ; passe stricte
-  `-Wall -Wextra -Wpedantic` sur `shared/protocol/solenoid_profile.c`,
-  `firmware/clavier/src/profile_tuning.c` et
-  `firmware/moteur/src/solenoid_driver.c` → 0 avertissement ; vérification
-  **indépendante** du layout binaire v2 (programme hôte jetable) :
-  `WIRE_SIZE=66`, `FORMAT_VERSION=2`, `FLASH_VERSION=2`, ordre
-  `version → pwm → impact_duration → impact_duty → impact_max → pull_duration`
-  conforme octet par octet (offsets 0..17).
+  hôte, aucune validation matérielle) : remplacée par la v3. Historique : 356 + 19
+  vérifications hôte.
 
   **Non couvert** (validation matérielle à faire) : machine à états
   `solenoid_driver.c` (IMPACT→PULL, Note Off pendant IMPACT, durée 0 → PULL),
-  store flash Moteur (rejet d'un slot v1), transfert `0x420`–`0x423` sur
-  11 chunks, et effet physique d'IMPACT.
+  store flash Moteur (rejet d'un slot v2 ou v1), transfert `0x420`–`0x423` sur
+  9 chunks, et effet physique d'IMPACT.
 
 **ADR-0023 (synchronisation robuste, implémentée, validée hôte 2026-10-24).**
 La synchronisation à trois tentatives et la réconciliation NVM sont en place et
@@ -404,7 +394,6 @@ masquée par le gcc hôte).
    aligner le repli sur 50, ou corriger la documentation sur 100 ?
 4. **Protection matérielle de dernier recours** (fusible, limitation de courant
    DRV8874) recommandée par ADR-0014 IMP-010 : aucune décision prise.
-5. **Plage d'IMPACT au banc** : ADR-0019 fixe `impact_max_us = 2000`. Si la
-   mesure de `τ` montre qu'une impulsion plus longue est nécessaire, le plafond
-   est réglable à chaud ; faut-il néanmoins une valeur par défaut plus large
-   (3 000–5 000 µs) une fois `τ` connu ?
+5. **Plage d'IMPACT au banc** : la durée `impact_duration_us` n'a plus de
+   plafond (amendement ADR-0014 du 2026-10-25). Faut-il néanmoins documenter une
+   plage de réglage recommandée une fois `τ` mesuré ?

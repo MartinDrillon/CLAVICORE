@@ -1,5 +1,11 @@
 # Impact ADR-0019 — phase IMPACT avant PULL (profil v2)
 
+> **Note (2026-10-25).** Ce document décrit la mise en œuvre initiale (v2). Le
+> format courant est la **v3** (54 octets, 9 chunks, version flash 3) : les
+> champs `impact_max_us`, `pull_max_us` et `probe_max_us` mentionnés ci-dessous
+> ont été supprimés (amendement ADR-0014 du 2026-10-25). Référence à jour :
+> [`profil-solenoides.md`](./profil-solenoides.md) §2.
+
 Note de référence pour le **Codeur** et le **Validateur**. Elle liste, fichier
 par fichier, ce qu'il faut revoir parce que
 [ADR-0019](../adr/adr-0019-phase-impact-impulsion-courte-avant-pull.md)

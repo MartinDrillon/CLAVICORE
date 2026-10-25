@@ -39,13 +39,14 @@ ADR-0005,
   encore en polarité **PULL** et bornée à **10 s**, et le keycode `MAINT`
   (position 84) est inatteignable. Détail et liste des fichiers :
   [`impact-adr-0012.md`](impact-adr-0012.md).
-- **Profil d'activation (ADR-0013, ADR-0014 ; ADR-0019 : phase IMPACT, format v2 — implémenté et validé 2026-10-22 ; ADR-0023 : synchronisation robuste — implémentée, validée hôte 2026-10-24, matériel en attente)** :
+- **Profil d'activation (ADR-0013, ADR-0014 ; ADR-0019 : phase IMPACT ; amendement ADR-0014 2026-10-25 : format v3, sans maxima de durée ; ADR-0023 : synchronisation robuste — implémentée, validée hôte 2026-10-24, matériel en attente)** :
   le profil des solénoïdes est réglé dans un fichier unique côté Clavier,
   transmis aux cartes Moteur par les trames `PROFILE_*` (`0x420`–`0x423`) au
   lancement de l'auto-test IPROPI, puis persisté en flash côté Moteur (deux
   secteurs A/B). Toutes les limites deviennent des données du profil ; plus
   aucune enveloppe thermique n'est figée dans le firmware Moteur (dérogation à
-  l'invariant 4). ADR-0023 ajoute **trois tentatives complètes au maximum** et
+  l'invariant 4). La durée de chaque phase est seule autorité : aucun maximum de
+  durée n'est transmis ni contrôlé. ADR-0023 ajoute **trois tentatives complètes au maximum** et
   une **réconciliation finale sur le tag NVM** ; elle ne change aucune trame.
   Détail : [`profil-solenoides.md`](profil-solenoides.md) et
   [`impact-adr-0023.md`](impact-adr-0023.md) ; listes des fichiers :
@@ -303,15 +304,15 @@ L'affichage journal tronque à 2 décimales : `delta = 1030` donne `6.00` et
 #### `PROFILE_BEGIN` — ID `0x420`, DLC 8
 
 Émetteur : **Clavier** vers diffusion. Ouvre le transfert du profil
-d'activation (ADR-0013 §3 ; format v2 et phase IMPACT : ADR-0019).
+d'activation (ADR-0013 §3 ; format v3 : ADR-0014 amendée 2026-10-25).
 
 | Octet | Nom | Valeurs / remarques |
 |---|---|---|
 | 0 | `proto_version` | version du protocole |
-| 1 | `format_version` | `2` (payload de 66 octets, ADR-0019) |
+| 1 | `format_version` | `3` (payload de 54 octets) |
 | 2 | `transfer_id` | `1..255`, incrémenté à chaque tentative ; `0` réservé à l'annonce de boot |
 | 3 | `flags` | bit 0 = `1` (profil global) ; bits 1..7 = 0 |
-| 4..5 | `payload_len` | u16 LE, `66` pour v2 |
+| 4..5 | `payload_len` | u16 LE, `54` pour v3 |
 | 6 | `chunk_size` | `6` |
 | 7 | `reserved` | `0` |
 
@@ -322,10 +323,10 @@ d'activation (ADR-0013 §3 ; format v2 et phase IMPACT : ADR-0019).
 | Octet | Nom | Valeurs / remarques |
 |---|---|---|
 | 0 | `transfer_id` | recopie du `PROFILE_BEGIN` |
-| 1 | `seq` | `0..10`, croissant, sans trou |
+| 1 | `seq` | `0..8`, croissant, sans trou |
 | 2..7 | `data[6]` | 6 octets du payload canonique |
 
-Payload de 66 octets ⇒ **11 chunks** (11×6). Un chunk orphelin (pas de
+Payload de 54 octets ⇒ **9 chunks** (9×6). Un chunk orphelin (pas de
 `BEGIN` actif, `transfer_id` inconnu, `seq` inattendu ou dupliqué) est ignoré et
 compté, jamais appliqué partiellement.
 
@@ -336,15 +337,16 @@ compté, jamais appliqué partiellement.
 | Octet | Nom | Valeurs / remarques |
 |---|---|---|
 | 0 | `proto_version` | version du protocole |
-| 1 | `format_version` | `2` |
+| 1 | `format_version` | `3` |
 | 2 | `transfer_id` | recopie du `PROFILE_BEGIN` |
 | 3 | `reserved` | `0` |
 | 4..7 | `crc32` | CRC32 u32 LE du payload canonique |
 
-Le Moteur vérifie : transfert actif, chunks `0..10` reçus une seule fois,
-longueur exacte, CRC, version supportée, contrôles structurels et contrôles de
+Le Moteur vérifie : transfert actif, chunks `0..8` reçus une seule fois,
+longueur exacte, CRC, version supportée (`3`), contrôles structurels et contrôles de
 mesure. En cas d'échec, il **conserve le profil actif** et répond avec le code
-d'erreur correspondant : aucun écrêtage, aucune application partielle.
+d'erreur correspondant : aucun écrêtage, aucune application partielle. Un payload
+v2 (`format_version = 2`, 66 octets) reçoit `UNSUPPORTED_VERSION` (7).
 
 #### `PROFILE_STATUS` — ID `0x423`, DLC 8
 
@@ -369,7 +371,7 @@ Règles :
   cartes présentes ne sont pas confirmées, le Clavier **n'émet pas** `0x401` et
   signale `PROFILE_SYNC_FAILED` ;
 - depuis ADR-0023, une opération comporte au maximum **trois tentatives
-  complètes** (`BEGIN` + 11 `CHUNK` + `COMMIT`), chacune avec un nouveau
+  complètes** (`BEGIN` + 9 `CHUNK` + `COMMIT`), chacune avec un nouveau
   `transfer_id` mais le même payload et le même CRC32 ;
 - un acquittement direct n'est valide que si `uid_tag` désigne une carte
   attendue, `result = OK` et `profile_tag32` est le tag attendu. Un
@@ -388,7 +390,7 @@ Règles :
   réconciliation de **toutes** les cartes attendues ; aucune divergence n'est
   corrigée en silence ;
 - aucune trame existante n'est modifiée : `CAN_PROTO_VERSION` reste `1` ;
-- le payload canonique (66 octets) et le format flash Moteur sont décrits dans
+- le payload canonique (54 octets) et le format flash Moteur sont décrits dans
   [`profil-solenoides.md`](profil-solenoides.md) ; l'état détaillé et les tests
   sont dans [`impact-adr-0023.md`](impact-adr-0023.md).
 
@@ -548,9 +550,10 @@ Deux secteurs de 4 Kio en fin de flash :
 `slot A = PICO_FLASH_SIZE_BYTES - 2 * 4096`, `slot B = ... - 4096`.
 
 En-tête de 32 octets : `magic` `'CVPF'` (`0x46505643`), `format_version` u16
-(`2`), `header_size` u16 (`32`), `payload_len` u16 (`66`), `reserved` u16,
+(`3`), `header_size` u16 (`32`), `payload_len` u16 (`54`), `reserved` u16,
 `seq` u32 monotone, `crc32` u32 (payload seul), `reserved[12]`. Le payload
-canonique (66 octets, ADR-0019) suit l'en-tête.
+canonique (54 octets, amendement ADR-0014 2026-10-25) suit l'en-tête. Un slot v1
+ou v2 est ignoré.
 
 Au boot, le Moteur applique le slot valide de `seq` le plus élevé ; aucun slot
 valide → valeurs de repli compilées (`source = DEFAULTS`). Écriture hors IRQ,

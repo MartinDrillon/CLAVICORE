@@ -122,10 +122,8 @@ static solenoid_profile_t make_profile(void) {
     p.pwm_freq_hz = 20000u;
     p.impact_duration_us = 800u;
     p.impact_duty_pct = 100u;
-    p.impact_max_us = 2000u;
     p.pull_duration_us = 15000u;
     p.pull_duty_pct = 50u;
-    p.pull_max_us = 50000u;
     p.hold_duty_pct = 25u;
     p.hold_duty_max_pct = 25u;
     p.hold_max_ms = 20000u;
@@ -133,7 +131,6 @@ static solenoid_profile_t make_profile(void) {
     p.release_duty_pct = 50u;
     p.probe_duration_us = 5000u;
     p.probe_duty_pct = 20u;
-    p.probe_max_us = 10000u;
     p.probe_duty_max_pct = 20u;
     p.maint_duty_pct = 50u;
     p.maint_duty_max_pct = 100u;
@@ -188,7 +185,6 @@ int main(void) {
     type("p set pwm_freq_hz 25000\n");       // verrouille
     type("p set champ_inconnu 1\n");
     type("p set pull_duty_pct 300\n");       // hors u8
-    type("p set pull_duration_us 60000\n");  // > pull_max_us
     type("p set\n");
     CHECK(g_send_count == 3);
 
@@ -232,16 +228,13 @@ int main(void) {
         CHECK(g_send_count == 1 && g_last_sent.pull_duty_pct == 60u);
     }
 
-    puts("--- IMPACT (ADR-0019) : reglable, coherence impact_duration <= impact_max");
+    puts("--- IMPACT (ADR-0019) : reglable, la duree est seule autorite (ADR-0014)");
     reset();
     type("p set impact_duration_us 1200\n");
     CHECK(g_send_count == 1 && g_last_sent.impact_duration_us == 1200u);
     reset();
-    type("p set impact_duration_us 2500\n");  // > impact_max_us par defaut (2000)
-    CHECK(g_send_count == 0);
-    reset();
-    type("p set impact_max_us 4000 impact_duration_us 3000\n");
-    CHECK(g_send_count == 1 && g_last_sent.impact_duration_us == 3000u);
+    type("p set impact_duration_us 2500\n");  // accepte : plus de plafond de duree
+    CHECK(g_send_count == 1 && g_last_sent.impact_duration_us == 2500u);
     reset();
     type("p set impact_duration_us 0\n");  // desactive la phase
     CHECK(g_send_count == 1 && g_last_sent.impact_duration_us == 0u);

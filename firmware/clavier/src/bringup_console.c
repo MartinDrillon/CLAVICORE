@@ -105,8 +105,9 @@ static void profile_show(void) {
     const solenoid_profile_t *active = can_link_profile_active();
     const size_t changed = profile_tuning_diff_count(active, can_link_profile_compiled());
 
-    diag_out_printf("[PROFILE] actif tag=0x%08lX (%u champ(s) differe(nt) du fichier compile)\n",
-           (unsigned long)solenoid_profile_tag(active), (unsigned)changed);
+    diag_out_printf("[PROFILE] actif fmt=%u tag=0x%08lX (%u champ(s) differe(nt) du fichier compile)\n",
+           (unsigned)SOLENOID_PROFILE_FORMAT_VERSION, (unsigned long)solenoid_profile_tag(active),
+           (unsigned)changed);
     for (size_t i = 0u; i < profile_tuning_field_count(); ++i) {
         print_field_line(active, i);
     }

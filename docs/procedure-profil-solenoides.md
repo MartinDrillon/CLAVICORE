@@ -2,9 +2,10 @@
 
 Procédure à l'usage des humains et des agents (Codeur, Validateur), issue des
 [ADR-0013](../adr/adr-0013-profil-activation-solenoides-centralise-clavier.md),
-[ADR-0014](../adr/adr-0014-limites-activation-pilotees-profil-clavier-derogation-invariant-4.md),
+[ADR-0014](../adr/adr-0014-limites-activation-pilotees-profil-clavier-derogation-invariant-4.md)
+(amendement du 2026-10-25 : format **v3**, sans maxima de durée),
 [ADR-0019](../adr/adr-0019-phase-impact-impulsion-courte-avant-pull.md)
-(phase IMPACT, format v2) et
+(phase IMPACT) et
 [ADR-0023](../adr/adr-0023-synchronisation-profil-reprise-verification-etat.md)
 (synchronisation robuste : implémentée, validée hôte 2026-10-24, matériel en attente).
 Elle couvre : modifier le profil, compiler, flasher, propager aux cartes Moteur,
@@ -18,8 +19,8 @@ Trames : [`specs/CAN.md`](./specs/CAN.md). Fichiers à revoir :
 
 > **Règle d'or** : un seul fichier de réglage,
 > `firmware/clavier/src/solenoid_profile_config.h`. Les cartes Moteur ne sont
-> **plus** reflashées pour ajuster un paramètre — **sauf la mise à jour unique
-> qui introduit la phase IMPACT (ADR-0019)**, à faire une fois sur les 5 cartes.
+> **plus** reflashées pour ajuster un paramètre — **sauf la mise à jour de
+> format (v3, §5.2)**, à faire une fois sur les 5 cartes.
 > Après modification, il faut **flasher le Clavier puis propager** : auto-test
 > IPROPI ou réglage à chaud à la console (ADR-0015).
 
@@ -30,8 +31,8 @@ Trames : [`specs/CAN.md`](./specs/CAN.md). Fichiers à revoir :
 * Dossiers `build/clavier` et `build/moteur` configurés une fois par poste.
 * Pour un premier déploiement (firmware Moteur modifié) : sonde CMSIS-DAP,
   carte alimentée, **24 V coupé ou solénoïdes débranchés pendant le flash**.
-* Pour la mise à jour IMPACT (ADR-0019) : les **5** cartes Moteur et le Clavier
-  doivent passer en v2 **ensemble** (voir §5).
+* Format v3 : les **5** cartes Moteur et le Clavier doivent être en v3
+  **ensemble** (voir §5.2).
 
 ## 2. Le fichier de réglage
 
@@ -43,7 +44,7 @@ par défaut ; **ce ne sont plus des bornes**, ADR-0014) :
 // Après modification : flasher le Clavier, puis propager (auto-test ou console).
 // Le profil est transmis aux cartes Moteur et persisté en flash (ADR-0013).
 // Aucune enveloppe de sécurité n'est imposée par le firmware Moteur (ADR-0014).
-// Depuis ADR-0019 (format v2) : phase IMPACT avant PULL.
+// Format v3 (ADR-0014 amendée) : phase IMPACT avant PULL, sans maxima de durée.
 #ifndef CLAVIER_SOLENOID_PROFILE_CONFIG_H
 #define CLAVIER_SOLENOID_PROFILE_CONFIG_H
 
@@ -53,10 +54,8 @@ static const solenoid_profile_t k_solenoid_profile = {
     .pwm_freq_hz = 20000u,            // porteuse PWM, au-dessus du domaine audible
     .impact_duration_us = 800u,       // IMPACT : impulsion 100 % très courte (ADR-0019)
     .impact_duty_pct = 100u,
-    .impact_max_us = 2000u,           // plafond de cohérence de l'impulsion
     .pull_duration_us = 15000u,       // PULL : attraction, après IMPACT
     .pull_duty_pct = 50u,
-    .pull_max_us = 50000u,            // plafond opératoire du PULL
     .hold_duty_pct = 25u,             // HOLD : maintien jusqu'au note off
     .hold_duty_max_pct = 25u,
     .hold_max_ms = 20000u,            // coupure de sécurité du HOLD
@@ -64,7 +63,6 @@ static const solenoid_profile_t k_solenoid_profile = {
     .release_duty_pct = 50u,
     .probe_duration_us = 5000u,       // PROBE : auto-test IPROPI
     .probe_duty_pct = 20u,
-    .probe_max_us = 10000u,
     .probe_duty_max_pct = 20u,
     .maint_duty_pct = 50u,            // MAINTENANCE : poussée inverse tenue
     .maint_duty_max_pct = 100u,
@@ -96,9 +94,8 @@ static const solenoid_profile_t k_solenoid_profile = {
      `maint_duty_pct <= maint_duty_max_pct`, `probe_duty_pct <=
      probe_duty_max_pct`, et `duty_max_pct >=` chaque duty, y compris
      `impact_duty_pct` ;
-   * `pull_duration_us <= pull_max_us`, `probe_duration_us <= probe_max_us`,
-     **`impact_duration_us <= impact_max_us`** ;
    * polarités `dir_level_pull != dir_level_release` ; durées en ms ≤ 4 000 000.
+   * Aucune durée de phase n'est plafonnée : la valeur saisie est appliquée telle quelle.
 3. Contrôler le bon sens physique (ADR-0014 : **aucune borne ne vous arrête**) :
    une durée ou un duty trop élevé peut détruire une bobine ou un driver.
    `impact_duration_us = 0` désactive la phase IMPACT.
@@ -106,20 +103,20 @@ static const solenoid_profile_t k_solenoid_profile = {
 ## 4. Régler à chaud (ADR-0015 D1)
 
 Sans recompiler : la console PuTTY du Clavier modifie le profil actif et le
-propage. Les trois champs IMPACT sont réglables comme les autres.
+propage. Les champs IMPACT sont réglables comme les autres.
 
 ```
 p set impact_duration_us 1000
-p set impact_max_us 5000 impact_duration_us 3000   // en une seule ligne
-p diff                                              // lignes à recopier dans le .h
+p set impact_duration_us 3000 pull_duration_us 60000   // plusieurs champs, une seule ligne
+p diff                                                  // lignes à recopier dans le .h
 ```
 
 Procédure détaillée (PuTTY, refus, échecs d'acquittement, persistance) :
 [`../tests/phase3b_profil_tuning.md`](../tests/phase3b_profil_tuning.md).
 
-## 5. Compiler, flasher, mettre à jour en v2
+## 5. Compiler, flasher, mettre à jour en v3
 
-### 5.1 Réglage ordinaire (profil v2 déjà en place)
+### 5.1 Réglage ordinaire (profil v3 déjà en place)
 
 ```powershell
 powershell -File tests\host\run_host_tests.ps1 *> "build\host_tests.log"   # 0 échec
@@ -129,7 +126,7 @@ cmake --build "build/clavier" *> "build\clavier\build.log"                 # -> 
 Copier `build/clavier/clavier.uf2` sur le Pico 2 en mode BOOTSEL. **Ne pas
 reflasher les cartes Moteur** pour un simple ajustement de valeur.
 
-### 5.2 Mise à jour unique IMPACT (ADR-0019) — Clavier + 5 cartes
+### 5.2 Mise à jour de format v3 — Clavier + 5 cartes
 
 ```powershell
 cmake --build "build/moteur" *> "build\moteur\build.log"                   # -> moteur.elf
@@ -138,12 +135,12 @@ cmake --build "build/clavier"                                              # -> 
 ```
 
 Puis, sous tension, **propager** (auto-test ou `p send`, §6). Attendu avant la
-première propagation : les cartes annoncent `source = DEFAULTS` (les slots v1 ne
-sont plus relus) et le Clavier signale `PROFILE_FALLBACK_IN_USE` ; la phase IMPACT
-est alors **inactive**. Elle s'active après le premier transfert v2.
+première propagation : les cartes annoncent `source = DEFAULTS` (les slots v1 et
+v2 ne sont plus relus) et le Clavier signale `PROFILE_FALLBACK_IN_USE`.
 
-Une carte restée en v1 rejette le profil v2 : `PROFILE_STATUS result=7`
-(`UNSUPPORTED_VERSION`) → la reflasher.
+Une carte restée en v2 rejette le profil v3 : `PROFILE_STATUS result=7`
+(`UNSUPPORTED_VERSION`) → la reflasher. Le Clavier journalise « version de profil
+non supportee … (profil v3 requis) ».
 
 ## 6. Propager et vérifier
 
@@ -152,14 +149,15 @@ Une carte restée en v1 rejette le profil v2 : `PROFILE_STATUS result=7`
    * `[STATUS] code=PROFILE_DIVERGENT` : les cartes ont un profil différent du
      Clavier — normal après un changement, tant qu'aucune propagation n'a eu lieu ;
    * `[STATUS] code=PROFILE_FALLBACK_IN_USE` : une carte n'a pas de profil
-     persistant valide (flash effacée ou slot v1) et joue avec les valeurs de repli.
+     persistant valide (flash effacée ou slot v1/v2) et joue avec les valeurs de repli.
 3. Propager : **bouton Moteur maintenu 3 s** (auto-test) ou `p send` (console).
-4. Le Clavier diffuse le profil v2 (66 o, 11 chunks), au plus **trois fois** en
+4. Le Clavier diffuse le profil v3 (54 o, 9 chunks), au plus **trois fois** en
    cas de perte (ADR-0023), puis, en auto-test, `0x401` seulement après
    confirmation de toutes les cartes attendues.
    Attendu :
    * pas de `PROFILE_SYNC_FAILED` ;
    * les `PROFILE_STATUS` de toutes les cartes présentes sont OK ;
+   * les lignes `profil actif fmt=3` (Moteur) et `[PROFILE] sync ok … fmt=3` (Clavier) ;
    * l'auto-test se déroule normalement (bitmap, `[SELFTEST]`).
 5. Rejouer une note et vérifier le comportement attendu. Mesure IMPACT : à
    l'oscilloscope sur le canal PWM, on doit voir une marche courte à
@@ -190,43 +188,27 @@ Une carte restée en v1 rejette le profil v2 : `PROFILE_STATUS result=7`
 |---|---|
 | `PROFILE_SYNC_FAILED` au test | après ADR-0023, une perte transitoire est reprise automatiquement ; l'échec final n'intervient qu'après trois tentatives et la sonde (ancien firmware, carte absente, bus durable). Un **refus terminal** (`BUSY`, `INVALID_FIELD`, `FLASH_ERROR`, `UNSUPPORTED_VERSION`) ou une divergence OK échoue immédiatement, sans reprise ni sonde. Aucun `0x401` n'est émis. |
 | `[PROFILE] sync reprise essai=…` | perte transitoire détectée : reprise automatique dans la même commande. Une occurrence isolée n'est pas une panne ; des reprises répétées imposent l'analyse du bus. |
-| `PROFILE_STATUS result=7` | version de profil non supportée : carte Moteur restée en v1 → reflasher (ADR-0019). |
-| `PROFILE_STATUS result=4` | profil incohérent ou incompatible avec la mesure (fenêtre ADC/PROBE). |
+| `PROFILE_STATUS result=7` | version de profil non supportée : carte Moteur en v1 ou v2 → reflasher (format v3). |
+| `PROFILE_STATUS result=4` | profil incohérent (duty, polarité, PWM) ou incompatible avec la mesure (fenêtre ADC/PROBE). |
 | `PROFILE_STATUS result=6` | échec d'écriture flash Moteur (secteurs réservés ou `__flash_binary_end`). |
-| `PROFILE_FALLBACK_IN_USE` persistant | la flash Moteur n'a jamais reçu de profil valide (ou slot v1) ; vérifier la position des slots et lancer une propagation. |
+| `PROFILE_FALLBACK_IN_USE` persistant | la flash Moteur n'a jamais reçu de profil valide (ou slot v1/v2) ; vérifier la position des slots et lancer une propagation. |
 | Le comportement ne change pas | le profil n'est appliqué qu'à une propagation explicite : auto-test après le flash Clavier, ou `p send`. |
-| PAS d'impulsion IMPACT observée | carte Moteur non reflashée en v2, ou `impact_duration_us = 0`, ou profil non propagé (repli `DEFAULTS`). |
+| PAS d'impulsion IMPACT observée | carte Moteur non reflashée en v3, ou `impact_duration_us = 0`, ou profil non propagé (repli `DEFAULTS`). |
+| `champ inconnu` sur `p set impact_max_us` / `pull_max_us` / `probe_max_us` | attendu : ces champs n'existent plus (v3). |
 
 ## 10. État validé
 
-* **v1 (ADR-0013/ADR-0014) — validée le 2026-10-21**, compilation + tests hôte
-  (260 vérifications, 0 échec) :
+* **v3 (amendement ADR-0014, 2026-10-25) — validée par compilation et tests hôte**
+  (575 vérifications, 0 échec ; validation matérielle à faire) :
 
   ```powershell
-  powershell -File tests\host\run_host_tests.ps1   # 260 verifications, 0 echec (exit 0)
+  powershell -File tests\host\run_host_tests.ps1   # 575 verifications, 0 echec (exit 0)
   cmake --build "build/moteur"                     # -> build/moteur/moteur.elf, exit 0
   cmake --build "build/clavier"                    # -> build/clavier/clavier.uf2, exit 0
   ```
 
+  - Empreinte : Moteur text 39 396 o / bss 6 680 o ; Clavier text 89 992 o / bss 11 940 o.
   - Pour forcer la recompilation des unités touchées (Ninja affiche sinon
     `no work to do`), supprimer leurs `.obj` sous `build/<cible>/CMakeFiles/`.
-  - Passe d'avertissements stricts sur les unités modifiées : rejouer la commande
-    de `build/moteur/build.ninja` en retirant `-o`, `-MF`, `-MT` et en ajoutant
-    `-Wall -Wextra -fsyntax-only`.
-  - Empreinte : Moteur text 37 800 o / bss 6 612 o ; Clavier text 72 200 o /
-    bss 11 088 o ; `__flash_binary_end` = `0x100083A8` (≈ 33,6 Ko).
-
-* **v2 (ADR-0019) — implémentée et validée le 2026-10-22** (compilation + tests
-  hôte ; validation matérielle à faire) :
-
-  ```powershell
-  powershell -File tests\host\run_host_tests.ps1   # 356 + 19 verifications, 0 echec
-  cmake --build "build/moteur"                     # -> build/moteur/moteur.elf
-  cmake --build "build/clavier"                    # -> build/clavier/clavier.uf2
-  ```
-
-  Passe stricte `-Wall -Wextra -Wpedantic` propre sur les unités modifiées ;
-  layout v2 (66 o, 11 chunks) vérifié octet par octet. Mesure au banc d'IMPACT
-  à faire : `tests/phase3b_profil_tuning.md` §2.4.
 
 Validation **matérielle** non acquise (voir `specs/profil-solenoides.md` §8).

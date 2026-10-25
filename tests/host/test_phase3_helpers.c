@@ -882,10 +882,8 @@ static solenoid_profile_t make_profile(void) {
     p.pwm_freq_hz = 20000u;
     p.impact_duration_us = 800u;
     p.impact_duty_pct = 100u;
-    p.impact_max_us = 2000u;
     p.pull_duration_us = 15000u;
     p.pull_duty_pct = 100u;
-    p.pull_max_us = 50000u;
     p.hold_duty_pct = 25u;
     p.hold_duty_max_pct = 25u;
     p.hold_max_ms = 20000u;
@@ -893,7 +891,6 @@ static solenoid_profile_t make_profile(void) {
     p.release_duty_pct = 50u;
     p.probe_duration_us = 5000u;
     p.probe_duty_pct = 20u;
-    p.probe_max_us = 10000u;
     p.probe_duty_max_pct = 20u;
     p.maint_duty_pct = 50u;
     p.maint_duty_max_pct = 100u;
@@ -916,7 +913,7 @@ static void test_solenoid_profile_codec(void) {
     solenoid_profile_t decoded = {0};
     solenoid_profile_t bad;
 
-    CHECK(SOLENOID_PROFILE_WIRE_SIZE == 66u);
+    CHECK(SOLENOID_PROFILE_WIRE_SIZE == 54u);
     CHECK(solenoid_profile_validate(&profile) == SOLENOID_PROFILE_OK);
     CHECK(solenoid_profile_encode(&profile, wire, sizeof(wire)) == SOLENOID_PROFILE_WIRE_SIZE);
     CHECK(wire[0] == SOLENOID_PROFILE_FORMAT_VERSION);
@@ -925,6 +922,20 @@ static void test_solenoid_profile_codec(void) {
     CHECK(solenoid_profile_encode(&decoded, wire2, sizeof(wire2)) == SOLENOID_PROFILE_WIRE_SIZE);
     CHECK(memcmp(wire, wire2, sizeof(wire)) == 0);
     CHECK(solenoid_profile_tag(&profile) == solenoid_profile_crc32(wire, sizeof(wire)));
+
+    // Amendement ADR-0014 : wire v3 = 54 octets, format_version = 3, et
+    // pull_duration_us decode depuis [10..13] (15000 = 0x00003A98).
+    CHECK(wire[0] == 3u);
+    CHECK(wire[10] == 0x98u && wire[11] == 0x3Au && wire[12] == 0x00u && wire[13] == 0x00u);
+    CHECK(decoded.pull_duration_us == 15000u);
+    // Un payload v2 (66 octets, format_version = 2) est refuse.
+    {
+        uint8_t v2[66];
+
+        memset(v2, 0, sizeof(v2));
+        v2[0] = 2u;
+        CHECK(!solenoid_profile_decode(v2, sizeof(v2), &decoded));
+    }
 
     CHECK(!solenoid_profile_decode(wire, sizeof(wire) - 1u, &decoded));
     wire[0] = 99u;  // version inconnue
@@ -940,8 +951,8 @@ static void test_solenoid_profile_codec(void) {
     bad.hold_duty_pct = 60u;
     CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_DUTY);
     bad = profile;
-    bad.pull_duration_us = bad.pull_max_us + 1u;
-    CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_CONSISTENCY);
+    bad.pull_duration_us = 60000u;  // duree longue acceptee (ADR-0014)
+    CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_OK);
     bad = profile;
     bad.dir_level_pull = bad.dir_level_release;
     CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_DIR);
@@ -957,14 +968,15 @@ static void test_solenoid_profile_codec(void) {
     bad.impact_duty_pct = 101u;
     CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_DUTY);
     bad = profile;
-    bad.impact_duration_us = bad.impact_max_us + 1u;
-    CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_ERR_CONSISTENCY);
+    bad.impact_duration_us = 2500u;  // duree longue acceptee (ADR-0014)
+    CHECK(solenoid_profile_validate(&bad) == SOLENOID_PROFILE_OK);
 }
 
 static void test_solenoid_profile_codecs(void) {
     uint8_t data[8];
     can_profile_begin_t begin = {CAN_PROTO_VERSION, SOLENOID_PROFILE_FORMAT_VERSION, 3u,
-                                 CAN_PROFILE_FLAG_GLOBAL, 66u, CAN_PROFILE_CHUNK_SIZE, 0u};
+                                 CAN_PROFILE_FLAG_GLOBAL, SOLENOID_PROFILE_WIRE_SIZE,
+                                 CAN_PROFILE_CHUNK_SIZE, 0u};
     can_profile_begin_t begin_out = {0};
     can_profile_chunk_t chunk = {3u, 0u, {1u, 2u, 3u, 4u, 5u, 6u}};
     can_profile_chunk_t chunk_out = {0};
@@ -976,9 +988,10 @@ static void test_solenoid_profile_codecs(void) {
     can_profile_status_t status_out = {0};
 
     CHECK(can_encode_profile_begin(data, &begin) == CAN_PROTO_OK);
-    CHECK(data[2] == 3u && data[4] == 66u && data[6] == CAN_PROFILE_CHUNK_SIZE);
+    CHECK(data[2] == 3u && data[4] == SOLENOID_PROFILE_WIRE_SIZE &&
+          data[6] == CAN_PROFILE_CHUNK_SIZE);
     CHECK(can_decode_profile_begin(data, CAN_DLC_PROFILE_BEGIN, &begin_out) == CAN_PROTO_OK);
-    CHECK(begin_out.payload_len == 66u && begin_out.transfer_id == 3u);
+    CHECK(begin_out.payload_len == SOLENOID_PROFILE_WIRE_SIZE && begin_out.transfer_id == 3u);
     CHECK(can_decode_profile_begin(data, 4u, &begin_out) == CAN_PROTO_BAD_DLC);
     begin.chunk_size = 7u;
     CHECK(can_encode_profile_begin(data, &begin) == CAN_PROTO_BAD_VALUE);
@@ -1052,22 +1065,16 @@ static void test_profile_tuning(void) {
     // hold_duty_pct > hold_duty_max_pct : refus structurel, jamais écrêté.
     CHECK(profile_tuning_apply("hold_duty_pct 30", &p, &report) == PROFILE_TUNING_ERR_STRUCTURE);
     CHECK(p.hold_duty_pct == base.hold_duty_pct);
-    CHECK(profile_tuning_apply("pull_duration_us 60000", &p, &report) ==
-          PROFILE_TUNING_ERR_STRUCTURE);
-    CHECK(report.structure == SOLENOID_PROFILE_ERR_CONSISTENCY);
-    CHECK(profile_tuning_apply("pull_max_us 80000 pull_duration_us 60000", &p, &report) ==
-          PROFILE_TUNING_OK);
-    CHECK(p.pull_max_us == 80000u && p.pull_duration_us == 60000u);
+    // Duree longue acceptee : plus de plafond de duree (ADR-0014).
+    CHECK(profile_tuning_apply("pull_duration_us 60000", &p, &report) == PROFILE_TUNING_OK);
+    CHECK(p.pull_duration_us == 60000u);
 
-    // ADR-0019 : phase IMPACT réglable à chaud, cohérence impact_duration <= impact_max.
+    // ADR-0019 : phase IMPACT réglable à chaud ; la durée est seule autorité.
     p = base;
     CHECK(profile_tuning_apply("impact_duration_us 1200", &p, &report) == PROFILE_TUNING_OK);
-    CHECK(p.impact_duration_us == 1200u && p.impact_max_us == 2000u);
-    CHECK(profile_tuning_apply("impact_duration_us 2500", &p, &report) ==
-          PROFILE_TUNING_ERR_STRUCTURE);
-    CHECK(profile_tuning_apply("impact_max_us 4000 impact_duration_us 3000", &p, &report) ==
-          PROFILE_TUNING_OK);
-    CHECK(p.impact_duration_us == 3000u && p.impact_max_us == 4000u);
+    CHECK(p.impact_duration_us == 1200u);
+    CHECK(profile_tuning_apply("impact_duration_us 2500", &p, &report) == PROFILE_TUNING_OK);
+    CHECK(p.impact_duration_us == 2500u);
     CHECK(profile_tuning_apply("impact_duration_us 0", &p, &report) == PROFILE_TUNING_OK);
     CHECK(p.impact_duration_us == 0u);
     p = base;
@@ -1093,11 +1100,10 @@ static void test_profile_tuning(void) {
     (void)profile_tuning_describe(PROFILE_TUNING_ERR_LOCKED, &report, text, sizeof(text));
     CHECK(strstr(text, "probe_duration_us") != NULL && strstr(text, "auto-test") != NULL);
     {
-        static const char *const wanted[] = {"pull_duration_us", "pull_duty_pct", "pull_max_us",
+        static const char *const wanted[] = {"pull_duration_us", "pull_duty_pct",
                                               "hold_duty_pct",    "hold_duty_max_pct",
                                               "hold_max_ms",      "min_rest_ms",
-                                              "impact_duration_us", "impact_duty_pct",
-                                              "impact_max_us"};
+                                              "impact_duration_us", "impact_duty_pct"};
 
         for (size_t i = 0u; i < sizeof(wanted) / sizeof(wanted[0]); ++i) {
             CHECK(profile_tuning_find(wanted[i], &index));
@@ -1107,11 +1113,11 @@ static void test_profile_tuning(void) {
     }
 
     // Table : un champ par membre de la structure, valeurs lues avec la bonne largeur.
-    CHECK(profile_tuning_field_count() == 27u);
+    CHECK(profile_tuning_field_count() == 24u);
     CHECK(profile_tuning_find("dir_safety_delay_us", &index));
     CHECK(profile_tuning_field_value(&base, index) == 200u);
-    CHECK(profile_tuning_find("pull_max_us", &index));
-    CHECK(profile_tuning_field_value(&base, index) == 50000u);
+    CHECK(profile_tuning_find("hold_max_ms", &index));
+    CHECK(profile_tuning_field_value(&base, index) == 20000u);
     CHECK(!profile_tuning_find("nope", &index));
 
     // Mise en forme prête à recopier dans solenoid_profile_config.h.

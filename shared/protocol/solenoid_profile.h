@@ -18,6 +18,10 @@
 // ADR-0019 (v2) : ajoute la phase IMPACT (impulsion courte à duty élevé avant
 // PULL) avec trois champs `impact_*` insérés après `pwm_freq_hz`.
 //
+// Amendement ADR-0014 du 2026-10-25 (v3) : retire les trois plafonds de durée
+// redondants (`*_max_us`) ; la durée de chaque phase est seule autorité (plus
+// d'écrêtage ni de rejet « durée > max »). Le payload passe de 66 à 54 octets.
+//
 // Le Clavier et le Moteur partagent ce fichier. Toute évolution du format passe
 // par une nouvelle `SOLENOID_PROFILE_FORMAT_VERSION` et une ADR (invariant 5).
 #ifndef CLAVICORE_SOLENOID_PROFILE_H
@@ -29,11 +33,12 @@
 
 // --- Format du payload ------------------------------------------------------
 
-// Version du format canonique. `v2` = 66 octets, décrit ci-dessous (v1 = 57 octets).
-#define SOLENOID_PROFILE_FORMAT_VERSION 2u
+// Version du format canonique. `v3` = 54 octets, décrit ci-dessous (v2 = 66,
+// v1 = 57 octets).
+#define SOLENOID_PROFILE_FORMAT_VERSION 3u
 
-// Taille canonique du payload v2, en octets.
-#define SOLENOID_PROFILE_WIRE_SIZE 66u
+// Taille canonique du payload v3, en octets.
+#define SOLENOID_PROFILE_WIRE_SIZE 54u
 
 // Taille maximale admise par le récepteur (marge pour les versions futures).
 #define SOLENOID_PROFILE_WIRE_MAX 128u
@@ -49,9 +54,10 @@
 
 // `magic` little-endian des octets 'C','V','P','F'.
 #define SOLENOID_PROFILE_FLASH_MAGIC 0x46505643u
-// Version de l'enregistrement flash : 2 depuis ADR-0019 (payload v2). Un
-// enregistrement v1 n'est jamais relu par un firmware v2.
-#define SOLENOID_PROFILE_FLASH_VERSION 2u
+// Version de l'enregistrement flash : 3 depuis l'amendement ADR-0014 du
+// 2026-10-25 (payload v3). Un enregistrement v1 ou v2 n'est jamais relu par un
+// firmware v3 : le Moteur repart sur ses valeurs de repli.
+#define SOLENOID_PROFILE_FLASH_VERSION 3u
 // En-tête du slot : magic u32, version u16, header_size u16, payload_len u16,
 // reserved u16, seq u32, crc32 u32, reserved[12].
 #define SOLENOID_PROFILE_FLASH_HEADER_SIZE 32u
@@ -64,43 +70,38 @@
 // `format_version` en tête). Unités : µs pour IMPACT/PULL/RELEASE/PROBE et les
 // délais, ms pour HOLD/MAINTENANCE et les repos, % pour les duties, Hz pour la PWM.
 //
-// Layout du payload v2 (66 octets, little-endian) :
-//   [0]     format_version      u8
-//   [1..4]  pwm_freq_hz         u32
-//   [5..8]  impact_duration_us  u32
-//   [9]     impact_duty_pct     u8
-//   [10..13] impact_max_us      u32
-//   [14..17] pull_duration_us   u32
-//   [18]    pull_duty_pct       u8
-//   [19..22] pull_max_us        u32
-//   [23]    hold_duty_pct       u8
-//   [24]    hold_duty_max_pct   u8
-//   [25..28] hold_max_ms        u32
-//   [29..32] release_duration_us u32
-//   [33]    release_duty_pct    u8
-//   [34..37] probe_duration_us  u32
-//   [38]    probe_duty_pct      u8
-//   [39..42] probe_max_us       u32
-//   [43]    probe_duty_max_pct  u8
-//   [44]    maint_duty_pct      u8
-//   [45]    maint_duty_max_pct  u8
-//   [46..49] maint_max_ms       u32
-//   [50..53] maint_min_rest_ms  u32
-//   [54..57] min_rest_ms        u32
-//   [58..59] dir_safety_delay_us u16
-//   [60..61] wake_delay_us      u16
-//   [62]    dir_level_pull      u8
-//   [63]    dir_level_release   u8
-//   [64]    dir_level_maint     u8
-//   [65]    duty_max_pct        u8
+// Layout du payload v3 (54 octets, little-endian) :
+//   [0]     format_version       u8
+//   [1..4]  pwm_freq_hz          u32
+//   [5..8]  impact_duration_us   u32
+//   [9]     impact_duty_pct      u8
+//   [10..13] pull_duration_us    u32
+//   [14]    pull_duty_pct        u8
+//   [15]    hold_duty_pct        u8
+//   [16]    hold_duty_max_pct    u8
+//   [17..20] hold_max_ms         u32
+//   [21..24] release_duration_us u32
+//   [25]    release_duty_pct     u8
+//   [26..29] probe_duration_us   u32
+//   [30]    probe_duty_pct       u8
+//   [31]    probe_duty_max_pct   u8
+//   [32]    maint_duty_pct       u8
+//   [33]    maint_duty_max_pct   u8
+//   [34..37] maint_max_ms        u32
+//   [38..41] maint_min_rest_ms   u32
+//   [42..45] min_rest_ms         u32
+//   [46..47] dir_safety_delay_us u16
+//   [48..49] wake_delay_us       u16
+//   [50]    dir_level_pull       u8
+//   [51]    dir_level_release    u8
+//   [52]    dir_level_maint      u8
+//   [53]    duty_max_pct         u8
 typedef struct {
     uint32_t pwm_freq_hz;
     uint32_t impact_duration_us;
     uint8_t impact_duty_pct;
-    uint32_t impact_max_us;
     uint32_t pull_duration_us;
     uint8_t pull_duty_pct;
-    uint32_t pull_max_us;
     uint8_t hold_duty_pct;
     uint8_t hold_duty_max_pct;
     uint32_t hold_max_ms;
@@ -108,7 +109,6 @@ typedef struct {
     uint8_t release_duty_pct;
     uint32_t probe_duration_us;
     uint8_t probe_duty_pct;
-    uint32_t probe_max_us;
     uint8_t probe_duty_max_pct;
     uint8_t maint_duty_pct;
     uint8_t maint_duty_max_pct;
@@ -131,7 +131,7 @@ typedef enum {
     SOLENOID_PROFILE_ERR_VERSION,
     SOLENOID_PROFILE_ERR_LENGTH,
     SOLENOID_PROFILE_ERR_DUTY,        // duty > 100 % ou plafond < valeur opératoire
-    SOLENOID_PROFILE_ERR_CONSISTENCY, // durée > son propre plafond, etc.
+    SOLENOID_PROFILE_ERR_CONSISTENCY, // réservé : plus émis (plus de plafond de durée)
     SOLENOID_PROFILE_ERR_DIR,         // niveaux de polarité invalides
     SOLENOID_PROFILE_ERR_PWM,         // fréquence hors plage réalisable
     SOLENOID_PROFILE_ERR_DURATION,    // valeur en ms non convertible en µs u32

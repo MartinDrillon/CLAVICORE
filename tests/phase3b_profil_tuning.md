@@ -16,7 +16,7 @@ couvrable sans matériel : tout ce qui suit.
 ## Pré-requis
 
 - Clavier flashé (`build/clavier/clavier.uf2`, `CLAVIER_CDC_CONSOLE=ON`, défaut).
-- **Aucun reflash des cartes Moteur** : le firmware Moteur n'est pas modifié (D1) — **sauf** la mise à jour unique qui introduit la phase IMPACT (ADR-0019, format v2).
+- **Aucun reflash des cartes Moteur** : le firmware Moteur n'est pas modifié (D1) — **sauf** la mise à jour unique qui introduit la phase IMPACT (ADR-0019, format v3).
   Les cartes doivent toutefois avoir un firmware ADR-0013 (gestionnaire `PROFILE_*`).
 - PuTTY sur le port COM du CDC du Clavier. Terminal → **Local echo : Force on**,
   **Local line editing : Force on** (le Clavier ne renvoie pas les caractères).
@@ -30,7 +30,7 @@ couvrable sans matériel : tout ce qui suit.
 
 ## 1. Lecture
 
-1. `p show` → 27 lignes `.champ = Vu,` et le tag. 2. `p fields` → champs réglables
+1. `p show` → 24 lignes `.champ = Vu,` et le tag. 2. `p fields` → champs réglables
 et verrouillés (raison). 3. `p diff` → « aucune difference ».
 
 ## 2. Réglage et propagation
@@ -96,8 +96,9 @@ Règles pratiques :
   lance la diffusion, les suivantes sont refusées tant qu'elle dure
   (`operation CAN en cours`) et sont perdues.
 - **Mettre ensemble les champs liés** : `hold_duty_pct` ne peut pas dépasser
-  `hold_duty_max_pct`, ni `pull_duration_us` dépasser `pull_max_us`. Pour monter
-  l'un, envoyer l'autre dans la même ligne, sinon la ligne est refusée.
+  `hold_duty_max_pct`. Pour monter l'un, envoyer l'autre dans la même ligne,
+  sinon la ligne est refusée. Les durées (`impact/pull/probe_duration_us`) sont
+  en revanche appliquées telles quelles, sans plafond.
 - **Ne rien envoyer en jouant** : le réglage est refusé si une touche est tenue
   ou relâchée depuis moins de 0,5 s, et une carte dont un canal n'est pas au repos
   répond `BUSY`.
@@ -128,18 +129,18 @@ Règles pratiques :
 
 ### 2.4 Phase IMPACT (ADR-0019)
 
-Pré-requis : cartes Moteur reflashées en v2 (format 66 o). Sans ce reflash,
+Pré-requis : cartes Moteur reflashées en v3 (format 54 o). Sans ce reflash,
 l'impulsion n'existe pas et le transfert est rejeté (`result=7`).
 
 1. `p set impact_duration_us 1000` → `impact_duration_us 800 -> 1000`, puis
-   `sync ok but=reglage ...` (un seul verdict). Jouer une note : à l'oscilloscope sur le
-   canal PWM, impulsion à 100 % pendant 1 ms puis duty PULL.
-2. `p set impact_max_us 4000 impact_duration_us 3000` (une seule ligne) → OK.
-   `impact_duration_us = 3000` seul aurait été refusé (`impact_max_us = 2000`).
+   `sync ok but=reglage ... fmt=3 ...` (un seul verdict). Jouer une note : à
+   l'oscilloscope sur le canal PWM, impulsion à 100 % pendant 1 ms puis duty PULL.
+2. `p set impact_duration_us 3000` → appliqué sans plafond : `impact_duration_us
+   800 -> 3000`, puis `sync ok`.
 3. `p set impact_duty_pct 80` → impulsion à 80 % : comparer bruit et course.
 4. `p set impact_duration_us 0` → impulsion supprimée (départ direct en PULL).
-5. `p set impact_duration_us 2500` (sans toucher `impact_max_us`) → « profil
-   incoherent » (`impact_duration_us > impact_max_us`), rien n'est envoyé.
+5. `p set impact_max_us 4000` → `champ inconnu` (le champ n'existe plus), rien
+   n'est envoyé.
 6. `p diff` → les lignes `impact_*` à recopier dans le fichier.
 7. Mesurer au banc : courant de crête (IPROPI) et `τ` pour choisir la durée ;
    consigner la valeur retenue.

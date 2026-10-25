@@ -109,8 +109,8 @@ int main(void) {
     // l'appui long 3 s coupe ce test puis émet 0x402 dès que tous les canaux sont
     // revenus IDLE. Le clock-test 5 s reste accessible sur le même bouton.
     printf("[moteur] Livraison 1 prete. Etat canal0: %s\n", solenoid_state_name(last_state));
-    printf("[moteur] profil actif tag=0x%08lX source=%s\n",
-           (unsigned long)solenoid_profile_active_tag(),
+    printf("[moteur] profil actif fmt=%u tag=0x%08lX source=%s\n",
+           (unsigned)SOLENOID_PROFILE_FORMAT_VERSION, (unsigned long)solenoid_profile_active_tag(),
            solenoid_profile_active_source() == CAN_PROFILE_SOURCE_NVM ? "NVM" : "DEFAULTS");
 
     while (true) {

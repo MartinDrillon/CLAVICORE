@@ -1336,11 +1336,11 @@ static void handle_profile_status(const can_profile_status_t *status) {
                           (unsigned)position, (unsigned)status->result,
                           profile_result_name((uint8_t)status->result));
     if (status->result == CAN_PROFILE_RESULT_UNSUPPORTED_VERSION) {
-        // ADR-0019 : carte restée en v1 face à un profil v2 (result = 7).
+        // Amendement ADR-0014 : carte restée en v2 face à un profil v3 (result = 7).
         diag_out_printf_class(
             DIAG_CLASS_ALWAYS,
             "[PROFILE] pos=%u version de profil non supportee: reflasher la carte Moteur "
-            "(profil v2 requis)",
+            "(profil v3 requis)",
             (unsigned)position);
     }
 }
@@ -2588,12 +2588,12 @@ static void profile_sync_final_success(uint32_t first_ms) {
     diag_out_printf_class(
         DIAG_CLASS_NORMAL,
         "[PROFILE] sync ok but=%s duree=%lu ms tentatives=%u/%u acquittements=%u/%u "
-        "reconciliees=%u tardifs=%u source=%s tag=0x%08lX",
+        "reconciliees=%u tardifs=%u source=%s fmt=%u tag=0x%08lX",
         tuning ? "reglage" : "auto-test", (unsigned long)profile_sync_elapsed_ms(first_ms),
         (unsigned)profile_sync_transfer_count, (unsigned)CAN_LINK_PROFILE_MAX_ATTEMPTS,
         (unsigned)profile_sync_received, (unsigned)profile_sync_expected,
         (unsigned)profile_sync_reconciled, (unsigned)profile_sync_late, profile_sync_source,
-        (unsigned long)local_profile_tag);
+        (unsigned)SOLENOID_PROFILE_FORMAT_VERSION, (unsigned long)local_profile_tag);
     if (tuning) {
         if (profile_sync_expected == 0u) {
             diag_out_printf_class(

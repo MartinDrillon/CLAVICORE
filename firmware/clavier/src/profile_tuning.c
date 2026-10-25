@@ -28,10 +28,8 @@ static const field_t g_fields[] = {
     FIELD(pwm_freq_hz, LOCK_PWM),
     FIELD(impact_duration_us, NULL),
     FIELD(impact_duty_pct, NULL),
-    FIELD(impact_max_us, NULL),
     FIELD(pull_duration_us, NULL),
     FIELD(pull_duty_pct, NULL),
-    FIELD(pull_max_us, NULL),
     FIELD(hold_duty_pct, NULL),
     FIELD(hold_duty_max_pct, NULL),
     FIELD(hold_max_ms, NULL),
@@ -39,7 +37,6 @@ static const field_t g_fields[] = {
     FIELD(release_duty_pct, NULL),
     FIELD(probe_duration_us, LOCK_PROBE),
     FIELD(probe_duty_pct, LOCK_PROBE),
-    FIELD(probe_max_us, LOCK_PROBE),
     FIELD(probe_duty_max_pct, LOCK_PROBE),
     FIELD(maint_duty_pct, NULL),
     FIELD(maint_duty_max_pct, NULL),
@@ -333,8 +330,6 @@ static const char *structure_text(solenoid_profile_result_t structure) {
     case SOLENOID_PROFILE_ERR_DUTY:
         return "duty > 100 % ou au-dessus d'un plafond "
                "(hold_duty_pct <= hold_duty_max_pct, tout duty <= duty_max_pct)";
-    case SOLENOID_PROFILE_ERR_CONSISTENCY:
-        return "duree au-dessus de son plafond (pull_duration_us <= pull_max_us)";
     case SOLENOID_PROFILE_ERR_DIR:
         return "niveaux de polarite invalides";
     case SOLENOID_PROFILE_ERR_PWM:

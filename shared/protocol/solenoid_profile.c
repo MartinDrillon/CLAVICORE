@@ -51,13 +51,9 @@ size_t solenoid_profile_encode(const solenoid_profile_t *profile, uint8_t *out, 
     put_u32_le(&out[offset], profile->impact_duration_us);
     offset += 4u;
     out[offset++] = profile->impact_duty_pct;
-    put_u32_le(&out[offset], profile->impact_max_us);
-    offset += 4u;
     put_u32_le(&out[offset], profile->pull_duration_us);
     offset += 4u;
     out[offset++] = profile->pull_duty_pct;
-    put_u32_le(&out[offset], profile->pull_max_us);
-    offset += 4u;
     out[offset++] = profile->hold_duty_pct;
     out[offset++] = profile->hold_duty_max_pct;
     put_u32_le(&out[offset], profile->hold_max_ms);
@@ -68,8 +64,6 @@ size_t solenoid_profile_encode(const solenoid_profile_t *profile, uint8_t *out, 
     put_u32_le(&out[offset], profile->probe_duration_us);
     offset += 4u;
     out[offset++] = profile->probe_duty_pct;
-    put_u32_le(&out[offset], profile->probe_max_us);
-    offset += 4u;
     out[offset++] = profile->probe_duty_max_pct;
     out[offset++] = profile->maint_duty_pct;
     out[offset++] = profile->maint_duty_max_pct;
@@ -106,13 +100,9 @@ bool solenoid_profile_decode(const uint8_t *data, size_t length, solenoid_profil
     out->impact_duration_us = get_u32_le(&data[offset]);
     offset += 4u;
     out->impact_duty_pct = data[offset++];
-    out->impact_max_us = get_u32_le(&data[offset]);
-    offset += 4u;
     out->pull_duration_us = get_u32_le(&data[offset]);
     offset += 4u;
     out->pull_duty_pct = data[offset++];
-    out->pull_max_us = get_u32_le(&data[offset]);
-    offset += 4u;
     out->hold_duty_pct = data[offset++];
     out->hold_duty_max_pct = data[offset++];
     out->hold_max_ms = get_u32_le(&data[offset]);
@@ -123,8 +113,6 @@ bool solenoid_profile_decode(const uint8_t *data, size_t length, solenoid_profil
     out->probe_duration_us = get_u32_le(&data[offset]);
     offset += 4u;
     out->probe_duty_pct = data[offset++];
-    out->probe_max_us = get_u32_le(&data[offset]);
-    offset += 4u;
     out->probe_duty_max_pct = data[offset++];
     out->maint_duty_pct = data[offset++];
     out->maint_duty_max_pct = data[offset++];
@@ -168,11 +156,6 @@ solenoid_profile_result_t solenoid_profile_validate(const solenoid_profile_t *pr
         profile->maint_duty_pct > profile->duty_max_pct ||
         profile->impact_duty_pct > profile->duty_max_pct) {
         return SOLENOID_PROFILE_ERR_DUTY;
-    }
-    if (profile->pull_duration_us > profile->pull_max_us ||
-        profile->probe_duration_us > profile->probe_max_us ||
-        profile->impact_duration_us > profile->impact_max_us) {
-        return SOLENOID_PROFILE_ERR_CONSISTENCY;
     }
     if (profile->dir_level_pull > 1u || profile->dir_level_release > 1u ||
         profile->dir_level_maint > 1u || profile->dir_level_pull == profile->dir_level_release) {

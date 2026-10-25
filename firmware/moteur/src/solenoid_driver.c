@@ -22,15 +22,11 @@ static uint32_t clamp_duty(uint32_t percent) {
 }
 
 static uint32_t impact_duration_us(void) {
-    const solenoid_profile_t *p = profile();
-
-    return p->impact_duration_us > p->impact_max_us ? p->impact_max_us : p->impact_duration_us;
+    return profile()->impact_duration_us;
 }
 
 static uint32_t pull_duration_us(void) {
-    const solenoid_profile_t *p = profile();
-
-    return p->pull_duration_us > p->pull_max_us ? p->pull_max_us : p->pull_duration_us;
+    return profile()->pull_duration_us;
 }
 
 static uint32_t clamp_hold_duty(uint32_t percent) {
@@ -41,9 +37,7 @@ static uint32_t clamp_hold_duty(uint32_t percent) {
 }
 
 static uint32_t probe_duration_us(void) {
-    const solenoid_profile_t *p = profile();
-
-    return p->probe_duration_us > p->probe_max_us ? p->probe_max_us : p->probe_duration_us;
+    return profile()->probe_duration_us;
 }
 
 static uint32_t probe_duty_percent(void) {
@@ -54,7 +48,7 @@ static uint32_t probe_duty_percent(void) {
     return clamp_duty(capped);
 }
 
-// Paramètres PROBE réellement appliqués (après écrêtage par le profil). L'auto-test
+// Paramètres PROBE réellement appliqués (durée et duty du profil actif). L'auto-test
 // IPROPI s'en sert pour positionner sa fenêtre de mesure et estimer la résistance
 // (ADR-0009 §5) : il ne doit jamais relire les champs bruts du profil.
 uint32_t solenoid_driver_probe_duration_us(void) {

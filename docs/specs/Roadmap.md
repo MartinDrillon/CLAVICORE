@@ -194,17 +194,18 @@ vérifications, 0 échec) ; la campagne **de banc** reste à faire
 - [x] `shared/protocol` : trame `IPROPI_OHM` (`0x601`, DLC 8) avec `ohm_milliohm`
       et `i100_mA`
 - [x] Moteur : PROBE **5 ms** avec fenêtre d'échantillonnage en fin d'impulsion
-      (plafond `probe_max_us` du profil, 10 ms par défaut)
+      (durée `probe_duration_us` du profil, 5 ms par défaut ; sans maximum depuis le format v3)
 - [x] Moteur : estimation `ohm` / `i100` à partir de `delta`, du duty appliqué et
       des constantes de `solenoid_ohm_constants.h`
 - [x] Profil d'activation centralisé côté Clavier (ADR-0013/ADR-0014) : fichier
       unique `firmware/clavier/src/solenoid_profile_config.h`, transfert
       `0x420`–`0x423` à l'auto-test, persistance flash A/B côté Moteur,
       enveloppe thermique supprimée (dérogation à l'invariant 4)
-- [x] Phase **IMPACT** avant PULL (ADR-0019) : format profil **v2** (66 o,
-      11 chunks, version flash 2), 3 champs `impact_*` réglables à la console
-      (ADR-0015) ; **implémenté et validé compilation + tests hôte le
-      2026-10-22** (356 + 19 vérifications, 0 échec) — validation **matérielle**
+- [x] Phase **IMPACT** avant PULL (ADR-0019) : format profil **v3** (54 o,
+      9 chunks, version flash 3 ; amendement ADR-0014 du 2026-10-25, sans maxima
+      de durée), 3 champs `impact_*` réglables à la console
+      (ADR-0015) ; **implémenté et validé compilation + tests hôte** (575
+      vérifications, 0 échec) — validation **matérielle**
       à faire (`tests/phase3b_profil_tuning.md` §2.4)
 - [x] Clavier : écrire la table dès qu'**une** carte complète a répondu, calculer
       les motifs `flags`, émettre `[TABLE]`, `[MAP]`, `[SELFTEST_RAW] ohm_est/i100`

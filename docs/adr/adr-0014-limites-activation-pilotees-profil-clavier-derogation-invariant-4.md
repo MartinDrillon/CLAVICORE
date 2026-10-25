@@ -22,6 +22,10 @@ renvoyer ici.
 
 **Accepted**
 
+**Amendé le 2026-10-25** — voir « Amendement 2026-10-25 » en fin de document :
+`impact_max_us`, `pull_max_us` et `probe_max_us` sont supprimés du profil ; le
+format passe en v3 (54 octets). Les autres limites de l'ADR sont inchangées.
+
 ### Context
 
 ADR-0013 organise la migration de tous les paramètres d'activation vers un
@@ -256,3 +260,140 @@ dangereux.
 * **REF-005**: `AGENTS.md`, invariant 4 — limites électriques dans la couche pilote
 * **REF-006**: Datasheet DRV8874 — courant, FAULT, R_DS(on), tWAKE
 * **REF-007**: `docs/specs/CAN.md` — trames 0x420–0x423
+
+---
+
+## Amendement 2026-10-25 — Suppression des maxima de durée redondants (`*_max_us`)
+
+### Status de l'amendement
+
+**Accepted** — demandé explicitement par l'utilisateur le 2026-10-25
+(« ne supprime que les vrais doublons »). Amendement d'une décision déjà actée :
+la dérogation de l'invariant 4 décrite ci-dessus n'est ni élargie ni retirée,
+elle s'applique à un profil qui contient simplement trois champs de moins.
+
+### Context
+
+Trois champs du profil ne font que doubler un autre champ du même profil :
+
+| Champ borné par un doublon | Durée qui le rend redondant | Usage |
+|---|---|---|
+| `impact_max_us` (2000 µs) | `impact_duration_us` | écrêtage + rejet `ERR_CONSISTENCY` |
+| `pull_max_us` (50 000 µs) | `pull_duration_us` | écrêtage + rejet `ERR_CONSISTENCY` |
+| `probe_max_us` | `probe_duration_us` | écrêtage + rejet `ERR_CONSISTENCY` |
+
+Depuis ADR-0014, ces maxima sont eux-mêmes des données du fichier Clavier et
+ne bornent plus rien que l'utilisateur ne puisse déjà changer. Conséquence
+pratique : pour allonger une impulsion, l'utilisateur doit modifier **deux**
+valeurs du même fichier, et une durée réglée seule est refusée en bloc au
+décodage. Le champ de durée est déjà l'unique point de consigne ; le maximum
+n'apporte aucune sécurité supplémentaire, seulement une seconde occasion de se
+tromper.
+
+Ne sont **pas** concernés, car ils ne doublent aucun champ et sont l'unique
+point de coupure d'une phase sans durée propre : `hold_max_ms`,
+`maint_max_ms` (et le `MAINTENANCE_TIMEOUT_MS` du Clavier, qui reste un
+doublon à traiter séparément), ainsi que les temps de repos
+`maint_min_rest_ms` et `min_rest_ms`, qui ne sont pas des temps d'activation.
+
+### Decision
+
+#### 1. Trois champs supprimés du profil
+
+`impact_max_us`, `pull_max_us` et `probe_max_us` disparaissent de
+`shared/protocol/solenoid_profile.h` (struct, table d'offsets, codec,
+validation), des valeurs par défaut du Moteur et du Clavier, de la table de
+réglage console (`g_fields[]`) et des tests hôte.
+
+#### 2. La durée devient seule autorité
+
+* Plus aucun écrêtage : `impact_duration_us`, `pull_duration_us` et
+  `probe_duration_us` sont appliquées telles que reçues.
+* Plus aucun rejet de cohérence sur ces trois durées : le profil qui porte une
+  durée longue est accepté et obéi, exactement comme un `hold_max_ms` long
+  l'est déjà depuis ADR-0014.
+* Subsistent les seuls contrôles de **représentabilité** et de cohérence qui ne
+  dépendent pas des champs supprimés : conversion µs `u32`, `probe_duration_us`
+  strictement positive et couvrant la fenêtre ADC (§3 ci-dessus), niveaux de
+  polarité, largeur de payload, CRC.
+
+#### 3. Format du profil : version 3, 54 octets
+
+Les trois champs retirés font 12 octets : la taille du payload canonique passe
+de 66 à **54 octets** (9 chunks de 6 octets, au lieu de 10+). `format_version`
+passe à **3** et `SOLENOID_PROFILE_FLASH_VERSION` à **3** avec `payload_len`
+attendu à 54.
+
+Un Moteur encore en v2 refuse le nouveau profil avec
+`CAN_PROFILE_RESULT_UNSUPPORTED_VERSION` (7) ; le Clavier le signale déjà en
+CDC. Un clavier encore en v2 est refusé de la même manière par le Moteur v3.
+Les deux firmwares doivent donc être reflashés ensemble.
+
+#### 4. Ce qui ne change pas
+
+`hold_max_ms`, `maint_max_ms`, `maint_min_rest_ms`, `min_rest_ms`,
+`*_duty_max_pct`, `duty_max_pct`, `dir_safety_delay_us`, `wake_delay_us`,
+`pwm_freq_hz`, les niveaux de polarité, l'atomicité (CRC, `COMMIT`),
+la persistance A/B et le repli sur défauts restent identiques.
+
+### Consequences
+
+#### Positive
+
+* **POS-005**: Un seul nombre à changer pour allonger ou raccourcir une
+  impulsion IMPACT/PULL/PROBE ; le fichier de réglage cesse de porter des
+  valeurs qui doivent rester cohérentes entre elles.
+* **POS-006**: Le refus « durée > max » disparaît : un réglage légitime au banc
+  n'est plus bloqué par une valeur que l'utilisateur avait lui-même posée.
+* **POS-007**: Le payload perd 12 octets et un chunk ; la table de réglage
+  console passe de 27 à 24 champs.
+
+#### Negative
+
+* **NEG-007**: Une durée PULL/IMPACT/PROBE réglée trop longue n'est plus
+  arrêtée par le firmware ; seule la conversion en µs `u32` la borne
+  (durées en µs : pas de borne de type pratique). C'est la protection
+  procédurale d'ADR-0014 qui s'applique, sans second filet.
+* **NEG-008**: Rupture de compatibilité du profil : cartes Moteur à reflasher
+  en même temps que le Clavier. Un profil v2 déjà en flash n'est plus relu et
+  le Moteur repart sur ses valeurs de repli (`source=DEFAULTS`, signalé en CDC)
+  jusqu'au prochain transfert de profil.
+* **NEG-009**: `p set impact_max_us|pull_max_us|probe_max_us` disparaît de la
+  console ; toute procédure de test qui les cite doit être corrigée.
+
+### Implementation Notes
+
+* **IMP-011**: Retirer les trois champs de la struct `solenoid_profile_t`, de
+  la table d'offsets documentée et des deux sens du codec
+  (`shared/protocol/solenoid_profile.c`), puis renuméroter les offsets
+  (54 octets, LE, un octet `format_version` en tête).
+* **IMP-012**: `SOLENOID_PROFILE_FORMAT_VERSION` → 3 ; `SOLENOID_PROFILE_WIRE_SIZE`
+  → 54 ; `SOLENOID_PROFILE_FLASH_VERSION` → 3 et contrôle `payload_len == 54`
+  dans `solenoid_profile_store.c`.
+* **IMP-013**: Supprimer les trois écrêtages du pilote
+  (`solenoid_driver.c`, fonctions `impact_duration_us`/`pull_duration_us`/
+  `probe`), en conservant l'écrêtage des duties.
+* **IMP-014**: Supprimer les trois comparaisons `*_duration <= *_max` de
+  `solenoid_profile_validate` ; conserver tous les autres contrôles et ne rien
+  remplacer par un nouveau seuil.
+* **IMP-015**: Retirer les trois entrées de `g_fields[]` côté Clavier et les
+  trois valeurs des défauts (`solenoid_profile_config.h`,
+  `solenoid_profile_defaults.h`).
+* **IMP-016**: Mettre à jour le message de refus de version côté Clavier pour
+  annoncer « profil v3 requis » au lieu de v2.
+* **IMP-017**: Journaliser `format_version` dans la ligne de profil actif au
+  boot Moteur et au boot Clavier, pour que la cause d'un refus de version soit
+  lisible en CDC sans reflash à l'aveugle.
+* **IMP-018**: Adapter les tests hôte : supprimer les cas « dépassement de
+  max » et les entrées de console associées, ajouter un cas « durée longue
+  acceptée et appliquée telle quelle », vérifier la taille 54 et le rejet d'un
+  payload v2.
+* **IMP-019**: Mettre à jour `docs/specs/profil-solenoides.md`,
+  `docs/specs/CAN.md` (table des offsets, taille, version) et les procédures de
+  test qui citent `impact_max_us`/`pull_max_us`.
+
+### References (amendement)
+
+* **REF-008**: [ADR-0013 — Profil d'activation centralisé sur le Clavier](./adr-0013-profil-activation-solenoides-centralise-clavier.md)
+* **REF-009**: [ADR-0019 — Phase IMPACT, impulsion courte avant PULL](./adr-0019-phase-impact-impulsion-courte-avant-pull.md)
+* **REF-010**: `AGENTS.md`, invariant 5 — tout changement d'interface partagée passe par une ADR

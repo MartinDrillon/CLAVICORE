@@ -17,6 +17,15 @@ côté firmware. L'invariant 5 est respecté : cette ADR précède toute modific
 de `shared/protocol/`. L'invariant 1 est respecté : une divergence de version ou
 de profil reste signalée, jamais corrigée en silence.
 
+**Amendé le 2026-10-25** par [ADR-0014, amendement 2026-10-25](./adr-0014-limites-activation-pilotees-profil-clavier-derogation-invariant-4.md).
+`impact_max_us` — et, avec lui, les maxima de durée redondants `pull_max_us` et
+`probe_max_us` — est supprimé du profil : le motif `min(duration, max)` et la
+règle de rejet `duration <= max` décrits ci-dessous (§2, §4, IMP-003, IMP-006)
+ne s'appliquent plus. `impact_duration_us` est appliqué tel quel. Le format
+passe directement de v2 à **v3, 54 octets, 9 chunks**, version flash 3. La
+décision IMPACT (nouvel état, `impact_duty_pct`, valeurs initiales, mise en
+service) reste en vigueur.
+
 ### Context
 
 Le profil d'activation (ADR-0013/ADR-0014) décrit aujourd'hui trois segments de
