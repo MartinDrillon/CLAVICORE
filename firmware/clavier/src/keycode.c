@@ -178,6 +178,11 @@ void keycode_press(keycode_state_t *state, keycode_t keycode) {
             // ADR-0030 : transpositions temporaires suivies dans main.c hors
             // de cet état (UNTRANSPOSE ne les annule pas) ; inertes ici.
             break;
+        case KEYCODE_REC_SOLE:
+        case KEYCODE_REC_MUTE:
+            // ADR-0032 : bascules du mode REC traitées dans main.c ; un appui
+            // seul n'a ici aucun effet.
+            break;
         case KEYCODE_NONE:
         case KEYCODE_NOTE:
         default:
@@ -435,6 +440,10 @@ const char *keycode_name(keycode_t keycode) {
             return "MAINT";
         case KEYCODE_UNTRANSPOSE:
             return "UNTRANSPOSE";
+        case KEYCODE_REC_SOLE:
+            return "REC_SOLE";
+        case KEYCODE_REC_MUTE:
+            return "REC_MUTE";
         default:
             return "invalid";
     }

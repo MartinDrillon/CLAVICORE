@@ -13,6 +13,9 @@
 
 #include "config.h"
 #include "ipropi_selftest.h"
+#include "listen_control_logic.h"
+#include "listen_core1.h"
+#include "listen_params.h"
 #include "motor_counter_map.h"
 #include "solenoid_profile.h"
 #include "solenoid_profile_store.h"
@@ -77,6 +80,24 @@ static can_profile_status_t profile_status;
 static uint32_t profile_status_due_us;
 // ADR-0020 §1 : tentatives restantes pour l'acquittement en cours.
 static uint8_t profile_status_attempts;
+
+// --- Écoute IPROPI (ADR-0032) ----------------------------------------------
+// Le Moteur ne compile aucune valeur d'écoute : `listen_staging` ne contient
+// que ce que le Clavier a envoyé (18 x LISTEN_PARAM), jamais un défaut.
+#define LISTEN_PARK_TIMEOUT_US 10000u
+#define LISTEN_TRACE_FRAME_SPACING_US 250u
+#define LISTEN_TX_MAX_PER_POLL 4u
+
+static listen_params_t listen_staging;
+static bool listen_park_pending;
+static can_listen_mode_t listen_mode_cached;
+static bool listen_trace_sending;
+static uint32_t listen_trace_index;
+static uint32_t listen_trace_due_us;
+static uint16_t listen_stream_seq;
+static uint16_t listen_stream_frame[CAN_LISTEN_TRACE_FRAME_SAMPLES];
+static uint8_t listen_stream_frame_count;
+static uint32_t listen_stream_due_us;
 
 static void can_rx_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg) {
     (void)cd;
@@ -577,6 +598,393 @@ static void handle_card_stats_request(const struct can2040_msg *msg) {
 #endif
 }
 
+// --- Écoute IPROPI : émission (ADR-0032 §3, §11) ----------------------------
+
+static void send_listen_status_now(can_listen_state_t state, uint8_t refused_param_id) {
+    can_listen_status_t status = {
+        .uid_tag = board_tag,
+        .state = state,
+        .refused_param_id = refused_param_id,
+        .sweep_period_us = (uint16_t)listen_core1_sweep_period_us(),
+        .overflows = listen_core1_overflow_count(),
+    };
+    uint8_t data[CAN_DLC_LISTEN_STATUS];
+
+    if (can_encode_listen_status(data, &status) != CAN_PROTO_OK ||
+        !send_frame(CAN_ID_LISTEN_STATUS, CAN_DLC_LISTEN_STATUS, data)) {
+        ++stats.tx_fail;
+        return;
+    }
+    ++stats.listen_status_sent;
+}
+
+// Refus explicite de l'auto-test pendant l'écoute (ADR-0032 §11) : le Clavier
+// reçoit REFUSED_BUSY, jamais un silence.
+static void send_selftest_refused_busy(uint8_t reply_to) {
+    const can_announce_status_t status = {
+        .uid_tag = board_tag,
+        .occupation_bits = 0u,
+        .reply_to = reply_to,
+        .test_status = CAN_SELFTEST_STATUS_REFUSED_BUSY,
+        .fault_bits = 0u,
+    };
+    uint8_t data[CAN_DLC_ANNOUNCE_STATUS];
+
+    if (can_encode_announce_status(data, &status) != CAN_PROTO_OK ||
+        !send_frame(CAN_ID_BOARD_ANNOUNCE_STATUS, CAN_DLC_ANNOUNCE_STATUS, data)) {
+        ++stats.tx_fail;
+        return;
+    }
+    ++stats.announces_sent;
+}
+
+static uint16_t timing_to_100us(uint32_t us, bool *saturated) {
+    uint32_t value = (us + 99u) / 100u;
+
+    if (value > CAN_LISTEN_TIMING_SATURATED) {
+        value = CAN_LISTEN_TIMING_SATURATED;
+        *saturated = true;
+    }
+    return (uint16_t)value;
+}
+
+static void listen_send_pulse(const listen_pulse_evt_t *evt) {
+    const uint32_t t_peak_us =
+        (evt->t_peak_us > 0xFFFFFFFFu - 99u) ? 0xFFFFFFFFu : evt->t_peak_us;
+    const uint32_t t_delta_us =
+        (evt->t_end_us > evt->t_peak_us) ? (evt->t_end_us - evt->t_peak_us) : 0u;
+    bool saturated = false;
+    const uint16_t t_peak_100us = timing_to_100us(t_peak_us, &saturated);
+    const uint16_t t_delta_100us = timing_to_100us(t_delta_us, &saturated);
+    const can_listen_pulse_t pulse = {
+        .uid_tag = board_tag,
+        .channel = evt->channel,
+        .seq = evt->seq,
+        .base = evt->base,
+        .peak = evt->peak,
+        .split = evt->split,
+        .saturated = saturated,
+    };
+    uint8_t data[CAN_DLC_LISTEN_PULSE];
+
+    if (can_encode_listen_pulse(data, &pulse) != CAN_PROTO_OK ||
+        !send_frame(CAN_ID_LISTEN_PULSE, CAN_DLC_LISTEN_PULSE, data)) {
+        ++stats.tx_fail;
+        ++stats.listen_tx_dropped;
+        return;
+    }
+    ++stats.listen_pulses_sent;
+
+    if (listen_staging.detail == 0u) {
+        return;
+    }
+    const can_listen_pulse_timing_t timing = {
+        .uid_tag = board_tag,
+        .seq = evt->seq,
+        .t_peak_100us = t_peak_100us,
+        .t_end_peak_100us = t_delta_100us,
+    };
+    uint8_t timing_data[CAN_DLC_LISTEN_PULSE_TIMING];
+
+    if (can_encode_listen_pulse_timing(timing_data, &timing) != CAN_PROTO_OK ||
+        !send_frame(CAN_ID_LISTEN_PULSE_TIMING, CAN_DLC_LISTEN_PULSE_TIMING, timing_data)) {
+        ++stats.tx_fail;
+        ++stats.listen_tx_dropped;
+    }
+}
+
+static void listen_trace_pump(uint32_t now_us) {
+    // N'émettre une trace que si une session TRACE est réellement demandée :
+    // une trace devenue prête pendant/après un OFF ne doit jamais être vidée
+    // (elle forcerait un retour LISTEN hors de propos).
+    if (!listen_core1_trace_ready()) {
+        listen_trace_sending = false;
+        return;
+    }
+    if (listen_mode_cached != CAN_LISTEN_MODE_TRACE) {
+        // Le mode a changé (STREAM/LISTEN) avant ce poll : la trace ne sera
+        // jamais émise. La libérer pour que le Core 1 ne reste pas bloqué dans
+        // trace_wait_release, et la compter comme trame d'écoute perdue.
+        listen_core1_trace_release();
+        listen_trace_sending = false;
+        ++stats.listen_tx_dropped;
+        return;
+    }
+    if (!listen_trace_sending) {
+        listen_trace_sending = true;
+        listen_trace_index = 0u;
+        listen_trace_due_us = now_us;
+    }
+    if ((int32_t)(now_us - listen_trace_due_us) < 0) {
+        return;
+    }
+
+    can_listen_trace_t frame = {0};
+    frame.seq = (uint16_t)(listen_trace_index / CAN_LISTEN_TRACE_FRAME_SAMPLES);
+    for (uint8_t i = 0u; i < CAN_LISTEN_TRACE_FRAME_SAMPLES; ++i) {
+        frame.samples[i] = listen_core1_trace_sample(listen_trace_index + i);
+    }
+    uint8_t data[CAN_DLC_LISTEN_TRACE];
+    if (can_encode_listen_trace(data, &frame) == CAN_PROTO_OK &&
+        send_frame(CAN_ID_LISTEN_TRACE, CAN_DLC_LISTEN_TRACE, data)) {
+        ++stats.listen_trace_frames_sent;
+    } else {
+        // Pas de réémission en boucle : la trame est perdue et comptée.
+        ++stats.tx_fail;
+        ++stats.listen_tx_dropped;
+    }
+    listen_trace_index += CAN_LISTEN_TRACE_FRAME_SAMPLES;
+    listen_trace_due_us = now_us + LISTEN_TRACE_FRAME_SPACING_US;
+
+    if (listen_trace_index >= CAN_LISTEN_TRACE_SAMPLES) {
+        listen_core1_trace_release();
+        listen_trace_sending = false;
+        // Retour au balayage, même session d'écoute (écrivain unique : Core 0).
+        (void)listen_core1_set_mode(CAN_LISTEN_MODE_LISTEN, 0u, 0u);
+        listen_mode_cached = CAN_LISTEN_MODE_LISTEN;
+    }
+}
+
+static void listen_stream_pump(uint32_t now_us) {
+    if (listen_mode_cached != CAN_LISTEN_MODE_STREAM) {
+        listen_stream_frame_count = 0u;
+        return;
+    }
+    if ((int32_t)(now_us - listen_stream_due_us) < 0) {
+        return;
+    }
+    while (listen_stream_frame_count < CAN_LISTEN_TRACE_FRAME_SAMPLES &&
+           listen_core1_take_stream(&listen_stream_frame[listen_stream_frame_count])) {
+        ++listen_stream_frame_count;
+    }
+    if (listen_stream_frame_count < CAN_LISTEN_TRACE_FRAME_SAMPLES) {
+        return;  // attendre les échantillons suivants, jamais bloquer
+    }
+
+    can_listen_trace_t frame = {0};
+    frame.seq = listen_stream_seq;
+    for (uint8_t i = 0u; i < CAN_LISTEN_TRACE_FRAME_SAMPLES; ++i) {
+        frame.samples[i] = listen_stream_frame[i];
+    }
+    uint8_t data[CAN_DLC_LISTEN_TRACE];
+    if (can_encode_listen_trace(data, &frame) == CAN_PROTO_OK &&
+        send_frame(CAN_ID_LISTEN_TRACE, CAN_DLC_LISTEN_TRACE, data)) {
+        ++stats.listen_trace_frames_sent;
+        ++listen_stream_seq;
+    } else {
+        ++stats.tx_fail;
+        ++stats.listen_tx_dropped;
+    }
+    listen_stream_frame_count = 0u;
+    listen_stream_due_us = now_us + LISTEN_TRACE_FRAME_SPACING_US;
+}
+
+static void listen_tx_poll(uint32_t now_us) {
+    listen_pulse_evt_t pulse;
+
+    for (uint8_t n = 0u; n < LISTEN_TX_MAX_PER_POLL && listen_core1_take_pulse(&pulse); ++n) {
+        listen_send_pulse(&pulse);
+    }
+
+    listen_status_evt_t status;
+    for (uint8_t n = 0u; n < LISTEN_TX_MAX_PER_POLL && listen_core1_take_status(&status); ++n) {
+        const can_listen_status_t frame = {
+            .uid_tag = board_tag,
+            .state = status.state,
+            .refused_param_id = status.refused_param_id,
+            .sweep_period_us = status.sweep_period_us,
+            .overflows = status.overflows,
+        };
+        uint8_t data[CAN_DLC_LISTEN_STATUS];
+
+        if (can_encode_listen_status(data, &frame) != CAN_PROTO_OK ||
+            !send_frame(CAN_ID_LISTEN_STATUS, CAN_DLC_LISTEN_STATUS, data)) {
+            ++stats.tx_fail;
+            ++stats.listen_tx_dropped;
+        } else {
+            ++stats.listen_status_sent;
+        }
+        if (status.state == CAN_LISTEN_STATE_TRACE_TIMEOUT &&
+            listen_mode_cached == CAN_LISTEN_MODE_TRACE) {
+            // Après un timeout, le Core 1 reste en mode TRACE et attend un
+            // retour LISTEN du Core 0, seul écrivain de s_mode (comme après
+            // une trace émise). Ne pas dépendre de la réception Clavier.
+            (void)listen_core1_set_mode(CAN_LISTEN_MODE_LISTEN, 0u, 0u);
+            listen_mode_cached = CAN_LISTEN_MODE_LISTEN;
+        }
+    }
+
+    if (listen_core1_trace_ready()) {
+        listen_trace_pump(now_us);
+    } else {
+        listen_stream_pump(now_us);
+    }
+}
+
+// --- Écoute IPROPI : réception (ADR-0032 §3, §11) ---------------------------
+
+static void handle_listen_param(const struct can2040_msg *msg) {
+    can_listen_param_t param;
+
+    const can_proto_result_t result =
+        can_decode_listen_param(msg->data, (uint8_t)msg->dlc, &param);
+    if (result == CAN_PROTO_BAD_DLC) {
+        ++stats.rx_bad_dlc;
+        return;
+    }
+    if (result != CAN_PROTO_OK || param.proto_version != CAN_PROTO_VERSION) {
+        ++stats.rx_bad_value;
+        return;
+    }
+    if (can_link_listen_is_active()) {
+        // Un jeu ne se modifie jamais en cours d'écoute : refus nommé.
+        send_listen_status_now(CAN_LISTEN_STATE_PARAM_MISMATCH, param.param_id);
+        return;
+    }
+    if (!listen_params_set(&listen_staging, param.param_id, param.value)) {
+        send_listen_status_now(CAN_LISTEN_STATE_PARAM_MISMATCH, param.param_id);
+        return;
+    }
+}
+
+static void handle_listen_control(const struct can2040_msg *msg, uint32_t now_us) {
+    can_listen_control_t control;
+
+    const can_proto_result_t result =
+        can_decode_listen_control(msg->data, (uint8_t)msg->dlc, &control);
+    if (result == CAN_PROTO_BAD_DLC) {
+        ++stats.rx_bad_dlc;
+        return;
+    }
+    if (result != CAN_PROTO_OK || control.proto_version != CAN_PROTO_VERSION ||
+        !can_listen_mode_is_valid(control.mode)) {
+        ++stats.rx_bad_value;
+        return;
+    }
+
+    if (control.mode == CAN_LISTEN_MODE_OFF) {
+        (void)listen_core1_set_mode(CAN_LISTEN_MODE_OFF, 0u, 0u);
+        listen_mode_cached = CAN_LISTEN_MODE_OFF;
+        listen_trace_sending = false;
+        listen_trace_index = 0u;
+        listen_stream_frame_count = 0u;
+        // Le Core 0 attend que le Core 1 soit parqué avant de rendre mux/ADC.
+        listen_park_pending = !listen_core1_wait_parked(LISTEN_PARK_TIMEOUT_US);
+        memset(&listen_staging, 0, sizeof(listen_staging));
+        return;
+    }
+
+    if (listen_park_pending) {
+        // La session précédente n'a pas encore rendu le mux : refus explicite.
+        send_listen_status_now(CAN_LISTEN_STATE_BUSY_SELFTEST, 0u);
+        return;
+    }
+    if (ipropi_selftest_is_running()) {
+        send_listen_status_now(CAN_LISTEN_STATE_BUSY_SELFTEST, 0u);
+        return;
+    }
+
+    if (control.mode == CAN_LISTEN_MODE_STREAM_OFF) {
+        if (!listen_core1_active()) {
+            return;  // rien à arrêter, aucun état silencieux : IDLE vient du Core 1
+        }
+        if (listen_core1_set_mode(CAN_LISTEN_MODE_LISTEN, 0u, 0u)) {
+            listen_mode_cached = CAN_LISTEN_MODE_LISTEN;
+            listen_stream_frame_count = 0u;
+        }
+        return;
+    }
+
+    const listen_control_action_t action =
+        listen_control_action(control.mode, control.target_uid_tag, board_tag,
+                              listen_core1_active(), listen_core1_params_crc(),
+                              control.param_crc16);
+    if (action == LISTEN_CONTROL_STAY_LISTEN) {
+        // TRACE/STREAM ciblant une autre carte : celle-ci reste en écoute.
+        return;
+    }
+    if (action == LISTEN_CONTROL_REFUSE) {
+        // CRC différent en cours d'écoute : un jeu ne se substitue jamais.
+        send_listen_status_now(CAN_LISTEN_STATE_PARAM_MISMATCH, 0u);
+        return;
+    }
+    if (action == LISTEN_CONTROL_APPLY) {
+        uint8_t bad_id = 0u;
+        if (listen_params_validate(&listen_staging, &bad_id) != LISTEN_PARAMS_OK ||
+            listen_params_crc16(&listen_staging) != control.param_crc16) {
+            // CRC ou validation refusés : rien n'est appliqué (rejet en bloc).
+            send_listen_status_now(CAN_LISTEN_STATE_PARAM_MISMATCH, bad_id);
+            return;
+        }
+        if (!listen_core1_apply_params(&listen_staging, control.param_crc16)) {
+            // Jeu non appliqué (mode non OFF ou arguments invalides) : refus
+            // nommé, aucun démarrage avec des paramètres ignorés.
+            send_listen_status_now(CAN_LISTEN_STATE_PARAM_MISMATCH, 0u);
+            return;
+        }
+    }
+    // LISTEN_CONTROL_REUSE : le Core 1 a déjà ce jeu (relance LISTEN après une
+    // trace, ou changement de mode en cours d'écoute) : ne pas le réappliquer.
+    if (control.mode == CAN_LISTEN_MODE_STREAM) {
+        // Nouvelle session STREAM : jeter les échantillons d'une session passée.
+        uint16_t dropped = 0u;
+        while (listen_core1_take_stream(&dropped)) {
+            // vidage borné par l'anneau (256 échantillons)
+        }
+        listen_stream_seq = 0u;
+        listen_stream_frame_count = 0u;
+        listen_stream_due_us = now_us;
+    }
+    if (!listen_core1_set_mode(control.mode, control.channel, control.target_uid_tag)) {
+        send_listen_status_now(CAN_LISTEN_STATE_PARAM_MISMATCH, 0u);
+        return;
+    }
+    listen_mode_cached = control.mode;
+    listen_trace_sending = false;
+    listen_trace_index = 0u;
+}
+
+static void handle_listen_noise_query(const struct can2040_msg *msg) {
+    can_listen_noise_query_t query;
+
+    const can_proto_result_t result =
+        can_decode_listen_noise_query(msg->data, (uint8_t)msg->dlc, &query);
+    if (result == CAN_PROTO_BAD_DLC) {
+        ++stats.rx_bad_dlc;
+        return;
+    }
+    if (result != CAN_PROTO_OK) {
+        ++stats.rx_bad_value;
+        return;
+    }
+    if (!listen_core1_active() || query.target_uid_tag != board_tag) {
+        ++stats.rx_ignored;  // autre carte, ou écoute éteinte
+        return;
+    }
+
+    uint16_t min = 0u;
+    uint16_t max = 0u;
+    bool truncated = false;
+    (void)listen_core1_take_noise(query.channel, query.lookback_ms, &min, &max, &truncated);
+
+    const can_listen_noise_report_t report = {
+        .uid_tag = board_tag,
+        .channel = query.channel,
+        .request_id = query.request_id,
+        .min = min,
+        .max = max,
+        .truncated = truncated,
+    };
+    uint8_t data[CAN_DLC_LISTEN_NOISE_REPORT];
+
+    if (can_encode_listen_noise_report(data, &report) != CAN_PROTO_OK ||
+        !send_frame(CAN_ID_LISTEN_NOISE_REPORT, CAN_DLC_LISTEN_NOISE_REPORT, data)) {
+        ++stats.tx_fail;
+        return;
+    }
+    ++stats.listen_noise_reports_sent;
+}
+
 static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {
     if ((msg->id & (CAN2040_ID_EFF | CAN2040_ID_RTR)) != 0u) {
         ++stats.rx_ext_or_rtr;
@@ -609,6 +1017,12 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {
         const can_proto_result_t result =
             can_decode_ipropi_selftest_request(msg->data, (uint8_t)msg->dlc, &request);
         if (result == CAN_PROTO_OK) {
+            if (can_link_listen_is_active()) {
+                // ADR-0032 §11 : aucune suspension en cours d'écoute ; refus nommé.
+                ++stats.requests_served;
+                send_selftest_refused_busy(request.request_id);
+                return;
+            }
             ++stats.requests_served;
             if (!announce_pending && !raw_reports_pending && !ohm_reports_pending &&
                 !selftest_result.report_ready && ipropi_selftest_start_request(&request)) {
@@ -623,6 +1037,15 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {
         }
         return;
     }
+    case CAN_ID_LISTEN_PARAM:
+        handle_listen_param(msg);
+        return;
+    case CAN_ID_LISTEN_CONTROL:
+        handle_listen_control(msg, now_us);
+        return;
+    case CAN_ID_LISTEN_NOISE_QUERY:
+        handle_listen_noise_query(msg);
+        return;
     case CAN_ID_IPROPI_SELFTEST_TRIGGER:
     case CAN_ID_BOARD_ANNOUNCE_UID:
     case CAN_ID_BOARD_ANNOUNCE_INFO:
@@ -632,6 +1055,12 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t now_us) {
     case CAN_ID_PROFILE_STATUS:
     case CAN_ID_CARD_EVENT:
     case CAN_ID_CARD_STATS:
+    // Ces trames sont émises par le Moteur : il ne les reçoit pas.
+    case CAN_ID_LISTEN_PULSE:
+    case CAN_ID_LISTEN_STATUS:
+    case CAN_ID_LISTEN_NOISE_REPORT:
+    case CAN_ID_LISTEN_PULSE_TIMING:
+    case CAN_ID_LISTEN_TRACE:
         ++stats.rx_ignored;
         return;
     case CAN_ID_CARD_STATS_REQUEST:
@@ -689,6 +1118,19 @@ void can_link_init(const uint8_t uid[BOARD_IDENTITY_UID_SIZE], solenoid_driver_t
 
     ipropi_selftest_init(drivers, driver_count, board_tag);
 
+    // Écoute IPROPI : structures partagées seulement, le Core 1 est lancé par
+    // main.c après cette initialisation (ADC et mux déjà prêts).
+    memset(&listen_staging, 0, sizeof(listen_staging));
+    listen_park_pending = false;
+    listen_mode_cached = CAN_LISTEN_MODE_OFF;
+    listen_trace_sending = false;
+    listen_trace_index = 0u;
+    listen_trace_due_us = 0u;
+    listen_stream_seq = 0u;
+    listen_stream_frame_count = 0u;
+    listen_stream_due_us = 0u;
+    listen_core1_init(board_uid, board_tag, drivers, driver_count);
+
     can2040_setup(&cbus, MOTEUR_CAN_PIO_NUM);
     can2040_callback_config(&cbus, can_rx_cb);
     irq_set_exclusive_handler(PIO0_IRQ_0, can_pio_irq_handler);
@@ -704,6 +1146,12 @@ void can_link_init(const uint8_t uid[BOARD_IDENTITY_UID_SIZE], solenoid_driver_t
 void can_link_poll(uint32_t now_us) {
     if (!started) {
         return;
+    }
+
+    // ADR-0032 §11 : tant que le Core 1 n'a pas rendu mux/ADC, l'auto-test
+    // reste refusé ; on réessaie sans bloquer la boucle principale.
+    if (listen_park_pending && listen_core1_wait_parked(0u)) {
+        listen_park_pending = false;
     }
 
     uint32_t tail = rx_tail;
@@ -732,6 +1180,10 @@ void can_link_poll(uint32_t now_us) {
                                            selftest_result.aborted_channel, 0u, 0u);
         }
     }
+
+    // Vidage des anneaux d'écoute (0x110/0x428/0x426/0x429) : jamais affamé par
+    // un acquittement en attente.
+    listen_tx_poll(now_us);
 
     if (announce_pending && announce_kind == ANNOUNCE_KIND_SELFTEST_REPLY && !selftest_result.report_ready) {
         return;
@@ -770,4 +1222,14 @@ can_link_stats_t can_link_stats(void) {
     can_link_stats_t copy = stats;
     copy.rx_overrun = isr_rx_overrun;
     return copy;
+}
+
+void can_link_listen_set_drive_mask(uint16_t non_idle_mask) {
+    listen_core1_set_drive_mask(non_idle_mask);
+}
+
+bool can_link_listen_is_active(void) {
+    // `listen_park_pending` couvre la fenêtre entre OFF et le parcage effectif
+    // du Core 1 : l'auto-test ne doit pas reprendre le mux avant.
+    return listen_core1_active() || listen_park_pending;
 }

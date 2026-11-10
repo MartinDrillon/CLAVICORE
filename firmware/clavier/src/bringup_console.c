@@ -1,11 +1,15 @@
 #include "bringup_console.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "can_link.h"
 #include "diag_out.h"
+#include "listen_params.h"
 #include "profile_tuning.h"
+#include "rec_console.h"
+#include "rec_mode.h"
 #include "usb_log.h"
 
 #ifndef CLAVIER_CDC_CONSOLE
@@ -25,6 +29,7 @@ static const char *skip_ws(const char *s);  // ligne trop longue : tout ignorer 
 static void print_help(void) {
     diag_out_printf("[CONSOLE] t=auto-test c=mode_diagnostic d=table m=etat m stats=compteurs cartes l=niveau_journal ?=aide p=profil (p ?)\n");
     diag_out_printf("[CONSOLE] l 0=verdicts l 1=bring-up l 2=trace l t=horodatage\n");
+    diag_out_printf("[CONSOLE] e=mode REC / ecoute IPROPI (e ?)\n");
     diag_out_printf("[CONSOLE] aucune commande n'ecrit ni n'efface la table\n");
 }
 
@@ -215,6 +220,437 @@ static void profile_command(const char *args) {
     }
 }
 
+// ---------------------------------------------------------------------------
+//  Console `e` : mode REC / écoute IPROPI (ADR-0032)
+// ---------------------------------------------------------------------------
+
+#define LISTEN_TOKEN_MAX 32u
+#define LISTEN_DIFF_MAX 1024u
+
+static void print_listen_help(void) {
+    diag_out_printf_class(
+        DIAG_CLASS_CONSOLE,
+        "[LISTEN] e show | e get <champ> | e set <champ> <valeur> [<champ> <valeur> ...]\n");
+    diag_out_printf_class(DIAG_CLASS_CONSOLE,
+                          "[LISTEN] e diff | e reset | e rec | e bruit | e raz\n");
+    diag_out_printf_class(
+        DIAG_CLASS_CONSOLE,
+        "[LISTEN] e trace <touche> | e stream <touche>|off   (touche = MI3, RE#3 ou 36..127)\n");
+    diag_out_printf_class(
+        DIAG_CLASS_CONSOLE,
+        "[LISTEN] reglage en RAM Clavier (perdu au reboot), aucune valeur n'est une limite\n");
+}
+
+static const char *next_token(const char *text, char *out, size_t capacity) {
+    size_t used = 0u;
+
+    text = skip_ws(text);
+    while (*text != '\0' && *text != ' ' && *text != '\t') {
+        if (used + 1u < capacity) {
+            out[used] = *text;
+        }
+        ++used;
+        ++text;
+    }
+    if (capacity > 0u) {
+        out[(used < capacity) ? used : (capacity - 1u)] = '\0';
+    }
+    return skip_ws(text);
+}
+
+static bool parse_u32(const char *text, uint32_t *out) {
+    char *end = NULL;
+    unsigned long value;
+
+    if (text == NULL || *text == '\0' || out == NULL) {
+        return false;
+    }
+    value = strtoul(text, &end, 0);
+    if (end == text || *end != '\0') {
+        return false;
+    }
+    if (value > 0xFFFFFFFFul) {
+        return false;
+    }
+    *out = (uint32_t)value;
+    return true;
+}
+
+static bool token_is(const char *text, const char *word) {
+    while (*text != '\0' && *word != '\0') {
+        char a = *text++;
+        char b = *word++;
+
+        if (a >= 'A' && a <= 'Z') {
+            a = (char)(a - 'A' + 'a');
+        }
+        if (b >= 'A' && b <= 'Z') {
+            b = (char)(b - 'A' + 'a');
+        }
+        if (a != b) {
+            return false;
+        }
+    }
+    return *text == '\0' && *word == '\0';
+}
+
+static void listen_show(void) {
+    const listen_params_t *params = rec_console_params();
+    const rec_state_t *rec = rec_console_state();
+
+    if (params == NULL) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] parametres indisponibles\n");
+        return;
+    }
+    for (uint8_t id = 1u; id <= LISTEN_PARAMS_COUNT; ++id) {
+        const char *name = listen_params_field_name(id);
+        uint32_t value = 0u;
+
+        if (name != NULL && listen_params_get(params, id, &value)) {
+            diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN]   %-20s = %lu\n", name,
+                                  (unsigned long)value);
+        }
+    }
+    diag_out_printf_class(
+        DIAG_CLASS_CONSOLE, "[LISTEN] actif=%s crc=0x%04X detail=%lu bruit=%s%s\n",
+        rec_mode_name(rec_console_mode()), (unsigned)listen_params_crc16(params),
+        (unsigned long)params->detail,
+        (rec != NULL && rec->noise_enabled) ? "on" : "off",
+        rec_console_params_valid() ? "" : " (config invalide)");
+}
+
+static void listen_get(const char *text) {
+    char name[LISTEN_TOKEN_MAX];
+    const listen_params_t *params = rec_console_params();
+    uint32_t value = 0u;
+
+    (void)next_token(text, name, sizeof(name));
+    if (name[0] == '.') {
+        memmove(name, name + 1, strlen(name));
+    }
+    if (params == NULL || !rec_mode_param_get(params, name, &value)) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] champ inconnu '%s'\n", name);
+        return;
+    }
+    diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] %s = %lu\n", name,
+                          (unsigned long)value);
+}
+
+// Imprime les champs qui diffèrent entre `before` et `after`. Retourne le
+// nombre de changements affichés.
+static size_t listen_print_changes(const listen_params_t *before, const listen_params_t *after) {
+    size_t changed = 0u;
+
+    for (uint8_t id = 1u; id <= LISTEN_PARAMS_COUNT; ++id) {
+        uint32_t old_value = 0u;
+        uint32_t new_value = 0u;
+
+        if (!listen_params_get(before, id, &old_value) ||
+            !listen_params_get(after, id, &new_value) || old_value == new_value) {
+            continue;
+        }
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN]   %s %lu -> %lu\n",
+                              listen_params_field_name(id), (unsigned long)old_value,
+                              (unsigned long)new_value);
+        ++changed;
+    }
+    return changed;
+}
+
+// Applique un jeu déjà validé : affiche les différences, coupe `bruit` si
+// detail passe à 0, puis diffuse (arrêt/redémarrage si REC est actif).
+static void listen_commit(const listen_params_t *candidate) {
+    listen_params_t *current = rec_console_params();
+    rec_state_t *rec = rec_console_state();
+    listen_params_t before;
+
+    if (current == NULL) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] parametres indisponibles\n");
+        return;
+    }
+    before = *current;
+    if (listen_print_changes(&before, candidate) == 0u) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE,
+                              "[LISTEN] reglage: aucune valeur ne change\n");
+    }
+    if (candidate->detail == 0u && rec != NULL && rec->noise_enabled) {
+        rec->noise_enabled = false;
+        diag_out_printf_class(DIAG_CLASS_CONSOLE,
+                              "[LISTEN] bruit=off (detail=0, aucune mesure de bruit)\n");
+    }
+    *current = *candidate;
+    if (!rec_console_send_params()) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE,
+                              "[LISTEN] diffusion impossible (reglage garde en RAM)\n");
+    }
+}
+
+static void listen_set(const char *text) {
+    const listen_params_t *current = rec_console_params();
+    listen_params_t candidate;
+    const char *cursor = skip_ws(text);
+
+    if (current == NULL) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] parametres indisponibles\n");
+        return;
+    }
+    if (*cursor == '\0') {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE,
+                              "[LISTEN] usage: e set <champ> <valeur> [...]\n");
+        return;
+    }
+    candidate = *current;
+    while (*cursor != '\0') {
+        char name[LISTEN_TOKEN_MAX];
+        char value_text[LISTEN_TOKEN_MAX];
+        uint32_t value = 0u;
+
+        cursor = next_token(cursor, name, sizeof(name));
+        if (*cursor == '\0') {
+            diag_out_printf_class(DIAG_CLASS_CONSOLE,
+                                  "[LISTEN] valeur manquante pour '%s'\n", name);
+            return;
+        }
+        cursor = next_token(cursor, value_text, sizeof(value_text));
+        if (!parse_u32(value_text, &value)) {
+            diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] valeur invalide '%s'\n",
+                                  value_text);
+            return;
+        }
+        {
+            const char *field_name = name;
+
+            if (field_name[0] == '.') {
+                ++field_name;
+            }
+            if (!rec_mode_param_set(&candidate, field_name, value)) {
+                diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] champ inconnu '%s'\n",
+                                      name);
+                return;
+            }
+        }
+    }
+    {
+        const char *bad_name = NULL;
+
+        if (rec_mode_params_validate(&candidate, &bad_name) != LISTEN_PARAMS_OK) {
+            // Rejet en bloc : aucune affectation n'est publiée (atomique).
+            diag_out_printf_class(DIAG_CLASS_CONSOLE,
+                                  "[LISTEN] reglage refuse: %s (validation)\n",
+                                  (bad_name != NULL) ? bad_name : "?");
+            return;
+        }
+    }
+    listen_commit(&candidate);
+}
+
+static void listen_diff(void) {
+    const listen_params_t *params = rec_console_params();
+    char lines[LISTEN_DIFF_MAX];
+    size_t count;
+
+    if (params == NULL) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] parametres indisponibles\n");
+        return;
+    }
+    count = rec_mode_params_diff(params, lines, sizeof(lines));
+    if (count == 0u) {
+        diag_out_printf_class(
+            DIAG_CLASS_CONSOLE,
+            "[LISTEN] aucune difference avec le fichier listen_config.h\n");
+        return;
+    }
+    diag_out_printf_class(DIAG_CLASS_CONSOLE,
+                          "[LISTEN] a recopier dans listen_config.h :\n");
+    {
+        const char *line = lines;
+
+        while (*line != '\0') {
+            const char *end = strchr(line, '\n');
+            size_t length = (end != NULL) ? (size_t)(end - line) : strlen(line);
+
+            if (length > 0u) {
+                char copy[96];
+
+                if (length >= sizeof(copy)) {
+                    length = sizeof(copy) - 1u;
+                }
+                memcpy(copy, line, length);
+                copy[length] = '\0';
+                diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN]   %s\n", copy);
+            }
+            if (end == NULL) {
+                break;
+            }
+            line = end + 1;
+        }
+    }
+}
+
+static void listen_reset(void) {
+    const listen_params_t *compiled = rec_console_compiled_params();
+
+    if (compiled == NULL) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] config compilee indisponible\n");
+        return;
+    }
+    listen_commit(compiled);
+}
+
+static void listen_rec(void) {
+    const rec_mode_t mode = rec_console_mode();
+
+    if (mode != REC_MODE_OFF) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] rec deja actif (%s)\n",
+                              rec_mode_name(mode));
+        return;
+    }
+    if (!rec_console_params_valid()) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE,
+                              "[LISTEN] config invalide, rec refuse (voir e show)\n");
+        return;
+    }
+    // main.c journalise `[REC] ON SOLE` ou `[REC] refus <raison>`.
+    (void)rec_console_enter_sole();
+}
+
+static void listen_bruit(void) {
+    const listen_params_t *params = rec_console_params();
+    rec_state_t *rec = rec_console_state();
+    bool enabled = false;
+
+    if (params == NULL || rec == NULL) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] etat indisponible\n");
+        return;
+    }
+    if (!rec_mode_noise_toggle(rec, params->detail != 0u, &enabled)) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] bruit: necessite detail=1\n");
+        return;
+    }
+    diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] bruit=%s\n",
+                          enabled ? "on" : "off");
+}
+
+static bool listen_resolve(const char *text, char *token, size_t capacity, uint8_t *midi_note,
+                           commissioning_note_target_t *target) {
+    const commissioning_runtime_t *runtime;
+
+    (void)next_token(text, token, capacity);
+    if (token[0] == '\0') {
+        return false;
+    }
+    if (!rec_console_table_valid()) {
+        return false;
+    }
+    runtime = rec_console_runtime();
+    if (runtime == NULL) {
+        return false;
+    }
+    return rec_mode_resolve_touch(runtime, token, midi_note, target);
+}
+
+static void listen_trace(const char *text) {
+    char token[LISTEN_TOKEN_MAX];
+    char label[16] = "?";
+    uint8_t midi_note = 0u;
+    commissioning_note_target_t target;
+
+    if (!rec_console_table_valid()) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[REC] refus REC_NO_TABLE\n");
+        return;
+    }
+    if (!listen_resolve(text, token, sizeof(token), &midi_note, &target)) {
+        (void)next_token(text, token, sizeof(token));
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] touche inconnue '%s'\n", token);
+        return;
+    }
+    (void)rec_mode_note_name(midi_note, label, sizeof(label));
+    if (!rec_console_trace(midi_note, &target)) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] trace impossible\n");
+        return;
+    }
+    diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] trace %s (uid=0x%04X ch=%u)\n", label,
+                          (unsigned)target.uid_tag, (unsigned)target.channel);
+}
+
+static void listen_stream(const char *text) {
+    char token[LISTEN_TOKEN_MAX];
+    uint8_t midi_note = 0u;
+    commissioning_note_target_t target;
+
+    if (!CLAVIER_SERIAL_STUDIO) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE,
+                              "[LISTEN] stream indisponible (CLAVIER_SERIAL_STUDIO=OFF)\n");
+        return;
+    }
+    (void)next_token(text, token, sizeof(token));
+    if (token[0] == '\0') {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE,
+                              "[LISTEN] usage: e stream <touche>|off\n");
+        return;
+    }
+    if (token_is(token, "off")) {
+        if (!rec_console_stream_off()) {
+            diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] stream off impossible\n");
+            return;
+        }
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] stream=off\n");
+        return;
+    }
+    if (!rec_console_table_valid()) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[REC] refus REC_NO_TABLE\n");
+        return;
+    }
+    if (!listen_resolve(text, token, sizeof(token), &midi_note, &target)) {
+        (void)next_token(text, token, sizeof(token));
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] touche inconnue '%s'\n", token);
+        return;
+    }
+    if (!rec_console_stream(&target)) {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] stream impossible\n");
+        return;
+    }
+    diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] stream uid=0x%04X ch=%u\n",
+                          (unsigned)target.uid_tag, (unsigned)target.channel);
+}
+
+static void listen_command(const char *args) {
+    const char *rest;
+
+    args = skip_ws(args);
+    if (*args == '\0' || *args == '?' || take_word(args, "help", &rest)) {
+        print_listen_help();
+    } else if (take_word(args, "show", &rest)) {
+        listen_show();
+    } else if (take_word(args, "set", &rest)) {
+        listen_set(rest);
+    } else if (take_word(args, "get", &rest)) {
+        listen_get(rest);
+    } else if (take_word(args, "diff", &rest)) {
+        listen_diff();
+    } else if (take_word(args, "reset", &rest)) {
+        listen_reset();
+    } else if (take_word(args, "rec", &rest)) {
+        listen_rec();
+    } else if (take_word(args, "bruit", &rest)) {
+        listen_bruit();
+    } else if (take_word(args, "trace", &rest)) {
+        listen_trace(rest);
+    } else if (take_word(args, "stream", &rest)) {
+        listen_stream(rest);
+    } else if (take_word(args, "raz", &rest)) {
+        if (rec_console_raz()) {
+            diag_out_printf_class(DIAG_CLASS_CONSOLE,
+                                  "[LISTEN] raz (touches relevees)\n");
+        } else {
+            diag_out_printf_class(DIAG_CLASS_CONSOLE, "[LISTEN] raz impossible\n");
+        }
+    } else {
+        diag_out_printf_class(DIAG_CLASS_CONSOLE,
+                              "[LISTEN] sous-commande inconnue (e ? pour l'aide)\n");
+    }
+}
+
 static void execute_line(const char *line) {
     const char *text = skip_ws(line);
 
@@ -227,6 +663,10 @@ static void execute_line(const char *line) {
     }
     if ((*text == 'p' || *text == 'P') && (text[1] == '\0' || text[1] == ' ' || text[1] == '\t')) {
         profile_command(text + 1);
+        return;
+    }
+    if ((*text == 'e' || *text == 'E') && (text[1] == '\0' || text[1] == ' ' || text[1] == '\t')) {
+        listen_command(text + 1);
         return;
     }
     switch (text[0]) {

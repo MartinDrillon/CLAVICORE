@@ -19,7 +19,7 @@ minuscules**. Une commande inconnue répond `[CONSOLE] commande inconnue (?=aide
 | Commande | Effet | Réponse typique |
 |---|---|---|
 | `?` | Affiche l'aide générale | lignes `[CONSOLE]` |
-| `t` | Demande un auto-test IPROPI (profil + `0x401`) | `[CONSOLE] t -> auto-test demande`, puis `[TRIGGER]`/`[STATUS]`; refus si auto-test, synchronisation, requête UID/contrôle en cours, ou jeu depuis moins de 0,5 s |
+| `t` | Demande un auto-test IPROPI (profil + `0x401`) | `[CONSOLE] t -> auto-test demande`, puis `[TRIGGER]`/`[STATUS]`; refus si auto-test, synchronisation, requête UID/contrôle en cours, jeu depuis moins de 0,5 s, **ou mode REC actif** (`[REC] refus REC_SELFTEST`) |
 | `c` | Bascule l'**acquisition** de calibration (trames `0x601`, estimation ohmique). Ne change pas le niveau de journal | `[CONSOLE] c -> mode diagnostic ON|OFF` |
 | `d` | Affiche la table de commissioning persistée et la correspondance position/canal/touche | lignes `[TABLE]`, `[MAP]`; réponse toujours affichée, même à `l 0` |
 | `m` | Affiche l'état synthétique du Clavier | `[CONSOLE] status valid=… state=… flags=… cards=… selftest=… calib=…` |
@@ -94,11 +94,37 @@ Règles de `p set` :
 | `dir_level_release` | polarité non réécrite à l'arrêt (fichier) |
 | `dir_level_maint` | polarité non réécrite à l'arrêt (fichier) |
 
+## Famille `e` — écoute IPROPI et mode REC (ADR-0032)
+
+Réglage de l'écoute en RAM Clavier (perdu au reboot), sans aucune limite
+électrique. Source : `firmware/clavier/src/bringup_console.c`,
+`firmware/clavier/src/rec_mode.c`, `firmware/clavier/src/listen_config.h`.
+
+| Commande | Effet |
+|---|---|
+| `e` / `e ?` / `e help` | Aide |
+| `e show` | Liste les 18 champs, puis `actif=OFF|SOLE|MUTE crc=0x… detail=… bruit=on|off` |
+| `e get <champ>` | Valeur du champ (le `.` initial est toléré) |
+| `e set <champ> <valeur> …` | Applique **toutes** les affectations après `listen_params_validate` ; rejet en bloc si un champ est invalide. En REC : arrêt puis redémarrage de l'écoute (le Moteur refuse `LISTEN_PARAM` hors OFF) |
+| `e diff` | Lignes `.champ = valeur,` des seuls champs différents de `listen_config.h` |
+| `e reset` | Revient au jeu compilé (`k_listen_config`) |
+| `e rec` | Entrée en REC variante `REC_SOLE` |
+| `e bruit` | Bascule les requêtes de bruit des voisins k−1/k+1 ; refusé si `detail=0` |
+| `e trace <touche>` | Capture d'un canal (4096 points) ; résumé `[TRACE]` dans PuTTY, courbe sur le port 2 si option ON |
+| `e stream <touche>` / `e stream off` | Flux direct (option `CLAVIER_SERIAL_STUDIO=ON` seulement) ; sinon `indisponible (CLAVIER_SERIAL_STUDIO=OFF)` |
+| `e raz` | Remet toutes les touches relevées (alternance repart à ON), sans Note Off |
+
+`<touche>` = nom (`MI3`, `RE#3`) ou numéro MIDI 36..127. Les changements
+s'appliquent à chaud ; `e set` en REC redémarre l'écoute, les cartes non ciblées
+continuent d'écouter. Une capture `trace` revient automatiquement au balayage
+après émission ou à `trace_timeout_ms` (`TRACE_TIMEOUT`).
+
 ## Diagnostiquer un refus de `t`
 
 `[STATUS] code=SELFTEST_REFUSED_PLAYING` est émis par plusieurs gardes : auto-test
-déjà en cours, requête UID/contrôle ou synchronisation de profil en cours, ou
-jeu depuis moins de 0,5 s. Le code seul ne dit pas laquelle.
+déjà en cours, requête UID/contrôle ou synchronisation de profil en cours, jeu
+depuis moins de 0,5 s, **ou mode REC actif** (`[REC] refus REC_SELFTEST`). Le
+code seul ne dit pas laquelle.
 
 1. `m` — état principal :
    - `valid=oui|non`, `state=FINAL|PROVISIONAL|INVALID|…` (table) ;

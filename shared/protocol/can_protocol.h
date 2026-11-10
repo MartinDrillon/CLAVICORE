@@ -44,6 +44,15 @@
 #define CAN_ID_PROFILE_CHUNK 0x421u
 #define CAN_ID_PROFILE_COMMIT 0x422u
 #define CAN_ID_PROFILE_STATUS 0x423u
+// Écoute IPROPI et mode REC (ADR-0032).
+#define CAN_ID_LISTEN_PULSE 0x110u         // Moteur -> Clavier
+#define CAN_ID_LISTEN_CONTROL 0x404u       // Clavier -> diffusion
+#define CAN_ID_LISTEN_PARAM 0x405u         // Clavier -> diffusion
+#define CAN_ID_LISTEN_NOISE_QUERY 0x406u   // Clavier -> diffusion
+#define CAN_ID_LISTEN_STATUS 0x426u        // Moteur -> Clavier
+#define CAN_ID_LISTEN_NOISE_REPORT 0x427u  // Moteur -> Clavier
+#define CAN_ID_LISTEN_PULSE_TIMING 0x428u  // Moteur -> Clavier
+#define CAN_ID_LISTEN_TRACE 0x429u         // Moteur -> Clavier
 
 #define CAN_ID_FORBIDDEN_FIRST 0x7F0u
 #define CAN_ID_MAX_STANDARD 0x7FFu
@@ -63,6 +72,14 @@
 #define CAN_DLC_PROFILE_CHUNK 8u
 #define CAN_DLC_PROFILE_COMMIT 8u
 #define CAN_DLC_PROFILE_STATUS 8u
+#define CAN_DLC_LISTEN_PULSE 8u
+#define CAN_DLC_LISTEN_CONTROL 8u
+#define CAN_DLC_LISTEN_PARAM 8u
+#define CAN_DLC_LISTEN_NOISE_QUERY 6u
+#define CAN_DLC_LISTEN_STATUS 8u
+#define CAN_DLC_LISTEN_NOISE_REPORT 8u
+#define CAN_DLC_LISTEN_PULSE_TIMING 8u
+#define CAN_DLC_LISTEN_TRACE 8u
 
 // --- Événements et compteurs de carte (ADR-0018, ADR-0020) ------------------
 
@@ -325,6 +342,116 @@ typedef struct {
     uint32_t profile_tag32;
 } can_profile_status_t;
 
+// --- Écoute IPROPI et mode REC (ADR-0032) ----------------------------------
+
+// Champs 12 bits et drapeaux (octets de contrôle).
+#define CAN_LISTEN_ADC_MASK 0x0FFFu  // base, crête, min, max
+#define CAN_LISTEN_CHANNEL_MASK 0x0Fu
+#define CAN_LISTEN_PULSE_FLAG_SPLIT 0x10u      // bit 4 : coupure de trille
+#define CAN_LISTEN_PULSE_FLAG_SATURATED 0x20u  // bit 5 : durée > 0xFFFF x 100 µs
+#define CAN_LISTEN_NOISE_FLAG_TRUNCATED 0x01u  // fenêtre > 256 ms
+#define CAN_LISTEN_TIMING_SATURATED 0xFFFFu    // 100 µs -> 6,55 s
+#define CAN_LISTEN_TRACE_FRAME_SAMPLES 4u
+#define CAN_LISTEN_TRACE_SAMPLES 4096u
+
+// Mode porté par LISTEN_CONTROL[1] (0 OFF, 1 ÉCOUTE, 2 TRACE, 3 STREAM,
+// 4 STREAM_OFF). STREAM_OFF revient au balayage sans quitter l'écoute.
+typedef enum {
+    CAN_LISTEN_MODE_OFF = 0,
+    CAN_LISTEN_MODE_LISTEN = 1,
+    CAN_LISTEN_MODE_TRACE = 2,
+    CAN_LISTEN_MODE_STREAM = 3,
+    CAN_LISTEN_MODE_STREAM_OFF = 4,
+} can_listen_mode_t;
+
+// État porté par LISTEN_STATUS[2]. Aucun état n'est silencieux : une écoute
+// qui ne peut pas tourner est toujours nommée.
+typedef enum {
+    CAN_LISTEN_STATE_IDLE = 0,              // éteinte, Core 1 parqué
+    CAN_LISTEN_STATE_LISTENING = 1,         // balayage 12 canaux
+    CAN_LISTEN_STATE_TRACE = 2,             // capture d'un canal en cours
+    CAN_LISTEN_STATE_STREAM = 3,            // flux d'un canal pendant le balayage
+    CAN_LISTEN_STATE_PARAM_MISMATCH = 4,    // CRC ou validation du jeu refusé
+    CAN_LISTEN_STATE_BUSY_SELFTEST = 5,     // LISTEN_CONTROL reçu pendant 0x401
+    CAN_LISTEN_STATE_UNAVAILABLE_SLEEP = 6, // nSLEEP bas
+    CAN_LISTEN_STATE_TRACE_TIMEOUT = 7,     // trace_timeout_ms écoulé
+    CAN_LISTEN_STATE_FAULT = 8,             // FAULT actif sur au moins un canal
+} can_listen_state_t;
+
+// LISTEN_PULSE (0x110, DLC 8) — une impulsion = appui OU relâchement (IPROPI
+// mesure |i|, le sens n'est pas lisible).
+typedef struct {
+    uint16_t uid_tag;
+    uint8_t channel;  // 0..11
+    uint8_t seq;      // recopie dans LISTEN_PULSE_TIMING
+    uint16_t base;    // ligne de base ADC au début de l'impulsion (0..4095)
+    uint16_t peak;    // maximum de l'impulsion (0..4095)
+    bool split;       // fin par coupure de trille
+    bool saturated;   // durée saturée (voir LISTEN_PULSE_TIMING)
+} can_listen_pulse_t;
+
+// LISTEN_CONTROL (0x404, DLC 8) — Clavier vers diffusion.
+// `param_crc16` = listen_params_crc16() du jeu envoyé avant l'ordre.
+typedef struct {
+    uint8_t proto_version;
+    can_listen_mode_t mode;
+    uint16_t param_crc16;
+    uint16_t target_uid_tag;  // TRACE/STREAM ; 0 en OFF/LISTEN
+    uint8_t channel;          // 0..11 en TRACE/STREAM ; 0 sinon
+} can_listen_control_t;
+
+// LISTEN_PARAM (0x405, DLC 8) — un champ, valeur u32 little-endian.
+// `param_id` = listen_param_id_t (listen_params.h) ; le codec le laisse opaque
+// pour que le Moteur puisse nommer un id refusé.
+typedef struct {
+    uint8_t proto_version;
+    uint8_t param_id;
+    uint32_t value;
+} can_listen_param_t;
+
+// LISTEN_NOISE_QUERY (0x406, DLC 6) — Clavier vers diffusion.
+typedef struct {
+    uint16_t target_uid_tag;
+    uint8_t channel;
+    uint8_t request_id;    // 1..127, recopié dans le rapport
+    uint16_t lookback_ms;  // <= 256, sinon le rapport est marqué tronqué
+} can_listen_noise_query_t;
+
+// LISTEN_STATUS (0x426, DLC 8) — état réel de la carte.
+typedef struct {
+    uint16_t uid_tag;
+    can_listen_state_t state;
+    uint8_t refused_param_id;  // 0 sauf refus de paramètre
+    uint16_t sweep_period_us;  // période mesurée d'un balayage des 12 canaux
+    uint8_t overflows;         // anneaux pleins, saturant à 255
+} can_listen_status_t;
+
+// LISTEN_NOISE_REPORT (0x427, DLC 8) — bruit du voisin demandé.
+typedef struct {
+    uint16_t uid_tag;
+    uint8_t channel;
+    uint8_t request_id;
+    uint16_t min;   // 0..4095
+    uint16_t max;   // 0..4095
+    bool truncated; // fenêtre demandée > 256 ms
+} can_listen_noise_report_t;
+
+// LISTEN_PULSE_TIMING (0x428, DLC 8) — durée du même `seq`, unité 100 µs,
+// saturée à 0xFFFF (6,55 s) ; `saturated` de LISTEN_PULSE est posé alors.
+typedef struct {
+    uint16_t uid_tag;
+    uint8_t seq;
+    uint16_t t_peak_100us;      // t_peak - t0
+    uint16_t t_end_peak_100us;  // t_end - t_peak
+} can_listen_pulse_timing_t;
+
+// LISTEN_TRACE (0x429, DLC 8) — 4 échantillons 12 bits. Utilisée pour `trace`
+// ET `stream`. Pas d'uid_tag (ADR-0032 §11) : le Clavier l'attribue à sa cible.
+typedef struct {
+    uint16_t seq;
+    uint16_t samples[CAN_LISTEN_TRACE_FRAME_SAMPLES];  // 0..4095
+} can_listen_trace_t;
+
 // --- Helpers purs ----------------------------------------------------------
 
 void can_put_u16_le(uint8_t *out, uint16_t value);
@@ -338,6 +465,9 @@ uint8_t can_next_request_id(uint8_t previous);
 bool can_selftest_bits_are_valid(uint16_t bits);
 bool can_selftest_status_is_valid(can_selftest_status_t status);
 bool can_solenoid_command_is_valid(can_solenoid_command_kind_t command);
+bool can_listen_mode_is_valid(can_listen_mode_t mode);
+bool can_listen_state_is_valid(can_listen_state_t state);
+bool can_listen_channel_is_valid(uint8_t channel);  // < CAN_IPROPI_CHANNEL_COUNT
 
 // SOLENOID_COMMAND (ID 0x100, DLC 5).
 can_proto_result_t can_encode_solenoid_command(uint8_t out[CAN_DLC_SOLENOID_COMMAND],
@@ -436,5 +566,53 @@ can_proto_result_t can_encode_card_stats(uint8_t out[CAN_DLC_CARD_STATS],
                                          const can_card_stats_t *stats);
 can_proto_result_t can_decode_card_stats(const uint8_t *data, uint8_t dlc,
                                          can_card_stats_t *stats);
+
+// LISTEN_PULSE (0x110, DLC 8) — ADR-0032 §9.
+can_proto_result_t can_encode_listen_pulse(uint8_t out[CAN_DLC_LISTEN_PULSE],
+                                           const can_listen_pulse_t *pulse);
+can_proto_result_t can_decode_listen_pulse(const uint8_t *data, uint8_t dlc,
+                                           can_listen_pulse_t *pulse);
+
+// LISTEN_CONTROL (0x404, DLC 8).
+can_proto_result_t can_encode_listen_control(uint8_t out[CAN_DLC_LISTEN_CONTROL],
+                                             const can_listen_control_t *control);
+can_proto_result_t can_decode_listen_control(const uint8_t *data, uint8_t dlc,
+                                             can_listen_control_t *control);
+
+// LISTEN_PARAM (0x405, DLC 8).
+can_proto_result_t can_encode_listen_param(uint8_t out[CAN_DLC_LISTEN_PARAM],
+                                           const can_listen_param_t *param);
+can_proto_result_t can_decode_listen_param(const uint8_t *data, uint8_t dlc,
+                                           can_listen_param_t *param);
+
+// LISTEN_NOISE_QUERY (0x406, DLC 6).
+can_proto_result_t can_encode_listen_noise_query(uint8_t out[CAN_DLC_LISTEN_NOISE_QUERY],
+                                                 const can_listen_noise_query_t *query);
+can_proto_result_t can_decode_listen_noise_query(const uint8_t *data, uint8_t dlc,
+                                                 can_listen_noise_query_t *query);
+
+// LISTEN_STATUS (0x426, DLC 8).
+can_proto_result_t can_encode_listen_status(uint8_t out[CAN_DLC_LISTEN_STATUS],
+                                            const can_listen_status_t *status);
+can_proto_result_t can_decode_listen_status(const uint8_t *data, uint8_t dlc,
+                                            can_listen_status_t *status);
+
+// LISTEN_NOISE_REPORT (0x427, DLC 8).
+can_proto_result_t can_encode_listen_noise_report(uint8_t out[CAN_DLC_LISTEN_NOISE_REPORT],
+                                                  const can_listen_noise_report_t *report);
+can_proto_result_t can_decode_listen_noise_report(const uint8_t *data, uint8_t dlc,
+                                                  can_listen_noise_report_t *report);
+
+// LISTEN_PULSE_TIMING (0x428, DLC 8).
+can_proto_result_t can_encode_listen_pulse_timing(uint8_t out[CAN_DLC_LISTEN_PULSE_TIMING],
+                                                  const can_listen_pulse_timing_t *timing);
+can_proto_result_t can_decode_listen_pulse_timing(const uint8_t *data, uint8_t dlc,
+                                                  can_listen_pulse_timing_t *timing);
+
+// LISTEN_TRACE (0x429, DLC 8).
+can_proto_result_t can_encode_listen_trace(uint8_t out[CAN_DLC_LISTEN_TRACE],
+                                           const can_listen_trace_t *trace);
+can_proto_result_t can_decode_listen_trace(const uint8_t *data, uint8_t dlc,
+                                           can_listen_trace_t *trace);
 
 #endif  // CLAVICORE_CAN_PROTOCOL_H

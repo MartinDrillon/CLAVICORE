@@ -5,6 +5,7 @@
 #include "pico/time.h"
 
 #include "config.h"
+#include "ipropi_mux.h"
 #include "ipropi_ohm.h"
 #include "solenoid_ohm_constants.h"
 #include "solenoid_profile_store.h"
@@ -62,9 +63,6 @@ typedef enum {
     SELFTEST_WAIT_IDLE,
 } selftest_state_t;
 
-static const uint8_t g_channel_to_mux_input[MOTEUR_CHANNEL_COUNT] = {9u, 10u, 11u, 12u, 13u, 14u,
-                                                                     1u, 2u, 5u, 3u, 4u, 6u};
-
 static solenoid_driver_t *g_drivers;
 static uint8_t g_driver_count;
 static uint16_t g_uid_tag;
@@ -85,18 +83,6 @@ static can_ipropi_raw_t g_raw_reports[CAN_IPROPI_CHANNEL_COUNT];
 static uint8_t g_raw_count;
 static can_ipropi_ohm_t g_ohm_reports[CAN_IPROPI_CHANNEL_COUNT];
 static uint8_t g_ohm_count;
-
-static void mux_disable(void) {
-    gpio_put(MOTEUR_MUX_EN_GPIO, true);
-}
-
-static void mux_select_channel(uint8_t channel) {
-    const uint8_t mux_input = g_channel_to_mux_input[channel];
-    gpio_put(MOTEUR_MUX_S0_GPIO, (mux_input & 0x01u) != 0u);
-    gpio_put(MOTEUR_MUX_S1_GPIO, (mux_input & 0x02u) != 0u);
-    gpio_put(MOTEUR_MUX_S2_GPIO, (mux_input & 0x04u) != 0u);
-    gpio_put(MOTEUR_MUX_S3_GPIO, (mux_input & 0x08u) != 0u);
-}
 
 static uint16_t average_adc_samples(void) {
     uint32_t sum = 0u;
@@ -165,7 +151,7 @@ static void finish_now(can_selftest_status_t status) {
                                                                : CAN_CARD_EVENT_CHANNEL_NONE;
     g_result_ready = true;
     g_state = SELFTEST_IDLE;
-    mux_disable();
+    ipropi_mux_disable();
 }
 
 void ipropi_selftest_init(solenoid_driver_t *drivers, uint8_t driver_count, uint16_t uid_tag) {
@@ -190,19 +176,8 @@ void ipropi_selftest_init(solenoid_driver_t *drivers, uint8_t driver_count, uint
         g_ohm_reports[i] = (can_ipropi_ohm_t){0};
     }
 
-    gpio_init(MOTEUR_MUX_EN_GPIO);
-    gpio_put(MOTEUR_MUX_EN_GPIO, true);
-    gpio_set_dir(MOTEUR_MUX_EN_GPIO, GPIO_OUT);
-
-    gpio_init(MOTEUR_MUX_S0_GPIO);
-    gpio_set_dir(MOTEUR_MUX_S0_GPIO, GPIO_OUT);
-    gpio_init(MOTEUR_MUX_S1_GPIO);
-    gpio_set_dir(MOTEUR_MUX_S1_GPIO, GPIO_OUT);
-    gpio_init(MOTEUR_MUX_S2_GPIO);
-    gpio_set_dir(MOTEUR_MUX_S2_GPIO, GPIO_OUT);
-    gpio_init(MOTEUR_MUX_S3_GPIO);
-    gpio_set_dir(MOTEUR_MUX_S3_GPIO, GPIO_OUT);
-    mux_select_channel(0u);
+    // Carte du mux partagée avec l'écoute IPROPI (ADR-0032) : une seule copie.
+    ipropi_mux_init();
 
     adc_init();
     adc_gpio_init(MOTEUR_MUX_OUT_GPIO);
@@ -210,8 +185,9 @@ void ipropi_selftest_init(solenoid_driver_t *drivers, uint8_t driver_count, uint
 }
 
 bool ipropi_selftest_start(uint8_t request_id) {
-    if (g_drivers == NULL || g_driver_count == 0u || request_id < CAN_REQUEST_ID_MIN ||
-        request_id > CAN_REQUEST_ID_MAX || g_state != SELFTEST_IDLE || g_result_ready) {
+    if (g_drivers == NULL || g_driver_count == 0u || g_driver_count > MOTEUR_CHANNEL_COUNT ||
+        request_id < CAN_REQUEST_ID_MIN || request_id > CAN_REQUEST_ID_MAX ||
+        g_state != SELFTEST_IDLE || g_result_ready) {
         return false;
     }
 
@@ -240,8 +216,8 @@ bool ipropi_selftest_start(uint8_t request_id) {
         g_raw_reports[i] = (can_ipropi_raw_t){0};
         g_ohm_reports[i] = (can_ipropi_ohm_t){0};
     }
-    mux_select_channel(g_channel);
-    gpio_put(MOTEUR_MUX_EN_GPIO, false);
+    (void)ipropi_mux_select(g_channel);
+    ipropi_mux_enable();
     g_state_since_us = 0u;
     g_state = SELFTEST_MUX_SETTLING;
     update_sampling();
@@ -352,9 +328,9 @@ void ipropi_selftest_tick(uint32_t now_us) {
             finish_now(g_result.test_status);
             return;
         }
-        mux_disable();
-        mux_select_channel(g_channel);
-        gpio_put(MOTEUR_MUX_EN_GPIO, false);
+        ipropi_mux_disable();
+        (void)ipropi_mux_select(g_channel);
+        ipropi_mux_enable();
         g_state_since_us = now_us;
         g_state = SELFTEST_MUX_SETTLING;
         return;

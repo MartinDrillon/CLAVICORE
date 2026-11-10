@@ -85,10 +85,16 @@ mode BOOTSEL.
 Commandes validées le **2026-10-21** (ADR-0010), à rejouer identiquement :
 
 ```powershell
-powershell -File tests\host\run_host_tests.ps1   # 221 au lot ADR-0010 ; résultat courant 2026-10-31 : 1044
+powershell -File tests\host\run_host_tests.ps1   # 221 au lot ADR-0010 ; résultat courant 2026-11-10 : 2280
 cmake --build "build/clavier"                    # Clavier (pico2) → clavier.uf2
 cmake --build "build/moteur"                     # Moteur → moteur.elf (flash SWD, §6)
 ```
+
+**Résultat de référence du 2026-11-10** (ADR-0032, mode REC) : **2 280
+vérifications hôte, 0 échec** ; builds Clavier (`pico2`, `CLAVIER_SERIAL_STUDIO`
+OFF **et** ON) et Moteur (`moteur_rp2354b`) **0 erreur / 0 warning** ; bss
+Moteur ≈ 32,9 Ko, Clavier 13,2 Ko (OFF) / 18,1 Ko (ON). Validation matérielle
+**non acquise** (`tests/lecture_test_roadmap.md`).
 
 **Résultat de référence du 2026-10-31** (correction sync profil Clavier) :
 builds Clavier **et** Moteur OK ; **1 044 vérifications hôte, 0 échec**
@@ -123,6 +129,21 @@ build/moteur/CMakeFiles/moteur.dir/D_/<chemin-du-repo>/shared/protocol/commissio
 TRACE `OFF`.
 Ces options expliquent la taille de l'artefact et sont à ajuster en configuration
 finale (ADR-0009 §7/§9, ADR-0025 §8).
+
+**Option Serial Studio (ADR-0032).** `CLAVIER_SERIAL_STUDIO` est **OFF par
+défaut** ; activée, elle ajoute un **second port CDC** nommé « Clavicore REC »
+(endpoints `0x84`/`0x05`/`0x85`) pour les courbes Quick Plot, sans toucher au
+port 1 (journal/console PuTTY). Configurer dans un répertoire séparé pour ne pas
+mélanger les deux builds :
+
+```powershell
+cmake -S "firmware/clavier" -B "build/clavier_studio" -G Ninja -DCMAKE_BUILD_TYPE=Release -DPICO_BOARD=pico2 -DCLAVIER_SERIAL_STUDIO=ON -DPICO_SDK_PATH="C:/Users/marti/.pico-sdk/sdk/2.3.1" -DCMAKE_C_COMPILER="C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/arm-none-eabi-gcc.exe" -DCMAKE_CXX_COMPILER="C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/arm-none-eabi-g++.exe" -DCMAKE_ASM_COMPILER="C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi/14.2 rel1/bin/arm-none-eabi-gcc.exe"
+cmake --build "build/clavier_studio"
+```
+
+Option OFF : `e stream` répond `indisponible (CLAVIER_SERIAL_STUDIO=OFF)` et
+aucun port COM supplémentaire n'apparaît. Le build de production se refait avec
+`-DCLAVIER_SERIAL_STUDIO=OFF`.
 
 **Non couvert par ces commandes** (à faire au banc) : PROBE 5 ms, estimation
 ohmique et tri des bobines (`tests/bringup_commissioning_provisoire.md`),

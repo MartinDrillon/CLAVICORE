@@ -5,6 +5,8 @@
 //   c : basculer le mode diagnostic (IPROPI_RAW + IPROPI_OHM) pour la session
 //   d : journaliser la table persistée et la correspondance canal -> touche
 //   m : état (validité de table, état/motifs, auto-test en cours, diagnostic)
+//   p : réglage à chaud du profil d'activation des solénoïdes (p ?)
+//   e : mode REC / écoute IPROPI, réglage à chaud des paramètres (e ?)
 //   ? : aide
 //
 // Aucune commande n'écrit ni n'efface la table : seul un auto-test explicitement

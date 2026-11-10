@@ -39,6 +39,13 @@ documente donc pas.
 | `UNTRANSPOSE` | Remet à zéro les transpositions **persistantes**, l'armure et les surcouches d'altération ; n'annule pas une transposition temporaire encore maintenue | ADR-0011, ADR-0026, ADR-0029, ADR-0030 |
 | `MAINT` | Bascule du mode maintenance (appui uniquement) | ADR-0006, ADR-0012 |
 | `GET_UID` | Demande les UID des cartes Moteur à l'appui | ADR-0003 |
+| `REC_SOLE` | Bascule du mode REC, variante solénoïdes muets et MIDI de la matrice conservé ; en REC, `REC_SOLE` ou `REC_MUTE` fait sortir | ADR-0032 |
+| `REC_MUTE` | Bascule du mode REC, variante solénoïdes muets **et** MIDI de la matrice muet ; en REC, `REC_SOLE` ou `REC_MUTE` fait sortir | ADR-0032 |
+
+`REC_SOLE` et `REC_MUTE` ont pour codes fixes `0x1000` et `0x1100`
+(`firmware/clavier/src/keycode.h`) ; aucun des deux n'est placé dans
+`firmware/clavier/src/keymap.c` (l'humain choisit les positions, invariant 6),
+et `e rec` équivaut à `REC_SOLE`.
 
 Les huit `T_TEMP_*` sont des keycodes **momentanés**, non persistés : kinds 14
 (`KEYCODE_TEMP_TRANSPOSE_ST`, codes `0x0E00`..`0x0E03`) et 15

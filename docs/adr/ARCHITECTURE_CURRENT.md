@@ -162,6 +162,10 @@ changement d'interface partagée exige une ADR **avant** le code (invariant 5).
 - `0x100` SOLENOID_COMMAND, `0x401` IPROPI_SELFTEST_REQUEST,
   `0x402` IPROPI_SELFTEST_TRIGGER, `0x403`/`0x425` compteurs,
   `0x420`–`0x423` profil, `0x424` CARD_EVENT, `0x601` IPROPI_OHM.
+- Écoute IPROPI (ADR-0032) : `0x110` LISTEN_PULSE, `0x404` LISTEN_CONTROL,
+  `0x405` LISTEN_PARAM, `0x406` LISTEN_NOISE_QUERY, `0x426` LISTEN_STATUS,
+  `0x427` LISTEN_NOISE_REPORT, `0x428` LISTEN_PULSE_TIMING, `0x429`
+  LISTEN_TRACE.
 - Toute trame nouvelle ou modifiée = ADR + mise à jour de `shared/protocol/` +
   signalement des modules dépendants.
 
@@ -183,6 +187,36 @@ changement d'interface partagée exige une ADR **avant** le code (invariant 5).
   reason=%s`. Aucune position de combo n'est normative (ADR-0029 §7).
 - Détail : `docs/specs/combos.md`.
 
+### 4.9 Mode REC — écoute IPROPI (ADR-0032)
+- Le Clavier peut être utilisé comme **clavier maître MIDI** : en mode REC, les
+  cartes Moteur écoutent la FEM induite par l'aimant de chaque touche dans la
+  bobine, en frein au repos (aucun changement électrique, ADR-0024). Le Core 1
+  (second Cortex-M33) balaie les 12 canaux du mux IPROPI et publie des anneaux
+  à producteur/consommateur uniques ; le Core 0 émet le CAN et les notes.
+- Détecteur pur `pulse_detector.{h,c}`, mémoire O(1) par canal : base lente
+  (`baseline_tau_ms`), début (`rise_thr`), crête, fin par retour maintenu
+  (`return_thr`, `return_hold_us`) ou coupure de trille (`split_pct`) ; filtre
+  `min_pulse_us` ; anneau de bruit 256 ms.
+- **Deux keycodes** de bascule, positions libres : `REC_SOLE` (solénoïdes
+  muets, MIDI matrice conservé) et `REC_MUTE` (matrice muette aussi). `e rec` =
+  `REC_SOLE`. En REC : aucune trame `0x100`, auto-test et MAINTENANCE refusés.
+- **Classement côté Clavier** par (UID, canal) via la table de commissioning ;
+  alternance 1re impulsion = appui, 2e = relâchement ; fusion par compteur par
+  note ; `e raz` remet les touches relevées. Aucun remapping automatique.
+- Paramètres réglables à chaud dans **`firmware/clavier/src/listen_config.h`**
+  (18 champs, modèle `solenoid_profile_config.h`), diffusés en RAM Moteur avec
+  CRC16 ; aucune valeur n'est une limite électrique. Console `e` :
+  `show/get/set/diff/reset/rec/bruit/trace/stream/raz`.
+- `trace` (4096 points, un canal, 50 kHz par défaut) et `stream` servent au
+  réglage ; résumés seuls dans PuTTY, courbes sur un **second port CDC**
+  (`Clavicore REC`) seulement si `CLAVIER_SERIAL_STUDIO=ON` (défaut OFF).
+  TRACE/STREAM sont ciblés par UID ; les autres cartes continuent d'écouter ;
+  retour automatique au balayage après émission ou `TRACE_TIMEOUT`.
+- Débit : par canal `settle_us + 2 µs × samples_per_dwell + ≈ 1 µs` ; à
+  `settle_us = 15`, ≈ 4,6 kHz/canal (N=1). Ordre de grandeur FEM : 50 mV →
+  ≈ 6,6 mA → ≈ 7 mV sur IPROPI → ≈ 9 points ADC (K = 1,08 V/A).
+- Validation **matérielle non acquise** : campagne `tests/lecture_test_roadmap.md`.
+
 ## 5. Règles de travail
 
 - Chercher avant de lire, lire par plage de lignes ; déléguer « où est défini
@@ -195,6 +229,15 @@ changement d'interface partagée exige une ADR **avant** le code (invariant 5).
 
 ## 6. Validation acquise / non acquise
 
+- **Acquis (2026-11-10, ADR-0032)** : `powershell -File
+  tests\host\run_host_tests.ps1` → **2280 vérifications, 0 échec** (dont
+  `test_listen_control_logic` 20, `rec_mode` 117, `console_tuning` 58,
+  `listen_protocol` 598, `pulse_detector` 141, `listen_noise_ring` 40) ;
+  builds Moteur (`moteur_rp2354b`) et Clavier (`pico2`, option OFF **et** ON)
+  **0 erreur / 0 warning**, `-Wall -Wextra -Werror -fsyntax-only` propre sur
+  les unités touchées. Mémoire : Moteur bss ≈ 32,9 Ko ; Clavier bss 13,2 Ko
+  (OFF) / 18,1 Ko (ON). Validation **matérielle non acquise** (N2 au banc,
+  `tests/lecture_test_roadmap.md`).
 - **Acquis (2026-11-04, ADR-0031)** : `powershell -File
   tests\host\run_host_tests.ps1` → **1312 vérifications, 0 échec** (dont
   `test_combo` **183**) ; builds Clavier (cible `pico2`) et Moteur (cible
@@ -231,6 +274,9 @@ changement d'interface partagée exige une ADR **avant** le code (invariant 5).
 | Format et cycle de vie du profil | `docs/specs/profil-solenoides.md` |
 | Réglage du profil au banc | `docs/procedure-profil-solenoides.md` |
 | Console PuTTY | `docs/specs/commandes-putty.md` |
+| Mode REC, écoute IPROPI, `e trace`/`e stream` | `docs/specs/commandes-putty.md`, `docs/specs/CAN.md` (huit `LISTEN_*`) |
+| Banc de l'écoute (M1–M3, G1, seuils, MIDI) | `tests/lecture_test_roadmap.md` |
+| Réglage de l'écoute | `firmware/clavier/src/listen_config.h` (`e set` / `e diff`) |
 | Keycodes | `docs/specs/keycodes.md` |
 | Combos de positions | `docs/specs/combos.md` |
 | Build / flash | `docs/specs/setup-build-flash.md` |

@@ -5,6 +5,8 @@
 #include <stdint.h>
 
 #include "diag_log.h"
+#include "can_protocol.h"
+#include "listen_params.h"
 #include "solenoid_profile.h"
 
 typedef enum {
@@ -63,6 +65,11 @@ void can_link_set_calibration_enabled(bool enabled);
 void can_link_dump_table(void);
 void can_link_dump_status(void);
 bool can_link_has_valid_table(void);
+// Table de commissioning courante en LECTURE SEULE (NULL si invalide). Sert au
+// mode REC pour classer une impulsion (UID, canal) sans dupliquer la table.
+const commissioning_runtime_t *can_link_commissioning_runtime(void);
+// Position d'une carte à partir de son uid_tag (false si absente de la table).
+bool can_link_position_for_uid_tag(uint16_t uid_tag, uint8_t *position);
 bool can_link_selftest_active(void);
 bool can_link_note_on(uint8_t midi_note, uint8_t velocity);
 bool can_link_note_off(uint8_t midi_note);
@@ -74,5 +81,55 @@ can_link_stats_t can_link_stats(void);
 // présentes (`m stats`). Mêmes refus que la requête d'UID ; refuse aussi si
 // aucune carte n'est attendue. Sans effet si un balayage est déjà en cours.
 can_link_request_result_t can_link_stats_request_start(void);
+
+// --- Mode REC : écoute IPROPI (ADR-0032) -----------------------------------
+// Le Clavier est l'unique maître : il envoie le jeu complet de paramètres
+// (18 x LISTEN_PARAM) puis LISTEN_CONTROL avec le CRC du jeu. Aucune valeur
+// d'écoute n'est compilée côté Moteur.
+bool can_link_profile_sync_active(void);
+// Diffuse les 18 LISTEN_PARAM (1 ms d'intervalle). Ne démarre pas l'écoute.
+bool can_link_listen_send_params(const listen_params_t *params);
+// Envoie le jeu complet puis LISTEN_CONTROL `mode`. Pour TRACE/STREAM,
+// `target_uid_tag` et `channel` désignent la carte et le canal ; en LISTEN,
+// les deux valent 0.
+bool can_link_listen_start(const listen_params_t *params, can_listen_mode_t mode,
+                           uint16_t target_uid_tag, uint8_t channel);
+// Envoie LISTEN_CONTROL OFF. Non bloquant : can_link_poll attend le STATUS IDLE
+// (20 ms) et journalise `[LISTEN] arret sans reponse` à l'échéance.
+bool can_link_listen_stop(void);
+bool can_link_listen_trace(const listen_params_t *params, uint16_t uid_tag, uint8_t channel);
+bool can_link_listen_stream(const listen_params_t *params, uint16_t uid_tag, uint8_t channel);
+// STREAM_OFF : revient au balayage sans quitter l'écoute.
+bool can_link_listen_stream_off(void);
+bool can_link_listen_noise_query(uint16_t uid_tag, uint8_t channel, uint8_t request_id,
+                                 uint16_t lookback_ms);
+// Vrai entre un démarrage d'écoute réussi et son arrêt (ou son échec).
+bool can_link_listen_is_active(void);
+
+typedef enum {
+    CAN_LINK_LISTEN_PULSE = 0,
+    CAN_LINK_LISTEN_STATUS,
+    CAN_LINK_LISTEN_NOISE,
+    CAN_LINK_LISTEN_TRACE_FRAME,
+    // Extension Clavier : nécessaire pour corréler durée et requête `e bruit`
+    // (la fiche de lot omet ce membre, la trame 0x428 existe au §1.4).
+    CAN_LINK_LISTEN_PULSE_TIMING,
+} can_link_listen_event_kind_t;
+
+typedef struct {
+    can_link_listen_event_kind_t kind;
+    union {
+        can_listen_pulse_t pulse;
+        can_listen_status_t status;
+        can_listen_noise_report_t noise;
+        can_listen_trace_t trace;
+        can_listen_pulse_timing_t timing;
+    } u;
+    uint16_t source_uid_tag;  // attribué à la réception (0x429 : cible courante)
+} can_link_listen_event_t;
+
+// File bornée (64 événements) ; le débordement est compté dans
+// stats.events_dropped, jamais silencieux.
+bool can_link_listen_take_event(can_link_listen_event_t *out);
 
 #endif

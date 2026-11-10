@@ -47,6 +47,12 @@ typedef struct {
     uint32_t card_events_sent;
     uint32_t card_events_dropped;
     uint32_t stats_requests_served;
+    // ADR-0032 : trames d'écoute émises / perdues (anneaux et CAN).
+    uint32_t listen_pulses_sent;
+    uint32_t listen_status_sent;
+    uint32_t listen_trace_frames_sent;
+    uint32_t listen_noise_reports_sent;
+    uint32_t listen_tx_dropped;
 } can_link_stats_t;
 
 void can_link_init(const uint8_t uid[BOARD_IDENTITY_UID_SIZE], solenoid_driver_t *drivers,
@@ -57,5 +63,11 @@ bool can_link_send_selftest_trigger(void);
 // Best-effort : ne bloque jamais, ne réessaie pas.
 bool can_link_send_card_event(can_card_event_t event, uint8_t channel, uint8_t state, uint8_t fault);
 can_link_stats_t can_link_stats(void);
+
+// ADR-0032 : masque des canaux non IDLE (relayé au Core 1 pour le masquage
+// drive_blank_ms), et vrai si une écoute est demandée ou si le Core 1 n'a pas
+// encore rendu le mux (refus de l'auto-test).
+void can_link_listen_set_drive_mask(uint16_t non_idle_mask);
+bool can_link_listen_is_active(void);
 
 #endif

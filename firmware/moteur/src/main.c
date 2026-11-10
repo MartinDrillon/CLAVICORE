@@ -7,6 +7,7 @@
 
 #include "board_identity.h"
 #include "can_link.h"
+#include "listen_core1.h"
 
 #ifndef MOTEUR_DIAG_TRACE
 #define MOTEUR_DIAG_TRACE 1
@@ -88,6 +89,9 @@ int main(void) {
     uint8_t board_uid[BOARD_IDENTITY_UID_SIZE];
     if (board_identity_read(board_uid)) {
         can_link_init(board_uid, drivers, MOTEUR_CHANNEL_COUNT, time_us_32());
+        // ADR-0032 : l'ADC et le mux ont été initialisés par ipropi_selftest_init
+        // (appelé dans can_link_init) ; le Core 1 peut démarrer sans CAN.
+        listen_core1_launch();
     } else {
         printf("[moteur] UID invalide: CAN desactive\n");
     }
@@ -247,6 +251,16 @@ int main(void) {
                         : 0u);
             }
         }
+
+        // ADR-0032 : canaux non IDLE -> masque d'invalidation de l'écoute
+        // (drive_blank_ms court à la sortie du masque, côté Core 1).
+        uint16_t non_idle_mask = 0u;
+        for (uint8_t i = 0u; i < MOTEUR_CHANNEL_COUNT; ++i) {
+            if (solenoid_driver_state(&drivers[i]) != SOLENOID_STATE_IDLE) {
+                non_idle_mask |= (uint16_t)(1u << i);
+            }
+        }
+        can_link_listen_set_drive_mask(non_idle_mask);
 
         can_link_poll(now_us);
 

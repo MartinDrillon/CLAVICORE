@@ -67,6 +67,19 @@ bool can_solenoid_command_is_valid(can_solenoid_command_kind_t command) {
            command == CAN_SOLENOID_COMMAND_PUSH_ON;
 }
 
+bool can_listen_mode_is_valid(can_listen_mode_t mode) {
+    // Énumération non signée : ne comparer que la borne haute évite -Wtype-limits.
+    return (unsigned)mode <= (unsigned)CAN_LISTEN_MODE_STREAM_OFF;
+}
+
+bool can_listen_state_is_valid(can_listen_state_t state) {
+    return (unsigned)state <= (unsigned)CAN_LISTEN_STATE_FAULT;
+}
+
+bool can_listen_channel_is_valid(uint8_t channel) {
+    return channel < CAN_IPROPI_CHANNEL_COUNT;
+}
+
 can_proto_result_t can_encode_solenoid_command(uint8_t out[CAN_DLC_SOLENOID_COMMAND],
                                                const can_solenoid_command_t *command) {
     if (out == NULL || command == NULL) {
@@ -686,5 +699,327 @@ can_proto_result_t can_decode_card_stats(const uint8_t *data, uint8_t dlc,
     if (!card_counter_is_valid(stats->counter_id)) {
         return CAN_PROTO_BAD_VALUE;
     }
+    return CAN_PROTO_OK;
+}
+
+
+// --- Écoute IPROPI et mode REC (0x110, 0x404-0x406, 0x426-0x429) — ADR-0032 --
+
+static bool listen_target_is_required(can_listen_mode_t mode) {
+    return mode == CAN_LISTEN_MODE_TRACE || mode == CAN_LISTEN_MODE_STREAM;
+}
+
+can_proto_result_t can_encode_listen_pulse(uint8_t out[CAN_DLC_LISTEN_PULSE],
+                                           const can_listen_pulse_t *pulse) {
+    if (out == NULL || pulse == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (!can_listen_channel_is_valid(pulse->channel) || pulse->base > CAN_ADC_12BIT_MAX ||
+        pulse->peak > CAN_ADC_12BIT_MAX) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    can_put_u16_le(&out[0], pulse->uid_tag);
+    out[2] = (uint8_t)((pulse->channel & CAN_LISTEN_CHANNEL_MASK) |
+                       (pulse->split ? CAN_LISTEN_PULSE_FLAG_SPLIT : 0u) |
+                       (pulse->saturated ? CAN_LISTEN_PULSE_FLAG_SATURATED : 0u));
+    out[3] = pulse->seq;
+    out[4] = (uint8_t)(pulse->base & 0xFFu);
+    out[5] = (uint8_t)(((pulse->base >> 8u) & 0x0Fu) | ((pulse->peak & 0x0Fu) << 4u));
+    out[6] = (uint8_t)((pulse->peak >> 4u) & 0xFFu);
+    out[7] = 0u;
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_listen_pulse(const uint8_t *data, uint8_t dlc,
+                                           can_listen_pulse_t *pulse) {
+    uint16_t base;
+    uint16_t peak;
+    uint8_t channel;
+
+    if (data == NULL || pulse == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_LISTEN_PULSE) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    channel = (uint8_t)(data[2] & CAN_LISTEN_CHANNEL_MASK);
+    base = (uint16_t)((uint16_t)data[4] | ((uint16_t)(data[5] & 0x0Fu) << 8u));
+    peak = (uint16_t)(((uint16_t)(data[5] >> 4u) & 0x0Fu) | ((uint16_t)data[6] << 4u));
+    if (!can_listen_channel_is_valid(channel)) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    pulse->uid_tag = can_get_u16_le(&data[0]);
+    pulse->channel = channel;
+    pulse->seq = data[3];
+    pulse->base = base;
+    pulse->peak = peak;
+    pulse->split = (data[2] & CAN_LISTEN_PULSE_FLAG_SPLIT) != 0u;
+    pulse->saturated = (data[2] & CAN_LISTEN_PULSE_FLAG_SATURATED) != 0u;
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_encode_listen_control(uint8_t out[CAN_DLC_LISTEN_CONTROL],
+                                             const can_listen_control_t *control) {
+    if (out == NULL || control == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (!can_listen_mode_is_valid(control->mode) ||
+        !can_listen_channel_is_valid(control->channel) ||
+        (listen_target_is_required(control->mode) && control->target_uid_tag == 0u)) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    out[0] = control->proto_version;
+    out[1] = (uint8_t)control->mode;
+    can_put_u16_le(&out[2], control->param_crc16);
+    can_put_u16_le(&out[4], control->target_uid_tag);
+    out[6] = control->channel;
+    out[7] = 0u;
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_listen_control(const uint8_t *data, uint8_t dlc,
+                                             can_listen_control_t *control) {
+    can_listen_mode_t mode;
+
+    if (data == NULL || control == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_LISTEN_CONTROL) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    mode = (can_listen_mode_t)data[1];
+    if (!can_listen_mode_is_valid(mode) || !can_listen_channel_is_valid(data[6]) ||
+        (listen_target_is_required(mode) && can_get_u16_le(&data[4]) == 0u)) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    control->proto_version = data[0];
+    control->mode = mode;
+    control->param_crc16 = can_get_u16_le(&data[2]);
+    control->target_uid_tag = can_get_u16_le(&data[4]);
+    control->channel = data[6];
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_encode_listen_param(uint8_t out[CAN_DLC_LISTEN_PARAM],
+                                           const can_listen_param_t *param) {
+    if (out == NULL || param == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    // `param_id` reste opaque : le Moteur doit pouvoir nommer un id refusé.
+    out[0] = param->proto_version;
+    out[1] = param->param_id;
+    out[2] = (uint8_t)(param->value & 0xFFu);
+    out[3] = (uint8_t)((param->value >> 8u) & 0xFFu);
+    out[4] = (uint8_t)((param->value >> 16u) & 0xFFu);
+    out[5] = (uint8_t)((param->value >> 24u) & 0xFFu);
+    out[6] = 0u;
+    out[7] = 0u;
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_listen_param(const uint8_t *data, uint8_t dlc,
+                                           can_listen_param_t *param) {
+    if (data == NULL || param == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_LISTEN_PARAM) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    param->proto_version = data[0];
+    param->param_id = data[1];
+    param->value = (uint32_t)data[2] | ((uint32_t)data[3] << 8u) |
+                   ((uint32_t)data[4] << 16u) | ((uint32_t)data[5] << 24u);
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_encode_listen_noise_query(uint8_t out[CAN_DLC_LISTEN_NOISE_QUERY],
+                                                 const can_listen_noise_query_t *query) {
+    if (out == NULL || query == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (!can_listen_channel_is_valid(query->channel) || query->lookback_ms == 0u) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    can_put_u16_le(&out[0], query->target_uid_tag);
+    out[2] = query->channel;
+    out[3] = query->request_id;
+    can_put_u16_le(&out[4], query->lookback_ms);
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_listen_noise_query(const uint8_t *data, uint8_t dlc,
+                                                 can_listen_noise_query_t *query) {
+    uint16_t lookback_ms;
+
+    if (data == NULL || query == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_LISTEN_NOISE_QUERY) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    lookback_ms = can_get_u16_le(&data[4]);
+    if (!can_listen_channel_is_valid(data[2]) || lookback_ms == 0u) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    query->target_uid_tag = can_get_u16_le(&data[0]);
+    query->channel = data[2];
+    query->request_id = data[3];
+    query->lookback_ms = lookback_ms;
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_encode_listen_status(uint8_t out[CAN_DLC_LISTEN_STATUS],
+                                            const can_listen_status_t *status) {
+    if (out == NULL || status == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (!can_listen_state_is_valid(status->state)) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    can_put_u16_le(&out[0], status->uid_tag);
+    out[2] = (uint8_t)status->state;
+    out[3] = status->refused_param_id;
+    can_put_u16_le(&out[4], status->sweep_period_us);
+    out[6] = status->overflows;
+    out[7] = 0u;
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_listen_status(const uint8_t *data, uint8_t dlc,
+                                            can_listen_status_t *status) {
+    if (data == NULL || status == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_LISTEN_STATUS) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    if (!can_listen_state_is_valid((can_listen_state_t)data[2])) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    status->uid_tag = can_get_u16_le(&data[0]);
+    status->state = (can_listen_state_t)data[2];
+    status->refused_param_id = data[3];
+    status->sweep_period_us = can_get_u16_le(&data[4]);
+    status->overflows = data[6];
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_encode_listen_noise_report(uint8_t out[CAN_DLC_LISTEN_NOISE_REPORT],
+                                                  const can_listen_noise_report_t *report) {
+    if (out == NULL || report == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (!can_listen_channel_is_valid(report->channel) || report->min > CAN_ADC_12BIT_MAX ||
+        report->max > CAN_ADC_12BIT_MAX || report->min > report->max) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    can_put_u16_le(&out[0], report->uid_tag);
+    out[2] = report->channel;
+    out[3] = report->request_id;
+    out[4] = (uint8_t)(report->min & 0xFFu);
+    out[5] = (uint8_t)(((report->min >> 8u) & 0x0Fu) | ((report->max & 0x0Fu) << 4u));
+    out[6] = (uint8_t)((report->max >> 4u) & 0xFFu);
+    out[7] = (uint8_t)(report->truncated ? CAN_LISTEN_NOISE_FLAG_TRUNCATED : 0u);
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_listen_noise_report(const uint8_t *data, uint8_t dlc,
+                                                  can_listen_noise_report_t *report) {
+    uint16_t min;
+    uint16_t max;
+
+    if (data == NULL || report == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_LISTEN_NOISE_REPORT) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    min = (uint16_t)((uint16_t)data[4] | ((uint16_t)(data[5] & 0x0Fu) << 8u));
+    max = (uint16_t)(((uint16_t)(data[5] >> 4u) & 0x0Fu) | ((uint16_t)data[6] << 4u));
+    if (!can_listen_channel_is_valid(data[2]) || min > max) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    report->uid_tag = can_get_u16_le(&data[0]);
+    report->channel = data[2];
+    report->request_id = data[3];
+    report->min = min;
+    report->max = max;
+    report->truncated = (data[7] & CAN_LISTEN_NOISE_FLAG_TRUNCATED) != 0u;
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_encode_listen_pulse_timing(uint8_t out[CAN_DLC_LISTEN_PULSE_TIMING],
+                                                  const can_listen_pulse_timing_t *timing) {
+    if (out == NULL || timing == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    can_put_u16_le(&out[0], timing->uid_tag);
+    out[2] = timing->seq;
+    can_put_u16_le(&out[3], timing->t_peak_100us);
+    can_put_u16_le(&out[5], timing->t_end_peak_100us);
+    out[7] = 0u;
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_listen_pulse_timing(const uint8_t *data, uint8_t dlc,
+                                                  can_listen_pulse_timing_t *timing) {
+    if (data == NULL || timing == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_LISTEN_PULSE_TIMING) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    timing->uid_tag = can_get_u16_le(&data[0]);
+    timing->seq = data[2];
+    timing->t_peak_100us = can_get_u16_le(&data[3]);
+    timing->t_end_peak_100us = can_get_u16_le(&data[5]);
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_encode_listen_trace(uint8_t out[CAN_DLC_LISTEN_TRACE],
+                                           const can_listen_trace_t *trace) {
+    uint16_t s0;
+    uint16_t s1;
+    uint16_t s2;
+    uint16_t s3;
+
+    if (out == NULL || trace == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    s0 = trace->samples[0];
+    s1 = trace->samples[1];
+    s2 = trace->samples[2];
+    s3 = trace->samples[3];
+    if (s0 > CAN_ADC_12BIT_MAX || s1 > CAN_ADC_12BIT_MAX || s2 > CAN_ADC_12BIT_MAX ||
+        s3 > CAN_ADC_12BIT_MAX) {
+        return CAN_PROTO_BAD_VALUE;
+    }
+    can_put_u16_le(&out[0], trace->seq);
+    out[2] = (uint8_t)(s0 & 0xFFu);
+    out[3] = (uint8_t)(((s0 >> 8u) & 0x0Fu) | ((s1 & 0x0Fu) << 4u));
+    out[4] = (uint8_t)((s1 >> 4u) & 0xFFu);
+    out[5] = (uint8_t)(s2 & 0xFFu);
+    out[6] = (uint8_t)(((s2 >> 8u) & 0x0Fu) | ((s3 & 0x0Fu) << 4u));
+    out[7] = (uint8_t)((s3 >> 4u) & 0xFFu);
+    return CAN_PROTO_OK;
+}
+
+can_proto_result_t can_decode_listen_trace(const uint8_t *data, uint8_t dlc,
+                                           can_listen_trace_t *trace) {
+    if (data == NULL || trace == NULL) {
+        return CAN_PROTO_BAD_ARG;
+    }
+    if (dlc != CAN_DLC_LISTEN_TRACE) {
+        return CAN_PROTO_BAD_DLC;
+    }
+    trace->seq = can_get_u16_le(&data[0]);
+    trace->samples[0] =
+        (uint16_t)((uint16_t)data[2] | ((uint16_t)(data[3] & 0x0Fu) << 8u));
+    trace->samples[1] =
+        (uint16_t)(((uint16_t)(data[3] >> 4u) & 0x0Fu) | ((uint16_t)data[4] << 4u));
+    trace->samples[2] =
+        (uint16_t)((uint16_t)data[5] | ((uint16_t)(data[6] & 0x0Fu) << 8u));
+    trace->samples[3] =
+        (uint16_t)(((uint16_t)(data[6] >> 4u) & 0x0Fu) | ((uint16_t)data[7] << 4u));
     return CAN_PROTO_OK;
 }

@@ -1,6 +1,8 @@
 #include "usb_log.h"
 
+#include <stdarg.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "pico/stdio/driver.h"
 #include "pico/stdlib.h"
@@ -76,3 +78,94 @@ int usb_log_read_char(void) {
     }
     return (int)tud_cdc_read_char();
 }
+
+// ---------------------------------------------------------------------------
+//  Port 2 : Serial Studio Quick Plot (ADR-0032 §11.3)
+// ---------------------------------------------------------------------------
+#if CLAVIER_SERIAL_STUDIO
+
+#define STUDIO_RING_SIZE 4096u  // puissance de 2
+#define STUDIO_RING_MASK (STUDIO_RING_SIZE - 1u)
+
+static char studio_ring[STUDIO_RING_SIZE];
+static uint32_t studio_head;
+static uint32_t studio_tail;
+static uint32_t studio_dropped_bytes;
+static uint32_t studio_reported_dropped;
+
+static void studio_push(char c) {
+    if (studio_head - studio_tail >= STUDIO_RING_SIZE) {
+        // Tampon borné : on perd le plus ancien octet et on le compte, jamais
+        // de blocage de la boucle principale.
+        ++studio_tail;
+        ++studio_dropped_bytes;
+    }
+    studio_ring[studio_head++ & STUDIO_RING_MASK] = c;
+}
+
+void serial_studio_init(void) {
+    studio_head = 0u;
+    studio_tail = 0u;
+    studio_dropped_bytes = 0u;
+    studio_reported_dropped = 0u;
+}
+
+void serial_studio_write(const char *text, size_t length) {
+    if (text == NULL) {
+        return;
+    }
+    for (size_t i = 0u; i < length; ++i) {
+        studio_push(text[i]);
+    }
+}
+
+void serial_studio_printf(const char *format, ...) {
+    char line[96];
+    va_list args;
+    int written;
+
+    if (format == NULL) {
+        return;
+    }
+    va_start(args, format);
+    written = vsnprintf(line, sizeof(line), format, args);
+    va_end(args);
+    if (written <= 0) {
+        return;
+    }
+    if ((size_t)written >= sizeof(line)) {
+        written = (int)(sizeof(line) - 1u);
+    }
+    serial_studio_write(line, (size_t)written);
+}
+
+void serial_studio_task(void) {
+    // Débordement signalé une fois par valeur sur le port 1 (PuTTY), jamais
+    // sur le port 2 : le flux Quick Plot reste lisible.
+    if (studio_dropped_bytes != studio_reported_dropped) {
+        printf("[STUDIO] debordement port2: %lu octets perdus\n",
+               (unsigned long)studio_dropped_bytes);
+        studio_reported_dropped = studio_dropped_bytes;
+    }
+    if (!tud_cdc_n_connected(1u)) {
+        return;
+    }
+    while (studio_tail != studio_head) {
+        const uint32_t available = tud_cdc_n_write_available(1u);
+
+        if (available == 0u) {
+            break;
+        }
+        uint32_t count = studio_head - studio_tail;
+
+        if (count > available) {
+            count = available;
+        }
+        for (uint32_t i = 0u; i < count; ++i) {
+            tud_cdc_n_write_char(1u, studio_ring[studio_tail++ & STUDIO_RING_MASK]);
+        }
+    }
+    tud_cdc_n_write_flush(1u);
+}
+
+#endif  // CLAVIER_SERIAL_STUDIO

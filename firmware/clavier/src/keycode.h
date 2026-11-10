@@ -27,6 +27,10 @@ typedef enum {
     // décaler aucune valeur empaquetée existante.
     KEYCODE_TEMP_TRANSPOSE_ST = 14,
     KEYCODE_TEMP_TRANSPOSE_OCT = 15,
+    // ADR-0032 : bascules du mode REC, ajoutées EN FIN (aucune valeur existante
+    // ne bouge ; invariant 6 : aucun keymap n'est modifié par cette ADR).
+    KEYCODE_REC_SOLE = 16,
+    KEYCODE_REC_MUTE = 17,
 } keycode_kind_t;
 
 // ADR-0026 : deux directions d'altération, portées par des modificateurs
@@ -130,6 +134,10 @@ typedef struct {
 #define T_TEMP_OCT_L_DOWN 0x0F01u
 #define T_TEMP_OCT_R_UP 0x0F02u
 #define T_TEMP_OCT_R_DOWN 0x0F03u
+// ADR-0032 : bascules du mode REC. Positions libres : le keymap n'est pas
+// modifié (invariant 6) ; l'humain y place ces symboles quand il le souhaite.
+#define REC_SOLE 0x1000u
+#define REC_MUTE 0x1100u
 
 #define KEYCODE_NOTE_VALUE(midi_note) ((keycode_t){KEYCODE_NOTE, (midi_note)})
 #define KEYCODE_BEHAVIOR(kind_value) ((keycode_t){(kind_value), 0u})

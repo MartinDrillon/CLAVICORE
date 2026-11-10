@@ -1,17 +1,28 @@
 // Test hôte de la console de réglage à chaud (ADR-0015) : bringup_console.c est
 // compilé tel quel, can_link et usb_log sont remplacés par des doublures qui
 // enregistrent ce que la console demande d'envoyer aux cartes.
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "bringup_console.h"
 #include "can_link.h"
+#include "commissioning_table.h"
 #include "diag_out.h"
+#include "listen_config.h"
+#include "listen_params.h"
+#include "rec_console.h"
+#include "rec_mode.h"
 #include "solenoid_profile.h"
 #include "usb_log.h"
 
 static int g_checks = 0;
 static int g_failures = 0;
+
+// Sortie de la console capturée : les réponses `e` sont au niveau 0 et le test
+// vérifie le parsing (`e set`) et les lignes de `e diff`.
+static char g_output[8192];
+static size_t g_output_len;
 
 #define CHECK(cond)                                                          \
     do {                                                                     \
@@ -58,22 +69,102 @@ can_link_request_result_t can_link_profile_send(const solenoid_profile_t *profil
     return g_send_result;
 }
 
+// --- Pont console `e` (rec_console.h) ------------------------------------------
+// L'état vit normalement dans main.c ; ici la console est testée avec un état
+// local et les compteurs de diffusion.
+static listen_params_t g_listen_params;
+static rec_state_t g_rec;
+static rec_mode_t g_rec_mode;
+static commissioning_runtime_t g_runtime;
+static int g_listen_send_count;
+static int g_listen_enter_count;
+static int g_listen_raz_count;
+static int g_listen_trace_count;
+static int g_listen_stream_count;
+static int g_listen_stream_off_count;
+
+listen_params_t *rec_console_params(void) { return &g_listen_params; }
+const listen_params_t *rec_console_compiled_params(void) { return &k_listen_config; }
+rec_state_t *rec_console_state(void) { return &g_rec; }
+const commissioning_runtime_t *rec_console_runtime(void) { return &g_runtime; }
+bool rec_console_table_valid(void) { return true; }
+bool rec_console_params_valid(void) { return true; }
+rec_mode_t rec_console_mode(void) { return g_rec_mode; }
+bool rec_console_enter_sole(void) {
+    ++g_listen_enter_count;
+    g_rec_mode = REC_MODE_SOLE;
+    return true;
+}
+bool rec_console_raz(void) {
+    ++g_listen_raz_count;
+    rec_mode_raz(&g_rec);
+    return true;
+}
+bool rec_console_send_params(void) {
+    ++g_listen_send_count;
+    return true;
+}
+bool rec_console_trace(uint8_t midi_note, const commissioning_note_target_t *target) {
+    (void)midi_note;
+    (void)target;
+    ++g_listen_trace_count;
+    return true;
+}
+bool rec_console_stream(const commissioning_note_target_t *target) {
+    (void)target;
+    ++g_listen_stream_count;
+    return true;
+}
+bool rec_console_stream_off(void) {
+    ++g_listen_stream_off_count;
+    return true;
+}
+
 // Doublure du journal du Clavier (ADR-0017) : diag_out.c dépend du SDK Pico, il
-// n'est pas compilé ici. La console est testée sur ce qu'elle demande, pas sur
-// l'horodatage de ses lignes.
+// n'est pas compilé ici. La sortie est capturée pour vérifier les réponses de
+// la console, pas l'horodatage de ses lignes.
+static void append_output(const char *format, va_list args) {
+    int written;
+
+    if (g_output_len >= sizeof(g_output) - 1u) {
+        return;
+    }
+    written = vsnprintf(g_output + g_output_len, sizeof(g_output) - g_output_len, format,
+                        args);
+    if (written > 0) {
+        size_t added = (size_t)written;
+
+        if (added > sizeof(g_output) - 1u - g_output_len) {
+            added = sizeof(g_output) - 1u - g_output_len;
+        }
+        g_output_len += added;
+    }
+}
 void diag_out_printf(const char *format, ...) {
-    (void)format;
+    va_list args;
+
+    va_start(args, format);
+    append_output(format, args);
+    va_end(args);
 }
 void diag_out_line(const char *line) {
-    (void)line;
+    if (line != NULL) {
+        diag_out_printf("%s\n", line);
+    }
 }
 void diag_out_printf_class(diag_class_t category, const char *format, ...) {
+    va_list args;
+
     (void)category;
-    (void)format;
+    va_start(args, format);
+    append_output(format, args);
+    va_end(args);
 }
 void diag_out_line_class(diag_class_t category, const char *line) {
     (void)category;
-    (void)line;
+    if (line != NULL) {
+        diag_out_printf("%s\n", line);
+    }
 }
 static uint8_t g_diag_level = 1u;
 static bool g_diag_timestamp = true;
@@ -155,6 +246,20 @@ static void reset(void) {
     g_send_result = CAN_LINK_REQUEST_SENT;
     g_diag_level = 1u;
     g_diag_timestamp = true;
+    memset(&g_listen_params, 0, sizeof(g_listen_params));
+    g_listen_params = k_listen_config;
+    memset(&g_rec, 0, sizeof(g_rec));
+    rec_mode_set_params(&g_rec, &g_listen_params);
+    g_rec_mode = REC_MODE_OFF;
+    memset(&g_runtime, 0, sizeof(g_runtime));
+    g_listen_send_count = 0;
+    g_listen_enter_count = 0;
+    g_listen_raz_count = 0;
+    g_listen_trace_count = 0;
+    g_listen_stream_count = 0;
+    g_listen_stream_off_count = 0;
+    g_output[0] = '\0';
+    g_output_len = 0u;
     bringup_console_init();
 }
 
@@ -262,6 +367,87 @@ int main(void) {
     CHECK(g_diag_level == 0u);
     type("l 3\n");
     CHECK(g_diag_level == 0u);
+
+    puts("--- e show / get (ADR-0032)");
+    reset();
+    type("e show\n");
+    CHECK(strstr(g_output, "settle_us") != NULL);
+    CHECK(strstr(g_output, "actif=OFF") != NULL);
+    type("e get rise_thr\n");
+    CHECK(strstr(g_output, "rise_thr = 5") != NULL);
+    type("e get champ_inconnu\n");
+    CHECK(strstr(g_output, "champ inconnu") != NULL);
+
+    puts("--- e set multi-affectation puis e diff");
+    reset();
+    type("e set rise_thr 9 return_thr 4\n");
+    CHECK(g_listen_send_count == 1);
+    CHECK(g_listen_params.rise_thr == 9u && g_listen_params.return_thr == 4u);
+    CHECK(strstr(g_output, "rise_thr 5 -> 9") != NULL);
+    g_output[0] = '\0';
+    g_output_len = 0u;
+    type("e diff\n");
+    CHECK(strstr(g_output, ".rise_thr = 9,") != NULL);
+    CHECK(strstr(g_output, ".return_thr = 4,") != NULL);
+
+    puts("--- e set refuse en bloc : aucune valeur ne change, rien n'est diffuse");
+    reset();
+    type("e set rise_thr 2\n");  // return_thr (3) doit rester < rise_thr
+    CHECK(g_listen_send_count == 0);
+    CHECK(g_listen_params.rise_thr == 5u);
+    CHECK(strstr(g_output, "reglage refuse") != NULL);
+    reset();
+    type("e set rise_thr 9 return_thr 40\n");
+    CHECK(g_listen_send_count == 0);
+    CHECK(g_listen_params.rise_thr == 5u && g_listen_params.return_thr == 3u);
+    reset();
+    type("e set champ_inconnu 1\n");
+    CHECK(g_listen_send_count == 0);
+    CHECK(strstr(g_output, "champ inconnu") != NULL);
+
+    puts("--- e reset revient au fichier compile et diffuse");
+    reset();
+    type("e set rise_thr 9\n");
+    CHECK(g_listen_send_count == 1);
+    g_output[0] = '\0';
+    g_output_len = 0u;
+    type("e reset\n");
+    CHECK(g_listen_send_count == 2);
+    CHECK(g_listen_params.rise_thr == 5u);
+    CHECK(strstr(g_output, "rise_thr 9 -> 5") != NULL);
+
+    puts("--- e bruit exige detail=1, se coupe avec detail=0");
+    reset();
+    g_listen_params.detail = 0u;
+    type("e bruit\n");
+    CHECK(!g_rec.noise_enabled);
+    CHECK(strstr(g_output, "necessite detail=1") != NULL);
+    g_listen_params.detail = 1u;
+    type("e bruit\n");
+    CHECK(g_rec.noise_enabled);
+    CHECK(strstr(g_output, "bruit=on") != NULL);
+    type("e bruit\n");
+    CHECK(!g_rec.noise_enabled);
+    reset();
+    g_listen_params.detail = 1u;
+    g_rec.noise_enabled = true;
+    type("e set detail 0\n");
+    CHECK(!g_rec.noise_enabled);
+    CHECK(g_listen_send_count == 1);
+    CHECK(strstr(g_output, "bruit=off") != NULL);
+
+    puts("--- e stream refuse quand CLAVIER_SERIAL_STUDIO=OFF");
+    reset();
+    type("e stream MI3\n");
+    CHECK(g_listen_stream_count == 0);
+    CHECK(strstr(g_output, "indisponible (CLAVIER_SERIAL_STUDIO=OFF)") != NULL);
+
+    puts("--- e rec / e raz");
+    reset();
+    type("e rec\n");
+    CHECK(g_listen_enter_count == 1 && g_rec_mode == REC_MODE_SOLE);
+    type("e raz\n");
+    CHECK(g_listen_raz_count == 1);
 
     printf("%d verifications, %d echec(s)\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;

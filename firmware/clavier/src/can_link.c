@@ -12,6 +12,8 @@
 #include "can_protocol.h"
 #include "commissioning.h"
 #include "diag_out.h"
+#include "listen_params.h"
+#include "listen_start_logic.h"
 #include "profile_sync_logic.h"
 #include "card_counter_names.h"
 #include "stats_probe_logic.h"
@@ -138,8 +140,7 @@ static bool boot_card_summary_pending;
 // l'ont acquitté.
 #define CAN_LINK_PROFILE_MAX_ATTEMPTS PROFILE_SYNC_MAX_ATTEMPTS
 static bool profile_sync_active;
-static uint8_t profile_sync_transfer_id;
-static uint8_t profile_sync_next_transfer_id;
+static uint8_t profile_sync_transfer_id;static uint8_t profile_sync_next_transfer_id;
 static uint8_t profile_sync_transfer_ids[CAN_LINK_PROFILE_MAX_ATTEMPTS];
 static uint8_t profile_sync_transfer_count;
 static uint8_t profile_sync_attempt;
@@ -157,6 +158,18 @@ static uint32_t profile_sync_expected_tag;
 static uint8_t profile_sync_wire[SOLENOID_PROFILE_WIRE_SIZE];
 static size_t profile_sync_wire_len;
 static uint32_t local_profile_tag;
+
+// --- Mode REC : écoute IPROPI (ADR-0032) -----------------------------------
+#define CAN_LINK_LISTEN_EVENT_QUEUE 64u
+#define CAN_LINK_LISTEN_STOP_TIMEOUT_MS 20u
+static bool listen_active;
+static uint16_t listen_target_uid_tag;
+static uint16_t listen_param_crc;
+static can_link_listen_event_t listen_events[CAN_LINK_LISTEN_EVENT_QUEUE];
+static uint32_t listen_event_head;
+static uint32_t listen_event_tail;
+static bool listen_stop_pending;
+static uint32_t listen_stop_start_ms;
 
 // Attente et attribution des acquittements (ADR-0016 décisions 1 à 5) : tout est
 // indexé par INDEX d'entrée de `uid_position_table`, jamais par numéro de
@@ -970,6 +983,45 @@ static bool send_profile_frame(uint32_t id, uint8_t dlc, const uint8_t *data) {
         sleep_us(CAN_PROFILE_FRAME_RETRY_US);
     }
     return false;
+}
+
+// Même marge bornée que le profil, sans espacement fixe : l'appelant règle le
+// rythme (1 ms entre deux LISTEN_PARAM, ADR-0032 §3.4).
+static bool send_listen_frame(uint32_t id, uint8_t dlc, const uint8_t *data) {
+    for (uint32_t attempt = 0u; attempt < 100u; ++attempt) {
+        if (send_frame(id, dlc, data)) {
+            return true;
+        }
+        sleep_us(CAN_PROFILE_FRAME_RETRY_US);
+    }
+    return false;
+}
+
+// File SPSC locale (Core 0 uniquement) : les trames LISTEN_* reçues sont
+// remises à la boucle principale, qui seule décide des notes MIDI.
+static void listen_event_push(can_link_listen_event_kind_t kind, uint16_t source_uid_tag,
+                              const void *message, size_t size) {
+    can_link_listen_event_t *event;
+
+    if ((uint32_t)(listen_event_head - listen_event_tail) >= CAN_LINK_LISTEN_EVENT_QUEUE) {
+        ++stats.events_dropped;
+        return;
+    }
+    event = &listen_events[listen_event_head % CAN_LINK_LISTEN_EVENT_QUEUE];
+    event->kind = kind;
+    event->source_uid_tag = source_uid_tag;
+    memset(&event->u, 0, sizeof(event->u));
+    memcpy(&event->u, message, size);
+    ++listen_event_head;
+}
+
+bool can_link_listen_take_event(can_link_listen_event_t *out) {
+    if (out == NULL || listen_event_tail == listen_event_head) {
+        return false;
+    }
+    *out = listen_events[listen_event_tail % CAN_LINK_LISTEN_EVENT_QUEUE];
+    ++listen_event_tail;
+    return true;
 }
 
 // Diffuse `profile` (BEGIN + chunks + COMMIT) puis arme l'attente des
@@ -2316,6 +2368,13 @@ static void handle_selftest_trigger(uint8_t dlc, const uint8_t *data) {
         note_bad_frame();
         return;
     }
+    // ADR-0032 §7 : aucun auto-test (bouton Moteur, trame 0x402) pendant REC.
+    if (listen_active) {
+        emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
+        emit_trigger_refused_line("mode REC actif");
+        emit_line_class(DIAG_CLASS_ALWAYS, "[REC] refus REC_SELFTEST");
+        return;
+    }
     if (selftest_session.active) {
         emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
         emit_trigger_refused_line("auto-test deja en cours");
@@ -2601,6 +2660,65 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t first_ms) {
         }
         break;
     }
+    case CAN_ID_LISTEN_PULSE: {
+        can_listen_pulse_t pulse;
+
+        result = can_decode_listen_pulse(msg->data, dlc, &pulse);
+        if (result == CAN_PROTO_OK) {
+            listen_event_push(CAN_LINK_LISTEN_PULSE, pulse.uid_tag, &pulse, sizeof(pulse));
+            return;
+        }
+        break;
+    }
+    case CAN_ID_LISTEN_STATUS: {
+        can_listen_status_t status;
+
+        result = can_decode_listen_status(msg->data, dlc, &status);
+        if (result == CAN_PROTO_OK) {
+            // Un STATUS IDLE acquitte l'arrêt demandé ; le délai de 20 ms ne
+            // s'applique que si aucune carte ne répond (ADR-0032 §3.4).
+            if (status.state == CAN_LISTEN_STATE_IDLE) {
+                listen_stop_pending = false;
+            }
+            listen_event_push(CAN_LINK_LISTEN_STATUS, status.uid_tag, &status, sizeof(status));
+            return;
+        }
+        break;
+    }
+    case CAN_ID_LISTEN_NOISE_REPORT: {
+        can_listen_noise_report_t report;
+
+        result = can_decode_listen_noise_report(msg->data, dlc, &report);
+        if (result == CAN_PROTO_OK) {
+            listen_event_push(CAN_LINK_LISTEN_NOISE, report.uid_tag, &report, sizeof(report));
+            return;
+        }
+        break;
+    }
+    case CAN_ID_LISTEN_PULSE_TIMING: {
+        can_listen_pulse_timing_t timing;
+
+        result = can_decode_listen_pulse_timing(msg->data, dlc, &timing);
+        if (result == CAN_PROTO_OK) {
+            listen_event_push(CAN_LINK_LISTEN_PULSE_TIMING, timing.uid_tag, &timing,
+                              sizeof(timing));
+            return;
+        }
+        break;
+    }
+    case CAN_ID_LISTEN_TRACE: {
+        can_listen_trace_t trace;
+
+        result = can_decode_listen_trace(msg->data, dlc, &trace);
+        if (result == CAN_PROTO_OK) {
+            // 0x429 n'a pas d'uid_tag : on l'attribue à l'unique cible courante
+            // TRACE/STREAM (ADR-0032 §11).
+            listen_event_push(CAN_LINK_LISTEN_TRACE_FRAME, listen_target_uid_tag, &trace,
+                              sizeof(trace));
+            return;
+        }
+        break;
+    }
     case CAN_ID_UID_REQUEST:
     case CAN_ID_IPROPI_SELFTEST_REQUEST:
     case CAN_ID_SOLENOID_COMMAND:
@@ -2608,6 +2726,9 @@ static void handle_frame(const struct can2040_msg *msg, uint32_t first_ms) {
     case CAN_ID_PROFILE_CHUNK:
     case CAN_ID_PROFILE_COMMIT:
     case CAN_ID_CARD_STATS_REQUEST:
+    case CAN_ID_LISTEN_CONTROL:
+    case CAN_ID_LISTEN_PARAM:
+    case CAN_ID_LISTEN_NOISE_QUERY:
         ++stats.rx_ignored;
         return;
     default:
@@ -2671,6 +2792,13 @@ void can_link_init(void) {
     profile_probe_finished = false;
     profile_selftest_start_pending = false;
     profile_presence_pending = false;
+    listen_active = false;
+    listen_target_uid_tag = 0u;
+    listen_param_crc = 0u;
+    listen_event_head = 0u;
+    listen_event_tail = 0u;
+    listen_stop_pending = false;
+    listen_stop_start_ms = 0u;
 
     table_blank = commissioning_flash_table_is_blank();
     load_result = commissioning_state_load(&commissioning);
@@ -2795,6 +2923,14 @@ void can_link_poll(void) {
     }
 
     sweep_slots(first_ms);
+
+    // Arrêt de l'écoute : le STATUS IDLE est l'acquittement attendu. À
+    // l'échéance, le journal le dit ; on ne bloque jamais la boucle.
+    if (listen_stop_pending &&
+        deadline_reached(first_ms, listen_stop_start_ms, CAN_LINK_LISTEN_STOP_TIMEOUT_MS)) {
+        listen_stop_pending = false;
+        emit_line_class(DIAG_CLASS_ALWAYS, "[LISTEN] arret sans reponse");
+    }
 
     if ((uid_inflight || selftest_session.active) && !overrun_reported &&
         isr_rx_overrun != overrun_snapshot) {
@@ -2938,6 +3074,13 @@ can_link_request_result_t can_link_request_uid(void) {
 can_link_request_result_t can_link_request_selftest(void) {
     // Demandé depuis la console : posé avant tout refus (ADR-0017 décision 5).
     profile_sync_source = "console";
+    if (listen_active) {
+        // ADR-0032 §7 : `t` est refusé en REC, sans suspendre l'écoute.
+        emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
+        emit_trigger_refused_line("mode REC actif");
+        emit_line_class(DIAG_CLASS_ALWAYS, "[REC] refus REC_SELFTEST");
+        return CAN_LINK_REQUEST_BUSY;
+    }
     if (selftest_session.active) {
         emit_status(DIAG_STATUS_SELFTEST_REFUSED_PLAYING);
         return CAN_LINK_REQUEST_BUSY;
@@ -2956,6 +3099,155 @@ can_link_request_result_t can_link_request_selftest(void) {
         return CAN_LINK_REQUEST_TX_FAIL;
     }
     return CAN_LINK_REQUEST_SENT;
+}
+
+bool can_link_profile_sync_active(void) {
+    return profile_sync_active;
+}
+
+bool can_link_listen_send_params(const listen_params_t *params) {
+    uint8_t bad_id = 0u;
+
+    if (!started || params == NULL) {
+        return false;
+    }
+    if (listen_params_validate(params, &bad_id) != LISTEN_PARAMS_OK) {
+        return false;
+    }
+    for (uint8_t id = 1u; id <= (uint8_t)LISTEN_PARAMS_COUNT; ++id) {
+        can_listen_param_t param;
+        uint8_t payload[CAN_DLC_LISTEN_PARAM];
+
+        param.proto_version = CAN_PROTO_VERSION;
+        param.param_id = id;
+        if (!listen_params_get(params, id, &param.value)) {
+            return false;
+        }
+        if (can_encode_listen_param(payload, &param) != CAN_PROTO_OK ||
+            !send_listen_frame(CAN_ID_LISTEN_PARAM, CAN_DLC_LISTEN_PARAM, payload)) {
+            ++stats.tx_fail;
+            return false;
+        }
+        // Marge simple : le Moteur n'écrit pas en flash, 1 ms suffit.
+        sleep_us(1000u);
+    }
+    listen_param_crc = listen_params_crc16(params);
+    return true;
+}
+
+static bool send_listen_control(can_listen_mode_t mode, uint16_t target_uid_tag,
+                                uint8_t channel) {
+    can_listen_control_t control;
+    uint8_t payload[CAN_DLC_LISTEN_CONTROL];
+
+    if (!started) {
+        return false;
+    }
+    control.proto_version = CAN_PROTO_VERSION;
+    control.mode = mode;
+    control.param_crc16 = listen_param_crc;
+    control.target_uid_tag = target_uid_tag;
+    control.channel = channel;
+    if (can_encode_listen_control(payload, &control) != CAN_PROTO_OK ||
+        !send_listen_frame(CAN_ID_LISTEN_CONTROL, CAN_DLC_LISTEN_CONTROL, payload)) {
+        ++stats.tx_fail;
+        return false;
+    }
+
+    if (mode == CAN_LISTEN_MODE_OFF) {
+        listen_active = false;
+        listen_target_uid_tag = 0u;
+        listen_stop_pending = true;
+        listen_stop_start_ms = now_ms();
+    } else if (mode == CAN_LISTEN_MODE_STREAM_OFF) {
+        // Retour au balayage : l'écoute reste active.
+    } else {
+        listen_active = true;
+        listen_target_uid_tag =
+            (mode == CAN_LISTEN_MODE_TRACE || mode == CAN_LISTEN_MODE_STREAM)
+                ? target_uid_tag
+                : 0u;
+    }
+    return true;
+}
+
+bool can_link_listen_start(const listen_params_t *params, can_listen_mode_t mode,
+                           uint16_t target_uid_tag, uint8_t channel) {
+    listen_start_action_t action;
+    bool targeted;
+
+    if (params == NULL || !started) {
+        return false;
+    }
+    action = listen_start_action(listen_active, listen_param_crc, listen_params_crc16(params));
+    targeted = (mode == CAN_LISTEN_MODE_TRACE || mode == CAN_LISTEN_MODE_STREAM);
+    switch (action) {
+    case LISTEN_START_STOP_FIRST:
+        // Un jeu différent ne se substitue jamais en cours d'écoute côté
+        // Moteur : sortir proprement, puis rediffuser le jeu complet.
+        if (!send_listen_control(CAN_LISTEN_MODE_OFF, 0u, 0u)) {
+            return false;
+        }
+        /* fallthrough */
+    case LISTEN_START_SEND_PARAMS:
+        if (!can_link_listen_send_params(params)) {
+            return false;
+        }
+        if (listen_start_needs_listen_relay(action, targeted)) {
+            // L'OFF est diffusé : sans ce LISTEN intermédiaire (même CRC), les
+            // cartes non ciblées resteraient OFF et ignoreraient le contrôle
+            // TRACE/STREAM qui ne nomme qu'une carte.
+            if (!send_listen_control(CAN_LISTEN_MODE_LISTEN, 0u, 0u)) {
+                return false;
+            }
+        }
+        break;
+    case LISTEN_START_SKIP_PARAMS:
+        // Même CRC déjà appliqué au Moteur : renvoyer les 18 LISTEN_PARAM
+        // serait refusé (PARAM_MISMATCH) et la trace ne démarrerait pas.
+        break;
+    }
+    return send_listen_control(mode, target_uid_tag, channel);
+}
+
+bool can_link_listen_stop(void) {
+    return send_listen_control(CAN_LISTEN_MODE_OFF, 0u, 0u);
+}
+
+bool can_link_listen_trace(const listen_params_t *params, uint16_t uid_tag, uint8_t channel) {
+    return can_link_listen_start(params, CAN_LISTEN_MODE_TRACE, uid_tag, channel);
+}
+
+bool can_link_listen_stream(const listen_params_t *params, uint16_t uid_tag, uint8_t channel) {
+    return can_link_listen_start(params, CAN_LISTEN_MODE_STREAM, uid_tag, channel);
+}
+
+bool can_link_listen_stream_off(void) {
+    return send_listen_control(CAN_LISTEN_MODE_STREAM_OFF, 0u, 0u);
+}
+
+bool can_link_listen_noise_query(uint16_t uid_tag, uint8_t channel, uint8_t request_id,
+                                 uint16_t lookback_ms) {
+    can_listen_noise_query_t query;
+    uint8_t payload[CAN_DLC_LISTEN_NOISE_QUERY];
+
+    if (!started) {
+        return false;
+    }
+    query.target_uid_tag = uid_tag;
+    query.channel = channel;
+    query.request_id = request_id;
+    query.lookback_ms = lookback_ms;
+    if (can_encode_listen_noise_query(payload, &query) != CAN_PROTO_OK ||
+        !send_listen_frame(CAN_ID_LISTEN_NOISE_QUERY, CAN_DLC_LISTEN_NOISE_QUERY, payload)) {
+        ++stats.tx_fail;
+        return false;
+    }
+    return true;
+}
+
+bool can_link_listen_is_active(void) {
+    return listen_active;
 }
 
 const solenoid_profile_t *can_link_profile_active(void) {
@@ -3077,6 +3369,29 @@ static bool send_note_command(uint8_t midi_note, uint8_t velocity,
 
 bool can_link_has_valid_table(void) {
     return commissioning.valid;
+}
+
+const commissioning_runtime_t *can_link_commissioning_runtime(void) {
+    return commissioning.valid ? &commissioning.runtime : NULL;
+}
+
+bool can_link_position_for_uid_tag(uint16_t uid_tag, uint8_t *position) {
+    if (!commissioning.valid || position == NULL) {
+        return false;
+    }
+    for (uint8_t index = 0u; index < commissioning.entry_count &&
+                              index < UID_POSITION_COUNT; ++index) {
+        const commissioning_entry_t *entry = &commissioning.entries[index];
+
+        if (entry->identity.position == UID_POSITION_EMPTY) {
+            continue;
+        }
+        if (can_uid_tag(entry->identity.uid.id) == uid_tag) {
+            *position = entry->identity.position;
+            return true;
+        }
+    }
+    return false;
 }
 
 bool can_link_selftest_active(void) {

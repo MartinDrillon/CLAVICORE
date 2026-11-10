@@ -20,6 +20,9 @@ option(CLAVIER_CDC_CONSOLE "Active la console de bring-up sur le port CDC" ON)
 # Journal ADR-0025 : niveau initial (0 verdicts, 1 bring-up, 2 trace) et traces.
 set(CLAVIER_DIAG_DEFAULT_LEVEL "1" CACHE STRING "Niveau initial du journal (0|1|2)")
 option(CLAVIER_DIAG_TRACE "Compile le niveau 2 (notes, RAW, matrice, PUSH)" ON)
+# Second port CDC : flux Serial Studio Quick Plot (ADR-0032 §11.3). OFF par
+# défaut ; ON ajoute un descripteur et le code du port 2, rien d'autre.
+option(CLAVIER_SERIAL_STUDIO "Second port CDC : flux Serial Studio Quick Plot (ADR-0032)" OFF)
 
 set(PINMAP_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/../../Netlist/netlist_to_pinmap.py)
 set(PINMAP_NETLIST ${CMAKE_CURRENT_LIST_DIR}/../../Électrique/Clavier/Clavier_drive_1/Clavier_drive_1.xml)
@@ -47,6 +50,7 @@ add_executable(clavier
     src/midi.c
     src/note_state.c
     src/profile_tuning.c
+    src/rec_mode.c
     src/diag_log.c
     src/diag_out.c
     src/usb_log.c
@@ -54,6 +58,7 @@ add_executable(clavier
     ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol/can_protocol.c
     ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol/commissioning_table.c
     ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol/solenoid_profile.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../shared/protocol/listen_params.c
 )
 
 # can2040 (ADR-0002) : sous-module git épinglé v1.7.0. Jamais de copie fabriquée.
@@ -95,6 +100,19 @@ if(CLAVIER_DIAG_TRACE)
     target_compile_definitions(clavier PRIVATE CLAVIER_DIAG_TRACE=1)
 else()
     target_compile_definitions(clavier PRIVATE CLAVIER_DIAG_TRACE=0)
+endif()
+if(CLAVIER_SERIAL_STUDIO)
+    target_compile_definitions(clavier PRIVATE CLAVIER_SERIAL_STUDIO=1)
+    # TinyUSB lit tusb_config.h dans ses propres sources : la même valeur doit
+    # y être visible, sinon CFG_TUD_CDC diffère entre le descripteur et la pile.
+    if(TARGET tinyusb_device-tinyusb_config)
+        target_compile_definitions(tinyusb_device-tinyusb_config INTERFACE CLAVIER_SERIAL_STUDIO=1)
+    endif()
+else()
+    target_compile_definitions(clavier PRIVATE CLAVIER_SERIAL_STUDIO=0)
+    if(TARGET tinyusb_device-tinyusb_config)
+        target_compile_definitions(tinyusb_device-tinyusb_config INTERFACE CLAVIER_SERIAL_STUDIO=0)
+    endif()
 endif()
 
 pico_enable_stdio_uart(clavier 0)

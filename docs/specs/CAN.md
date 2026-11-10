@@ -512,6 +512,130 @@ par compteur. Le format et les règles d'omission sont dans
 pas. Les IDs 0–12 sont immuables ; `CAN_CARD_COUNTER_COUNT` vaut 18 et le
 format/DLC des trames ne change pas.
 
+### Trames d'écoute IPROPI et mode REC — ADR-0032
+
+Huit trames, définies uniquement dans `shared/protocol/can_protocol.h/.c`
+(helpers `can_encode_listen_*` / `can_decode_listen_*`). Le jeu de paramètres
+(`listen_params.h`, 18 × u32 LE) n'est **pas** une trame : il est envoyé par 18
+`LISTEN_PARAM` puis scellé par le CRC16 porté dans `LISTEN_CONTROL`.
+
+#### `LISTEN_PULSE` — ID `0x110`, DLC 8
+
+Moteur → Clavier. Une impulsion = appui **ou** relâchement (IPROPI mesure |i|).
+
+| Octet | Nom | Remarques |
+|---|---|---|
+| 0..1 | `uid_tag` | LE |
+| 2 | `channel` + drapeaux | bits 0–3 canal ; bit 4 `split` (coupure de trille) ; bit 5 `saturated` |
+| 3 | `seq` | recopié dans `LISTEN_PULSE_TIMING` |
+| 4 | `base[7:0]` | ligne de base ADC |
+| 5 | `base[11:8]` \| `peak[3:0] << 4` | 12 bits chacun |
+| 6 | `peak[11:4]` | maximum de l'impulsion |
+| 7 | réservé | 0 |
+
+#### `LISTEN_CONTROL` — ID `0x404`, DLC 8
+
+Clavier → diffusion. Mode : `0` OFF, `1` LISTEN, `2` TRACE, `3` STREAM,
+`4` STREAM_OFF (retour au balayage sans quitter l'écoute).
+
+| Octet | Nom | Remarques |
+|---|---|---|
+| 0 | `proto_version` | version du protocole |
+| 1 | `mode` | `can_listen_mode_t` |
+| 2..3 | `param_crc16` | CRC16 du jeu envoyé avant l'ordre (LE) |
+| 4..5 | `target_uid_tag` | requis en TRACE/STREAM, 0 sinon (LE) |
+| 6 | `channel` | 0..11 en TRACE/STREAM, 0 sinon |
+| 7 | réservé | 0 |
+
+Le Moteur n'applique un jeu qu'en mode **OFF**. Le Clavier envoie donc
+OFF → 18 `LISTEN_PARAM` → LISTEN lorsque le CRC change ; si le CRC est
+identique, il n'envoie que le contrôle de mode (TRACE/STREAM). Une carte non
+ciblée par TRACE/STREAM continue d'écouter. Après émission de la trace ou
+`TRACE_TIMEOUT`, la carte revient d'elle-même au balayage ; une trace périmée
+est jetée et comptée.
+
+#### `LISTEN_PARAM` — ID `0x405`, DLC 8
+
+Clavier → diffusion. Un champ par trame ; `param_id` = `listen_param_id_t`
+(1..18), valeur u32 LE.
+
+| Octet | Nom |
+|---|---|
+| 0 | `proto_version` |
+| 1 | `param_id` |
+| 2..5 | `value` (u32 LE) |
+| 6..7 | réservé (0) |
+
+Refusé en cours d'écoute (`PARAM_MISMATCH`, `refused_param_id` renseigné) et
+rejeté en bloc par `listen_params_validate()`.
+
+#### `LISTEN_NOISE_QUERY` — ID `0x406`, DLC 6
+
+Clavier → diffusion. Demandé après une impulsion pour le voisin k−1 ou k+1.
+
+| Octet | Nom | Remarques |
+|---|---|---|
+| 0..1 | `target_uid_tag` | LE |
+| 2 | `channel` | 0..11 |
+| 3 | `request_id` | 1..127, recopié dans le rapport |
+| 4..5 | `lookback_ms` | ≤ 256, sinon rapport `truncated` (LE) |
+
+#### `LISTEN_STATUS` — ID `0x426`, DLC 8
+
+Moteur → Clavier, au changement et au plus 1×/s par carte.
+
+| Octet | Nom | Remarques |
+|---|---|---|
+| 0..1 | `uid_tag` | LE |
+| 2 | `state` | `0` IDLE, `1` LISTENING, `2` TRACE, `3` STREAM, `4` PARAM_MISMATCH, `5` BUSY_SELFTEST, `6` UNAVAILABLE_SLEEP, `7` TRACE_TIMEOUT, `8` FAULT |
+| 3 | `refused_param_id` | 0 sauf refus de paramètre |
+| 4..5 | `sweep_period_us` | période mesurée d'un balayage 12 canaux (LE) |
+| 6 | `overflows` | anneaux pleins, saturant à 255 |
+| 7 | réservé | 0 |
+
+#### `LISTEN_NOISE_REPORT` — ID `0x427`, DLC 8
+
+Moteur → Clavier, réponse à `LISTEN_NOISE_QUERY`.
+
+| Octet | Nom | Remarques |
+|---|---|---|
+| 0..1 | `uid_tag` | LE |
+| 2 | `channel` | |
+| 3 | `request_id` | recopie de la requête |
+| 4 | `min[7:0]` | |
+| 5 | `min[11:8]` \| `max[3:0] << 4` | 12 bits chacun |
+| 6 | `max[11:4]` | |
+| 7 | drapeaux | bit 0 `truncated` (fenêtre > 256 ms) |
+
+#### `LISTEN_PULSE_TIMING` — ID `0x428`, DLC 8
+
+Moteur → Clavier, émis seulement si `detail = 1`. Unités de 100 µs, saturées à
+`0xFFFF` (6,55 s) ; `saturated` de `LISTEN_PULSE` est alors posé.
+
+| Octet | Nom | Remarques |
+|---|---|---|
+| 0..1 | `uid_tag` | LE |
+| 2 | `seq` | même `seq` que `LISTEN_PULSE` |
+| 3..4 | `t_peak_100us` | t_peak − t0 (LE) |
+| 5..6 | `t_end_peak_100us` | t_end − t_peak (LE) |
+| 7 | réservé | 0 |
+
+#### `LISTEN_TRACE` — ID `0x429`, DLC 8
+
+Moteur → Clavier. Sert à `trace` **et** `stream`. Pas d'`uid_tag` : le Clavier
+l'attribue à la cible du dernier `LISTEN_CONTROL` TRACE/STREAM. Quatre
+échantillons 12 bits par trame (`CAN_LISTEN_TRACE_SAMPLES` = 4096).
+
+| Octet | Nom |
+|---|---|
+| 0..1 | `seq` (u16 LE) |
+| 2 | `s0[7:0]` |
+| 3 | `s0[11:8]` \| `s1[3:0] << 4` |
+| 4 | `s1[11:4]` |
+| 5 | `s2[7:0]` |
+| 6 | `s2[11:8]` \| `s3[3:0] << 4` |
+| 7 | `s3[11:4]` |
+
 ### Format flash de commissioning (Clavier)
 
 * **1 secteur 4 Kio en fin de flash** :

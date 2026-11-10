@@ -75,6 +75,7 @@ règles actives, de la stack et des interfaces : **`./ARCHITECTURE_CURRENT.md`**
 | [0029](./adr-0029-keycodes-armure-et-alteration-temporaire.md) | Keycodes d'armure (CLE_B/CLE_D), d'altération temporaire (TEMP_B/TEMP_D) et nommage court | Accepted | architecture, firmware | Déprécie 0026 §6/IMP-002 (positions) | Armure mineure/majeure par tonique, altération temporaire, noms courts (ALT_B). Aucune position figée dans une ADR. |
 | [0030](./adr-0030-transpositions-temporaires-par-cote.md) | Transpositions temporaires par côté (demi-ton et octave) maintenues | Accepted | architecture, firmware | Étend 0029 | Huit keycodes momentanés T_TEMP_ST/OCT_L/R : ±1 demi-ton / ±1 octave tant que maintenus, par côté ; note tenue figée. |
 | [0031](./adr-0031-combos-positions.md) | Combos de positions — un keycode pour N touches pressées ensemble | Accepted | architecture, firmware | Étend 0029 | Table de combos dans le keymap, type ZMK ; seules les positions membres subissent la fenêtre ; sortie libre, toujours active. |
+| [0032](./adr-0032-mode-rec-ecoute-ipropi-clavier-maitre.md) | Mode REC — écoute des touches du clavecin par IPROPI | Accepted | architecture, firmware, protocol, hardware, diagnostic | — | Keycodes REC_SOLE/REC_MUTE ; Core 1 Moteur balaie IPROPI, détecte les impulsions ; huit trames `LISTEN_*` ; option Serial Studio. |
 
 ## Historique (conservé pour trace — ne pas ouvrir par défaut)
 
@@ -92,7 +93,7 @@ citée. Elles restent la trace de la décision et de sa justification.
 
 - **Collision 0026 corrigée le 2026-10-25** : l'ADR `probe` (Proposed, jamais
   implémentée — `bringup_console.c` ne connaît que `t`) est devenue **0027**.
-   Le 0026 restant est celui des keycodes. Prochain numéro libre : **0032**.
+   Le 0026 restant est celui des keycodes. Prochain numéro libre : **0033**.
 - Les fichiers `impact-adr-*.md` de `docs/specs/` sont les fiches d'impact
   détaillées ; ils ne sont pas des ADR et ne doivent pas être ajoutés ici.
   L'état daté de l'implémentation est dans `docs/specs/historique-implementation.md`.
