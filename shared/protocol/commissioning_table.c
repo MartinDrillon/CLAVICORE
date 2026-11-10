@@ -147,11 +147,12 @@ commissioning_result_t commissioning_validate_entries(const commissioning_entry_
     return COMMISSIONING_OK;
 }
 
-// Règle d'assignation ascendante (ADR-0010, remplace ADR-0004 §6) : l'ancrage est
-// la note la plus grave. La position 0 (nœud CAN 2), canal occupé le plus bas,
+// Règle d'assignation (ADR-0010, sens intra-carte inversé par ADR-0028) : l'ancrage
+// est la note la plus grave. La position 0 (nœud CAN 2), canal occupé le plus haut,
 // reçoit la touche 1 (DO2, MIDI 36) ; les positions sont parcourues de 0 à 4 et
 // chaque carte reçoit un bloc contigu de taille = nombre de canaux occupés. Dans
-// un bloc, les canaux occupés croissants reçoivent les touches croissantes. Les
+// un bloc, les canaux occupés parcourus de 11 vers 0 reçoivent les touches
+// croissantes (bloc compact). Les
 // canaux non occupés sont sautés (trous autorisés) ; les touches non attribuées
 // sont celles du haut (aigu). Aucune correction silencieuse : une configuration
 // dont les positions présentes ne forment pas 0..K-1 est signalée par le motif
@@ -201,7 +202,10 @@ commissioning_result_t commissioning_build_runtime(const commissioning_entry_t *
         }
         runtime->position_first_key[position] = (uint8_t)block_start;
         runtime->position_last_key[position] = (uint8_t)block_end;
-        for (uint8_t channel = 0u; channel < CAN_IPROPI_CHANNEL_COUNT; ++channel) {
+        // ADR-0028 : parcours décroissant des canaux. Le canal occupé le plus haut
+        // reçoit la touche la plus grave du bloc, le canal 0 la plus aiguë ; le bloc
+        // reste compact (les canaux non occupés sont sautés sans consommer de touche).
+        for (int channel = (int)CAN_IPROPI_CHANNEL_COUNT - 1; channel >= 0; --channel) {
             commissioning_note_target_t *target;
             uint8_t key;
 
@@ -217,7 +221,7 @@ commissioning_result_t commissioning_build_runtime(const commissioning_entry_t *
             target->key = key;
             target->midi_note = commissioning_key_to_midi_note(key);
             target->position = entry->identity.position;
-            target->channel = channel;
+            target->channel = (uint8_t)channel;
             target->uid_tag = can_uid_tag(entry->identity.uid.id);
             target->uid = entry->identity.uid;
             ++channel_index;

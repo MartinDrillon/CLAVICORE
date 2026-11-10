@@ -55,6 +55,10 @@ typedef enum {
     UID_REQUEST_MODE_NONE = 0,
     UID_REQUEST_MODE_BOOT_SCAN,
     UID_REQUEST_MODE_MANUAL,
+    // Requête d'UID émise au DÉBUT de chaque synchronisation de profil pour
+    // établir la présence réelle à l'instant du test (correction ADR-0016).
+    // Réutilise la trame UID_REQUEST existante et le timeout du scan de boot.
+    UID_REQUEST_MODE_PRESENCE,
 } uid_request_mode_t;
 
 typedef struct {
@@ -168,6 +172,10 @@ typedef enum {
 // UID de l'entrée vu en ligne depuis le dernier scan de boot : c'est ce qui
 // définit « attendue » (ADR-0016 décision 2), pas le numéro de position.
 static bool profile_seed_online[UID_POSITION_COUNT];
+// Scan de présence en cours AVANT le transfert du profil (correction ADR-0016) :
+// tant qu'il est armé, l'ensemble attendu n'est pas encore calculé et le verdict
+// ne doit pas être évalué (un ensemble attendu vide serait trivialement satisfait).
+static bool profile_presence_pending;
 // PROFILE_STATUS de boot (transfer_id = 0) reçu de cette entrée : distingue
 // ACK_TIMEOUT de NO_PROFILE_STATUS (ADR-0016 décision 5).
 static bool profile_boot_seen[UID_POSITION_COUNT];
@@ -196,6 +204,7 @@ static bool calibration_enabled = CLAVIER_SELFTEST_CALIBRATION != 0;
 
 static void can_rx_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg);
 static void can_pio_irq_handler(void);
+static void profile_sync_final_failure(uint32_t first_ms);
 
 static uint32_t now_ms(void) {
     return to_ms_since_boot(get_absolute_time());
@@ -295,7 +304,8 @@ static void emit_table_state_line(diag_class_t category) {
 }
 
 // Une ligne `[MAP]` par canal assigné (ADR-0009 §4) : canal -> touche -> note.
-// Dans un bloc, les canaux occupés croissants reçoivent les touches croissantes.
+// Dans un bloc, les canaux occupés parcourus de 11 vers 0 reçoivent les touches
+// croissantes (le canal occupé le plus haut = note la plus grave du bloc, ADR-0028).
 // La touche de départ du bloc vient de `runtime.position_first_key`, calculée par
 // `commissioning_build_runtime` : ancrage grave (règle ascendante, ADR-0010).
 static void emit_map_line(uint8_t position, uint8_t channel, uint8_t key,
@@ -326,11 +336,13 @@ static void emit_map_lines(diag_class_t category) {
         if (key == 0u) {
             continue;
         }
-        for (uint8_t channel = 0u; channel < CAN_IPROPI_CHANNEL_COUNT; ++channel) {
+        // ADR-0028 : canaux parcourus de 11 vers 0 pour que les lignes `[MAP]`
+        // sortent par touche croissante, en cohérence avec `commissioning_build_runtime`.
+        for (int channel = (int)CAN_IPROPI_CHANNEL_COUNT - 1; channel >= 0; --channel) {
             if ((entry->occupation_bitmap & ((uint16_t)1u << channel)) == 0u) {
                 continue;
             }
-            emit_map_line(position, channel, key, category);
+            emit_map_line(position, (uint8_t)channel, key, category);
             ++key;
         }
     }
@@ -453,8 +465,21 @@ static void emit_summary_line(const diag_summary_report_t *report) {
     emit_line_class(DIAG_CLASS_NORMAL, line);
 }
 
+// Recherche l'INDEX de l'entrée dont la POSITION stockée vaut `position`. Le
+// tableau d'amorçage est rangé par INDEX (index 0 = position 4) : lire
+// `uid_position_table[position]` avec une position comme index décalait les UID
+// affichés et faussait les gardes portant sur `position` (ADR-0016).
+static int seed_index_for_position(uint8_t position) {
+    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        if (uid_position_table[i].position == position) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
 static bool seed_position_is_configured(uint8_t position) {
-    return position < UID_POSITION_COUNT && uid_position_table[position].position != UID_POSITION_EMPTY;
+    return seed_index_for_position(position) >= 0;
 }
 
 static uint8_t configured_seed_card_count(void) {
@@ -547,7 +572,9 @@ static bool build_note_key_lists(uint16_t bitmap, uint8_t last_key, char *keys_b
                append_fragment(notes_buffer, notes_capacity, &notes_used, "-");
     }
 
-    current_key = (uint8_t)(last_key - block_size + 1u);
+    // ADR-0028 : canaux occupés parcourus croissants mais touches décroissantes ;
+    // le canal occupé le plus haut reçoit la touche la plus grave du bloc.
+    current_key = last_key;
     for (uint8_t channel = 0u; channel < CAN_IPROPI_CHANNEL_COUNT; ++channel) {
         char note_name[DIAG_NOTE_NAME_MAX];
 
@@ -569,7 +596,7 @@ static bool build_note_key_lists(uint16_t bitmap, uint8_t last_key, char *keys_b
             return false;
         }
         first = false;
-        ++current_key;
+        --current_key;
     }
     return true;
 }
@@ -741,6 +768,20 @@ static bool boot_scan_in_progress(void) {
     return uid_inflight && uid_request_mode == UID_REQUEST_MODE_BOOT_SCAN;
 }
 
+// Marque une entrée de la table d'amorçage comme présente en ligne (ADR-0016
+// décision 2). Pendant une synchronisation déjà lancée — donc APRÈS le scan de
+// présence — une carte ainsi découverte rejoint l'ensemble attendu et devra
+// confirmer : le compte attendu suit pour que le diagnostic reste cohérent.
+static void profile_mark_seed_online(size_t index) {
+    if (profile_seed_online[index]) {
+        return;
+    }
+    profile_seed_online[index] = true;
+    if (profile_sync_active && !profile_presence_pending) {
+        ++profile_sync_expected;
+    }
+}
+
 // ADR-0017 décision 4 : une annonce de boot spontanée reçue hors scan de boot
 // est un redémarrage de carte — état des solénoïdes et profil non garantis —
 // donc signalé, daté et compté, jamais toléré en silence (invariant 1).
@@ -792,13 +833,13 @@ static void emit_uid_report(const uint8_t uid[CAN_UID_SIZE], const can_announce_
         emit_status_position(DIAG_STATUS_UID_NOT_IN_TABLE, UID_POSITION_UNKNOWN_REPORTED);
         ++stats.boot_unknown;
     }
-    // « Attendue » se compte sur l'UID vu en ligne depuis le dernier scan de boot
-    // (ADR-0016 décision 2), jamais sur un numéro de position.
+    // « Attendue » se compte sur l'UID vu en ligne depuis le dernier scan de
+    // boot (ADR-0016 décision 2), jamais sur un numéro de position.
     {
         const int seed_index = profile_seed_index_for_uid(uid);
 
         if (seed_index >= 0) {
-            profile_seed_online[(size_t)seed_index] = true;
+            profile_mark_seed_online((size_t)seed_index);
         }
     }
     if (info != NULL && info->reply_to == CAN_REPLY_TO_BOOT && !boot_scan_in_progress()) {
@@ -1038,26 +1079,27 @@ static bool begin_profile_sync(const solenoid_profile_t *profile, profile_sync_g
     memset(profile_card_ack, 0, sizeof(profile_card_ack));
     memset(profile_card_divergent, 0, sizeof(profile_card_divergent));
     profile_probe_pending = false;
-    // Cartes ATTENDUES (ADR-0016 décision 2) : les entrées de `uid_position.h`
-    // dont l'UID a été vu en ligne depuis le dernier scan de boot — c'est-à-dire
-    // une carte qui a annoncé son UID. Aucune table persistée n'est requise :
-    // l'auto-test de bring-up reste possible sans table valide. Une entrée
-    // d'amorçage dont l'UID réel ne correspond pas à la carte présente n'est donc
-    // jamais attendue, et ne peut plus bloquer la procédure par un simple effet
-    // de numéro de position.
+    // Correction ADR-0016 : la présence est ré-établie à CHAQUE synchronisation
+    // par une requête d'UID (trame existante, timeout du scan de boot) et
+    // l'ensemble attendu est calculé sur les cartes qui répondent MAINTENANT —
+    // jamais sur un cumul depuis le scan de boot. Une carte absente ne peut donc
+    // plus être remplacée par une autre dans le verdict, et une carte présente
+    // mais arrivée après le scan de boot est attribuée par son UID.
+    memset(profile_seed_online, 0, sizeof(profile_seed_online));
+    memset(profile_boot_seen, 0, sizeof(profile_boot_seen));
     profile_sync_expected = 0u;
-    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
-        if (uid_position_table[i].position == UID_POSITION_EMPTY) {
-            continue;
-        }
-        if (profile_seed_online[i]) {
-            ++profile_sync_expected;
-        }
-    }
     profile_sync_received = 0u;
     profile_sync_failed = false;
     profile_sync_active = true;
-    (void)profile_start_attempt();
+    profile_presence_pending = true;
+    if (!start_uid_request(UID_REQUEST_MODE_PRESENCE, false)) {
+        // Présence non mesurable : on n'invente pas d'ensemble attendu.
+        profile_presence_pending = false;
+        profile_sync_active = false;
+        return false;
+    }
+    // Le transfert du profil démarre à la fin du scan de présence
+    // (profile_finish_presence_scan), pas ici.
     if (goal == PROFILE_SYNC_GOAL_SELFTEST &&
         solenoid_profile_tag(&profile_active) != solenoid_profile_tag(profile)) {
         diag_out_printf_class(
@@ -1065,6 +1107,47 @@ static bool begin_profile_sync(const solenoid_profile_t *profile, profile_sync_g
             "[PROFILE] auto-test: le profil du fichier compile remplace le profil regle a chaud\n");
     }
     return true;
+}
+
+// Cartes de la table d'amorçage qui n'ont pas répondu au scan de présence :
+// signalées explicitement (code d'état existant BOARD_MISSING), sans bloquer le
+// test des cartes présentes (invariant 1 : aucune correction silencieuse).
+static void profile_report_absent_seed_cards(void) {
+    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        if (uid_position_table[i].position == UID_POSITION_EMPTY) {
+            continue;
+        }
+        if (!profile_seed_online[i]) {
+            emit_status_position(DIAG_STATUS_BOARD_MISSING, uid_position_table[i].position);
+        }
+    }
+}
+
+// Fin du scan de présence : l'ensemble attendu est exactement les cartes qui ont
+// répondu maintenant ; les absentes sont signalées ; le transfert du profil
+// démarre alors seulement (ADR-0013 §4). Bus entièrement muet (aucune réponse à
+// la requête d'UID) : échec explicite, sans succès trivial « sync ok 0/0 ».
+static void profile_finish_presence_scan(uint32_t first_ms) {
+    profile_presence_pending = false;
+    profile_sync_expected = 0u;
+    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        if (uid_position_table[i].position != UID_POSITION_EMPTY && profile_seed_online[i]) {
+            ++profile_sync_expected;
+        }
+    }
+    if (profile_sync_expected == 0u) {
+        // Aucune carte attendue = aucune réponse à la requête d'UID. On
+        // n'émet AUCUN transfert de profil et on ne peut pas conclure « ok ».
+        diag_out_printf_class(
+            DIAG_CLASS_ALWAYS,
+            "[PROFILE] bus muet: aucune carte n'a repondu a la requete d'UID source=%s\n",
+            profile_sync_source);
+        profile_sync_failed = true;
+        profile_sync_final_failure(first_ms);
+        return;
+    }
+    profile_report_absent_seed_cards();
+    (void)profile_start_attempt();
 }
 
 // Durée réellement écoulée depuis l'armement (ADR-0017 décision 3). Comparaison
@@ -1113,6 +1196,25 @@ static bool profile_card_confirmed(size_t index) {
            profile_card_ack[index] == PROFILE_CARD_VERIFIED_NVM;
 }
 
+// Verdict par ENSEMBLE (correction ADR-0016) : chaque entrée attendue doit être
+// confirmée par SON UID (direct ou réconcilié). Un acquittement d'une autre
+// carte ne satisfait jamais un attendu manquant — c'est exactement le faux
+// positif « sync ok » observé au banc (direct(0) + reconciled(1) >= expected(1)
+// alors que la carte réconciliée n'était pas l'attendue).
+static bool profile_sync_all_expected_confirmed(void) {
+    bool expected[UID_POSITION_COUNT] = {0};
+    bool confirmed[UID_POSITION_COUNT] = {0};
+
+    for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        if (uid_position_table[i].position == UID_POSITION_EMPTY) {
+            continue;
+        }
+        expected[i] = profile_seed_online[i];
+        confirmed[i] = profile_card_confirmed(i);
+    }
+    return profile_sync_all_confirmed(expected, confirmed, UID_POSITION_COUNT);
+}
+
 static bool profile_sync_any_no_boot_status(void) {
     for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
         if (uid_position_table[i].position == UID_POSITION_EMPTY || !profile_seed_online[i]) {
@@ -1138,16 +1240,20 @@ static bool profile_request_probe(void) {
 }
 
 // Liste, pour chaque carte attendue, l'état de son acquittement : sans cela un
-// échec ne dit pas QUELLE carte n'a pas répondu, ni pourquoi (ADR-0016 §5).
+// échec ne dit pas QUELLE carte n'a pas répondu, ni pourquoi (ADR-0016 §5). Le
+// champ `uid` nomme la carte (position + UID complet), en plus de son tag.
 static void print_profile_sync_cards(void) {
     for (size_t i = 0u; i < UID_POSITION_COUNT; ++i) {
+        char uid_text[17];
+
         if (uid_position_table[i].position == UID_POSITION_EMPTY || !profile_seed_online[i]) {
             continue;
         }
-        diag_out_printf("[PROFILE] sync carte pos=%u tag=0x%04X motif=%s\n",
+        format_uid_hex(uid_text, uid_position_table[i].uid.id);
+        diag_out_printf("[PROFILE] sync carte pos=%u tag=0x%04X motif=%s uid=%s\n",
                         (unsigned)uid_position_table[i].position,
                         (unsigned)can_uid_tag(uid_position_table[i].uid.id),
-                        profile_card_motive_name(i));
+                        profile_card_motive_name(i), uid_text);
     }
 }
 
@@ -1258,9 +1364,10 @@ static void handle_profile_status(const can_profile_status_t *status) {
     if (!profile_sync_active || !profile_transfer_id_in_operation(status->transfer_id)) {
         return;
     }
-    if (seed_index < 0 || !profile_seed_online[(size_t)seed_index]) {
-        // ADR-0016 décision 4 : un acquittement non attribuable n'est jamais
-        // jeté en silence. Produit dès réception, sans attendre le délai.
+    if (seed_index < 0) {
+        // Tag hors table d'amorçage : jamais attribuable, jamais compté dans le
+        // verdict. Signalé dès réception, sans attendre le délai (ADR-0016
+        // décision 4).
         diag_out_printf_class(
             DIAG_CLASS_ALWAYS,
             "[PROFILE] ack inattendu tag=0x%04X transfer=%u result=%u",
@@ -1269,6 +1376,18 @@ static void handle_profile_status(const can_profile_status_t *status) {
         emit_status(DIAG_STATUS_PROFILE_ACK_UNATTRIBUTED);
         ++stats.profile_ack_unattributed;
         return;
+    }
+    if (!profile_seed_online[(size_t)seed_index]) {
+        // Carte absente du scan de présence (arrivée après, ou réponse perdue)
+        // mais NOMMÉE par le tag de son acquittement : elle rejoint l'ensemble
+        // attendu par son UID et l'acquittement déjà reçu est conservé — il
+        // confirme CETTE carte, jamais une autre (ADR-0016 décision 2 ; le tag
+        // la nomme déjà). Aucune requête d'UID n'est nécessaire ici.
+        profile_mark_seed_online((size_t)seed_index);
+        diag_out_printf_class(DIAG_CLASS_BRINGUP,
+                              "[PROFILE] carte tag=0x%04X attribuee a la position %u par "
+                              "acquittement (hors scan de presence)\n",
+                              (unsigned)status->uid_tag, (unsigned)position);
     }
 
     const size_t index = (size_t)seed_index;
@@ -1492,15 +1611,19 @@ static void emit_selftest_card_summary_lines(const commissioning_runtime_t *prev
         diag_card_state_t state = DIAG_CARD_STATE_MISSING;
         uint8_t last_key = 0u;
         uint8_t channel_count = 0u;
+        const int seed_index = seed_index_for_position((uint8_t)position);
 
-        if (!seed_position_is_configured((uint8_t)position)) {
+        // `position` est une POSITION (0..4), pas un index : le tableau est rangé
+        // par index (index 0 = position 4). Lire `uid_position_table[position]`
+        // affichait l'UID d'une AUTRE position (ADR-0016).
+        if (seed_index < 0) {
             continue;
         }
 
         memset(&report, 0, sizeof(report));
         report.position = (uint8_t)position;
         report.node = (uint8_t)(position + 2);
-        memcpy(report.uid, uid_position_table[position].uid.id, CAN_UID_SIZE);
+        memcpy(report.uid, uid_position_table[(size_t)seed_index].uid.id, CAN_UID_SIZE);
 
         if (selftest_session.status_valid[position]) {
             bitmap = selftest_session.status[position].occupation_bits;
@@ -1878,9 +2001,11 @@ static void finish_selftest_session(void) {
     const char *table_result_text = "NOT_WRITTEN(?)";
 
     // Une position seedée sans réponse n'est plus bloquante : elle est absente de
-    // la table et devient un motif signalé (ADR-0009 §2).
+    // la table et devient un motif signalé (ADR-0009 §2). `position` est une
+    // POSITION, pas un index : l'existence de l'entrée se vérifie par recherche
+    // (`uid_position_table[position]` désignerait une AUTRE position, ADR-0016).
     for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
-        if (uid_position_table[position].position == UID_POSITION_EMPTY) {
+        if (!seed_position_is_configured(position)) {
             continue;
         }
         if (!selftest_session.received_position[position]) {
@@ -1905,8 +2030,10 @@ static void finish_selftest_session(void) {
     }
 
     // Seules les cartes qui ont répondu entrent dans le cliché (ADR-0009 §1/§2).
+    // La garde porte sur la POSITION (recherche), pas sur un index : la politique
+    // de réécriture (quelles cartes absentes entrent ou non) est inchangée.
     for (uint8_t position = 0u; position < UID_POSITION_COUNT; ++position) {
-        if (uid_position_table[position].position == UID_POSITION_EMPTY ||
+        if (!seed_position_is_configured(position) ||
             !selftest_session.received_position[position]) {
             continue;
         }
@@ -2543,6 +2670,7 @@ void can_link_init(void) {
     profile_probe_pending = false;
     profile_probe_finished = false;
     profile_selftest_start_pending = false;
+    profile_presence_pending = false;
 
     table_blank = commissioning_flash_table_is_blank();
     load_result = commissioning_state_load(&commissioning);
@@ -2701,6 +2829,13 @@ void can_link_poll(void) {
         profile_probe_pending = false;
     }
 
+    // Fin du scan de présence (correction ADR-0016) : l'ensemble attendu est
+    // calculé sur les cartes qui viennent de répondre, les absentes sont
+    // signalées, puis seulement le transfert du profil est lancé.
+    if (profile_sync_active && profile_presence_pending && !uid_inflight) {
+        profile_finish_presence_scan(first_ms);
+    }
+
     // ADR-0020 §2 : balayage des compteurs, une requête en vol à la fois.
     if (stats_probe_active) {
         if (stats_probe_sent_ms == 0u) {
@@ -2732,13 +2867,13 @@ void can_link_poll(void) {
         }
     }
 
-    if (profile_sync_active) {
+    if (profile_sync_active && !profile_presence_pending) {
         const bool tuning = profile_sync_goal == PROFILE_SYNC_GOAL_TUNING;
         const uint32_t timeout_ms = tuning ? CAN_LINK_PROFILE_TUNING_TIMEOUT_MS
                                            : CAN_LINK_PROFILE_SYNC_TIMEOUT_MS;
 
         if (profile_probe_pending) {
-            if (!profile_sync_failed && profile_sync_all_confirmed(profile_sync_expected, profile_sync_received, profile_sync_reconciled)) {
+            if (!profile_sync_failed && profile_sync_all_expected_confirmed()) {
                 profile_sync_final_success(first_ms);
             } else if (profile_probe_finished) {
                 profile_sync_failed = true;
@@ -2750,7 +2885,7 @@ void can_link_poll(void) {
         } else if (profile_sync_failed) {
             // Refus terminal ou divergence : aucun essai supplementaire.
             profile_sync_final_failure(first_ms);
-        } else if (profile_sync_all_confirmed(profile_sync_expected, profile_sync_received, profile_sync_reconciled)) {
+        } else if (profile_sync_all_expected_confirmed()) {
             profile_sync_final_success(first_ms);
         } else if (deadline_reached(first_ms, profile_sync_attempt_start_ms, timeout_ms)) {
             if (profile_sync_attempt < CAN_LINK_PROFILE_MAX_ATTEMPTS) {

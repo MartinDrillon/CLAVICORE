@@ -1,7 +1,7 @@
 ---
 description: "Sous-agent de la chaîne, APRÈS les tests : met la documentation en phase avec ce qui a été réellement implémenté et validé (Detail_architecture.md, procédures de build/test, index des ADR). Documente le réel, pas le prévu."
 mode: all
-model: openrouter/anthropic/claude-haiku-5.5
+model: deepseek/deepseek-flash
 steps: 30
 permission:
   bash: deny
@@ -9,6 +9,7 @@ permission:
     "*": deny
     "docs/**": allow
     "tests/**/*.md": allow
+    "tests/*.md": allow
     "README.md": allow
   task:
     "*": deny

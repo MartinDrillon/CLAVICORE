@@ -39,6 +39,7 @@ add_executable(clavier
     src/main.c
     src/bringup_console.c
     src/can_link.c
+    src/combo.c
     src/commissioning.c
     src/keycode.c
     src/keymap.c

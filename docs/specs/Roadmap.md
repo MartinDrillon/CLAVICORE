@@ -1,6 +1,8 @@
 
 # Roadmap — Firmware Clavicore
 
+Document de planification historique. Il ne fait pas foi sur l'état du firmware ; état courant = `docs/adr/ARCHITECTURE_CURRENT.md`, décisions = ADR. Les cases à cocher peuvent être obsolètes.
+
 Architecture logicielle et plan d'implémentation du firmware C des deux
 familles de cartes (« Clavier » et « Moteur »). Ce document sert de référence
 vivante : à mettre à jour au fil de l'avancement (cocher les cases, ajuster les
@@ -130,11 +132,13 @@ Décisions figées par [ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assigna
 - **sens musical définitif** (notation scientifique, [ADR-0008](../adr/adr-0008-convention-nommage-octaves-notation-scientifique.md)) : touche 1 = **DO2** = MIDI 36 ; touche 49 =
   **DO6** = MIDI 84 ;
 - **règle d'assignation ascendante** ([ADR-0010](../adr/adr-0010-ancrage-grave-mapping-commissioning.md),
-  remplace ADR-0004 §6) : l'ancrage se fait sur la **touche 1 = DO2** (position 0,
-  canal occupé le plus bas) et les blocs montent dans l'ordre des canaux puis des
-  positions ;
-- **exemple de carte unique** : 3 canaux occupés sur une seule carte donnent
-  les touches **1, 2, 3** donc MIDI **36, 37, 38** ;
+  remplace ADR-0004 §6 ; sens intra-carte inversé par [ADR-0028](../adr/adr-0028-inversion-canal-touche-intra-carte.md)) :
+  l'ancrage se fait sur la **touche 1 = DO2** (position 0, canal occupé le plus
+  haut) et les blocs montent dans l'ordre des positions ; dans un bloc, les
+  canaux occupés sont parcourus de 11 vers 0 ;
+- **exemple de carte unique** : 3 canaux occupés sur une seule carte (`0x00B`,
+  canaux `0,1,3`) donnent les touches **1, 2, 3** : canal 3 → touche 1 (DO2,
+  MIDI 36), canal 1 → touche 2 (MIDI 37), canal 0 → touche 3 (MIDI 38) ;
 - **déclenchement local** : bouton Moteur maintenu **3 s** ;
 - **pas d'auto-test au boot** ;
 - **table persistante en flash côté Clavier**, cliché du dernier auto-test

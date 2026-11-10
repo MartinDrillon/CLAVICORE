@@ -144,6 +144,17 @@ rejette le profil **en bloc** ; l'ancien profil reste actif ; jamais d'écrêtag
 dans l'énumération que pour compatibilité de numérotation. Aucune durée de phase
 n'est comparée à un maximum.
 
+**Invariant d'amorçage.** Un profil doit satisfaire `solenoid_profile_validate()`
+**avant tout envoi**. Un profil invalide fait refuser `begin_profile_sync()` côté
+Clavier : `PROFILE_SYNC_FAILED`, aucun `0x401`, donc pas d'auto-test, donc table
+de commissioning jamais écrite (`table=invalid reason=BAD_MAGIC` à chaque boot).
+
+**Garde-fou de compilation (Clavier).** `firmware/clavier/src/solenoid_profile_config.h`
+contient des `_Static_assert` (C11) : `hold_duty_pct <= hold_duty_max_pct`,
+`probe_duty_pct <= probe_duty_max_pct`, `maint_duty_pct <= maint_duty_max_pct`.
+Une valeur incohérente fait échouer la compilation ; ce garde-fou ne remplace
+pas `solenoid_profile_validate()`, qui reste le contrôle exécuté à l'envoi.
+
 `impact_duration_us == 0` est **valide** : il désactive la phase. Il n'y a pas de
 plafond de duty de phase propre à IMPACT (le plafond global `duty_max_pct`
 s'applique, comme pour PULL et RELEASE).
@@ -180,20 +191,26 @@ Un profil qui échoue l'un de ces deux contrôles est refusé avec
         v
 [3] Auto-test IPROPI demandé (bouton Moteur 3 s -> 0x402, ou commande locale)
     start_selftest_request() :
-      a. encode(k_solenoid_profile) -> 54 octets + CRC32 ; tag attendu figé
-      b. jusqu'à 3 tentatives COMPLETES (ADR-0023), timeout 1000 ms avant
+      a. ré-établit la présence par UID_REQUEST (0x400, mode présence, timeout
+         du scan de boot ~500 ms) ; l'ensemble attendu = cartes qui répondent
+         MAINTENANT. Cartes de uid_position.h absentes -> [STATUS] BOARD_MISSING,
+         sans bloquer les présentes. Aucune réponse (bus muet) -> aucun
+         transfert, [PROFILE] bus muet…, PROFILE_SYNC_FAILED, jamais sync ok.
+         Le transfert ne démarre qu'après la fin de ce scan.
+      b. encode(k_solenoid_profile) -> 54 octets + CRC32 ; tag attendu figé
+      c. jusqu'à 3 tentatives COMPLETES (ADR-0023), timeout 1000 ms avant
          auto-test / 2000 ms en réglage :
            - nouveau transfer_id (1..255), même payload et même CRC32
            - diffuse PROFILE_BEGIN (0x420), 9 x PROFILE_CHUNK (0x421),
              PROFILE_COMMIT (0x422)
-           - attend PROFILE_STATUS des cartes présentes
+           - attend PROFILE_STATUS des cartes attendues
            - toutes confirmées          -> succès, tente 0x401
            - refus réessayable / timeout -> tentative suivante si reste < 3
            - refus terminal / divergence -> échec immédiat
-      c. après 3 tentatives non concluantes, UNE requête UID existante vérifie
+      d. après 3 tentatives non concluantes, UNE requête UID existante vérifie
          l'état réel (fenêtre 500 ms). Une réponse transfer_id=0, result=OK,
          source=NVM au tag attendu réconcilie la carte (PROFILE_VERIFIED_NVM)
-      d. verdict final :
+      e. verdict final :
          - toutes confirmées (direct ou NVM) -> émet 0x401
          - manquante / erreur / divergence   -> [STATUS] PROFILE_SYNC_FAILED,
                                                  aucun 0x401
@@ -218,8 +235,29 @@ Un profil qui échoue l'un de ces deux contrôles est refusé avec
 ### 4.b Reprises et réconciliation d'état (ADR-0023)
 
 Une commande explicite (`p send`, `p reset`, auto-test) forme une **opération**
-pouvant comporter trois tentatives complètes. Les règles qui doivent rester
-vraies à chaque tentative :
+pouvant comporter trois tentatives complètes. Depuis la correction du
+2026-10-31 (ADR-0016), **avant toute tentative** :
+
+* le Clavier ré-établit la présence par la requête UID existante
+  (`UID_REQUEST_MODE_PRESENCE`, timeout du scan de boot, ~500 ms) ; l'ensemble
+  attendu est exactement les cartes qui répondent à cet instant, jamais un cumul
+  depuis le scan de boot ;
+* les cartes de `uid_position.h` absentes sont signalées `BOARD_MISSING` et ne
+  bloquent pas le test des cartes présentes ; un bus muet (`expected == 0`)
+  n'émet aucun transfert, affiche `[PROFILE] bus muet…` et échoue avec
+  `PROFILE_SYNC_FAILED`, jamais `sync ok` ;
+* le verdict est **par UID** (`profile_sync_all_confirmed(expected[],
+  confirmed[])`) : chaque attendu doit être confirmé par son propre UID, direct
+  ou réconcilié ; un acquittement d'une autre carte ne compense pas un attendu
+  manquant ;
+* un ACK dont le `uid_tag` nomme une carte absente du scan la réintègre à
+  l'ensemble attendu et la confirme ; un tag hors table reste
+  `PROFILE_ACK_UNATTRIBUTED` ;
+* `[CARD] … MISSING` restitue l'UID de la position stockée (`.position`), jamais
+  un index de tableau ; la réécriture de table suit la même règle ;
+* la latence ajoutée est d'environ **500 ms par synchronisation**.
+
+Les règles qui doivent rester vraies à chaque tentative :
 
 * le payload et le CRC32 sont identiques ; seul `transfer_id` change ;
 * les cartes déjà confirmées ne sont ni oubliées ni réinitialisées, et une carte
@@ -241,7 +279,8 @@ vraies à chaque tentative :
 Le détail de la machine d'état, des compteurs et des logs est dans
 [`impact-adr-0023.md`](./impact-adr-0023.md). Les délais existants (1 000 ms
 avant auto-test, 2 000 ms en réglage) et la fenêtre de sonde de 500 ms sont
-conservés.
+conservés ; le scan de présence ajouté au début de chaque synchronisation coûte
+lui aussi ~500 ms.
 
 **Transition vers v3 (amendement ADR-0014, 2026-10-25).** Un Moteur reflashé en
 v3 ne relit pas les enregistrements flash v1 ni v2 (version, longueur) : au premier

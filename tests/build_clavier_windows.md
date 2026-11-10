@@ -9,7 +9,10 @@ projet. Elle couvre les deux firmwares :
   **SWD** avec OpenOCD — section 6. Aucun `.uf2` n'est utilisé pour cette carte.
 
 Statut : procédures de build validées — builds réussis sans warning/erreur.
-Dernière validation complète : **2026-10-24** (lot ADR-0016 à ADR-0021) ; artefact
+Dernière validation complète : **2026-10-31** (correction sync profil Clavier) ;
+artefact Clavier `build/clavier/clavier.uf2` de **179 712 octets** (text 93 488 o,
+bss 11 940 o), builds Clavier **et** Moteur OK. Validation précédente complète :
+**2026-10-24** (lot ADR-0016 à ADR-0021) ; artefact
 Clavier `build/clavier/clavier.uf2` de **166 912 octets**, `moteur.elf` de
 **647 628 octets** (RP2350 : 4 Mo flash, 520 Ko SRAM). La taille dépend des
 options de build (§5), volontairement activées pendant le bring-up.
@@ -82,10 +85,16 @@ mode BOOTSEL.
 Commandes validées le **2026-10-21** (ADR-0010), à rejouer identiquement :
 
 ```powershell
-powershell -File tests\host\run_host_tests.ps1   # 221 au lot ADR-0010 ; résultat courant 2026-10-24 : 581
+powershell -File tests\host\run_host_tests.ps1   # 221 au lot ADR-0010 ; résultat courant 2026-10-31 : 1044
 cmake --build "build/clavier"                    # Clavier (pico2) → clavier.uf2
 cmake --build "build/moteur"                     # Moteur → moteur.elf (flash SWD, §6)
 ```
+
+**Résultat de référence du 2026-10-31** (correction sync profil Clavier) :
+builds Clavier **et** Moteur OK ; **1 044 vérifications hôte, 0 échec**
+(`test_profile_sync` **46/46**) ; `clavier.uf2` **179 712 o** (text 93 488 o,
+bss 11 940 o). Résultats **hôte uniquement** : la campagne de banc de
+`tests/procedure_adr0023_sync_profil.md` §2.1 reste à exécuter.
 
 **Résultat de référence du 2026-10-24** (ADR-0016 à ADR-0025) : **581
 vérifications hôte, 0 échec**, `clavier.uf2` 173 056 o, `clavier-final.uf2`

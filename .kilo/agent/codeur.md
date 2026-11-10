@@ -1,7 +1,7 @@
 ---
 description: "Sous-agent de la chaîne : implémente le firmware strictement contre shared/protocol/ et la fiche de lot. N'invente jamais une interface. Utilisable aussi directement via /implementer."
 mode: all
-model: openrouter/deepseek/deepseek-v4.1-flash
+model: deepseek/deepseek-flash
 steps: 60
 permission:
   bash:

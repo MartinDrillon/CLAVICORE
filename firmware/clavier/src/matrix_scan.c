@@ -6,7 +6,17 @@
 #include "hal/pinmap.generated.h"
 
 #define MATRIX_DEBOUNCE_SAMPLES 5u
-#define MATRIX_SETTLE_TIME_US 5u
+
+// Délai laissé aux colonnes pour remonter après la libération d'une ligne.
+// Les colonnes sont en entrée avec pull-up interne (≈50–80 kΩ) : après qu'une
+// ligne a été relâchée, la colonne d'une touche maintenue doit remonter
+// au-dessus du seuil de lecture avant de lire la ligne suivante, sinon elle est
+// interprétée comme pressée sur la ligne voisine. Les pistes longues des
+// colonnes physiques extrêmes ajoutent de la capacité et allongent cette
+// remontée ; 5 µs était insuffisant sur banc (nœuds fantômes sur les lignes
+// voisines, touches muettes), 50 µs a corrigé entièrement la colonne 12 et
+// récupéré une touche de la colonne 1 (ligne 5). Les tests ont montrés que 10 µs sont suffisant. 
+#define MATRIX_SETTLE_TIME_US 10u
 
 static const uint row_pins[MATRIX_ROW_COUNT] = {
     PIN_L1, PIN_L2, PIN_L3, PIN_L4, PIN_L5, PIN_L6, PIN_L7,

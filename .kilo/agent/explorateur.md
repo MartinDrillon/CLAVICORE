@@ -1,7 +1,7 @@
 ---
 description: "Sous-agent de recherche en lecture seule : trouve, lit et résume du code, des docs ou des ADR pour un autre agent, sans rien modifier. Rend un résumé compact (chemin:ligne), jamais des fichiers entiers."
 mode: subagent
-model: openrouter/anthropic/claude-haiku-5.5
+model: deepseek/deepseek-flash
 permission:
   bash: deny
   edit: deny

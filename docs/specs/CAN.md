@@ -6,6 +6,8 @@ ADR-0005,
 [ADR-0004](../adr/adr-0004-auto-test-ipropi-table-assignation-solenoide-command.md),
 [ADR-0009](../adr/adr-0009-commissioning-provisoire-bring-up-et-estimation-resistance-bobine.md),
 [ADR-0010](../adr/adr-0010-ancrage-grave-mapping-commissioning.md),
+[ADR-0028](../adr/adr-0028-inversion-canal-touche-intra-carte.md)
+(sens intra-carte canal → touche inversé),
 [ADR-0012](../adr/adr-0012-mode-maintenance-force-inverse-duree-20s.md),
 [ADR-0013](../adr/adr-0013-profil-activation-solenoides-centralise-clavier.md),
 [ADR-0014](../adr/adr-0014-limites-activation-pilotees-profil-clavier-derogation-invariant-4.md),
@@ -31,14 +33,23 @@ ADR-0005,
   [`impact-adr-0009.md`](impact-adr-0009.md). Les validations strictement
   matérielles (PROBE, estimation ohmique, tri des bobines) restent à faire
   (`tests/bringup_commissioning_provisoire.md`).
-- **Assignation des touches (ADR-0010, implémenté)** : règle **ascendante**
-  ancrée sur la touche 1 = `DO2`, motif `0x40 ANCHOR_SHIFT` ; voir la section
+- **Assignation des touches (ADR-0010, ADR-0028, implémenté)** : règle
+  **ascendante inter-cartes** ancrée sur la touche 1 = `DO2`, motif
+  `0x40 ANCHOR_SHIFT` ; **sens intra-carte inversé** (canaux parcourus 11 → 0,
+  canal occupé le plus haut = note la plus grave du bloc) ; voir la section
   « Règle d'assignation des touches » plus bas.
-- **Mode MAINTENANCE (ADR-0012, décidé — pas encore implémenté)** : le texte
-  ci-dessous décrit la cible. Dans le binaire actuel, la poussée maintenance est
-  encore en polarité **PULL** et bornée à **10 s**, et le keycode `MAINT`
-  (position 84) est inatteignable. Détail et liste des fichiers :
-  [`impact-adr-0012.md`](impact-adr-0012.md).
+- **Mode MAINTENANCE (ADR-0012 — implémenté dans le code)** : le keycode `MAINT`
+  (position 84, `firmware/clavier/src/keymap.c:41`) bascule le mode
+  (`firmware/clavier/src/main.c:162`) ; la poussée part en `SOLENOID_COMMAND`
+  `command = 2` (`firmware/clavier/src/can_link.c:2983`), appliquée côté Moteur
+  en polarité inverse (`firmware/moteur/src/solenoid_driver.c:284-293`,
+  `dir_level_maint`), duty 50 %, coupure à `maint_max_ms` = **20 s**
+  (`firmware/moteur/src/solenoid_driver.c:63` et `:324` ;
+  `solenoid_profile_defaults.h:35`, `firmware/clavier/src/solenoid_profile_config.h:49`).
+  Coupure explicite Clavier : `MAINTENANCE_TIMEOUT_MS` = 20 s
+  (`firmware/clavier/src/main.c:50`). Détail et liste des fichiers :
+  [`impact-adr-0012.md`](impact-adr-0012.md) ; campagne au banc :
+  `tests/phase3b_maintenance.md`.
 - **Profil d'activation (ADR-0013, ADR-0014 ; ADR-0019 : phase IMPACT ; amendement ADR-0014 2026-10-25 : format v3, sans maxima de durée ; ADR-0023 : synchronisation robuste — implémentée, validée hôte 2026-10-24, matériel en attente)** :
   le profil des solénoïdes est réglé dans un fichier unique côté Clavier,
   transmis aux cartes Moteur par les trames `PROFILE_*` (`0x420`–`0x423`) au
@@ -367,16 +378,26 @@ v2 (`format_version = 2`, 66 octets) reçoit `UNSUPPORTED_VERSION` (7).
 `source` : `0` valeurs de repli compilées, `1` enregistrement flash valide.
 
 Règles :
+- avant le premier transfert, le Clavier ré-établit la présence par la requête
+  UID existante (mode présence, timeout du scan de boot, ~500 ms) ; l'ensemble
+  attendu est exactement les cartes qui répondent à cet instant. Les cartes de
+  `uid_position.h` absentes sont signalées `BOARD_MISSING` sans bloquer les
+  présentes ; un bus muet (`expected == 0`) n'émet aucun transfert et produit
+  `PROFILE_SYNC_FAILED`, jamais `sync ok` ;
 - le profil est diffusé **avant** `IPROPI_SELFTEST_REQUEST` ; si toutes les
-  cartes présentes ne sont pas confirmées, le Clavier **n'émet pas** `0x401` et
-  signale `PROFILE_SYNC_FAILED` ;
+  cartes attendues ne sont pas confirmées, le Clavier **n'émet pas** `0x401` et
+  signale `PROFILE_SYNC_FAILED`. Le verdict est **par UID** : chaque attendu doit
+  être confirmé par son propre UID (direct ou réconcilié) ; un acquittement d'une
+  autre carte ne compense pas un attendu manquant ;
 - depuis ADR-0023, une opération comporte au maximum **trois tentatives
   complètes** (`BEGIN` + 9 `CHUNK` + `COMMIT`), chacune avec un nouveau
   `transfer_id` mais le même payload et le même CRC32 ;
-- un acquittement direct n'est valide que si `uid_tag` désigne une carte
-  attendue, `result = OK` et `profile_tag32` est le tag attendu. Un
+- un acquittement direct n'est valide que si `uid_tag` désigne une carte de la
+  table d'amorçage, `result = OK` et `profile_tag32` est le tag attendu. Un
   acquittement d'une tentative antérieure de la même opération est accepté tant
-  que la carte n'est pas confirmée ; les doublons ne comptent pas ;
+  que la carte n'est pas confirmée ; les doublons ne comptent pas. Un ACK dont
+  le tag nomme une carte absente du scan de présence la réintègre à l'ensemble
+  attendu et la confirme ; un tag hors table reste `PROFILE_ACK_UNATTRIBUTED` ;
 - un refus (`result != OK`) n'est **pas** comparé au tag attendu : il porte le
   tag de l'ancien profil actif. `NO_TRANSFER`, `BAD_SEQUENCE` et `BAD_CRC` sont
   réessayables ; `BUSY`, `INVALID_FIELD`, `FLASH_ERROR` et
@@ -546,39 +567,15 @@ n'existe aucune commande d'édition ou d'écriture manuelle d'une entrée.
 
 ### Format flash du profil solénoïde (Moteur)
 
-Deux secteurs de 4 Kio en fin de flash :
-`slot A = PICO_FLASH_SIZE_BYTES - 2 * 4096`, `slot B = ... - 4096`.
+Le profil d'activation et sa persistance flash ne sont pas des trames CAN.
+Format v3 (54 o, 9 chunks), en-tête de 32 o, slots A/B, sélection par `seq`
+le plus élevé : voir [`profil-solenoides.md`](profil-solenoides.md) §5.
 
-En-tête de 32 octets : `magic` `'CVPF'` (`0x46505643`), `format_version` u16
-(`3`), `header_size` u16 (`32`), `payload_len` u16 (`54`), `reserved` u16,
-`seq` u32 monotone, `crc32` u32 (payload seul), `reserved[12]`. Le payload
-canonique (54 octets, amendement ADR-0014 2026-10-25) suit l'en-tête. Un slot v1
-ou v2 est ignoré.
+### Niveaux du journal CDC (ADR-0025)
 
-Au boot, le Moteur applique le slot valide de `seq` le plus élevé ; aucun slot
-valide → valeurs de repli compilées (`source = DEFAULTS`). Écriture hors IRQ,
-canaux IDLE, avec `flash_safe_execute` : effacer le slot au `seq` le plus
-faible, programmer `seq + 1`, relire et vérifier, puis appliquer en RAM. Détail
-complet : [`profil-solenoides.md`](profil-solenoides.md) §5.
-
-### Niveaux du journal CDC (ADR-0025, implémentée)
-
-Le journal est filtré par `l 0|1|2` ; `l` affiche le niveau et `l t` commute
-l'horodatage.
-
-| Niveau | Contenu |
-|---|---|
-| `l 0` | verdicts d'opérations demandées, défauts, divergences, refus, mesures manquantes, réponses console |
-| `l 1` | niveau 0 + boot, UID, table, mapping, résumés par carte, événements ordinaires |
-| `l 2` | niveau 1 + notes, RAW, matrice, PUSH courants |
-
-Les lignes de la décision 2 d'ADR-0025 (divergences, `PROFILE_SYNC_FAILED`,
-`CARD_REBOOTED`, `TRIGGER_BLOCKED`, `CHANNEL_FAULT`, `SELFTEST_ABORTED`,
-`MANUAL_TEST_STARTED`, `NOTE_DROPPED`, warning de courant, `ohm_manquants`) sont
-émises à **tous** les niveaux. Les lignes libres de matrice deviennent une ligne
-taguée `[KEY]` à `l 2` uniquement. La commande `n` est retirée ; `c` reste
-l'acquisition de calibration. Les détails de format, de catégorie par tag et
-d'options de compilation sont dans [`impact-adr-0025.md`](impact-adr-0025.md).
+Le journal se filtre par `l 0|1|2` ; `l t` commute l'horodatage. Contenu des
+niveaux et commandes : [`commandes-putty.md`](commandes-putty.md) ; détail de
+format : [`impact-adr-0025.md`](impact-adr-0025.md).
 
 ### Lignes `[STATUS]` (codes `0x20+` d'ADR-0004, `0x31` d'ADR-0009, `0x32+` d'ADR-0013, `0x35+` d'ADR-0016/0017/0018/0020)
 
@@ -750,39 +747,64 @@ ADR-0010 pour le sens de l'assignation).
 - formule : `touche = note_midi - 35`
 - hors plage MIDI `36..84` : note ignorée
 
-### Règle ascendante (ADR-0010)
+### Règle ascendante (ADR-0010, sens intra-carte inversé par ADR-0028)
 
 - L'ancrage se fait sur la touche **1** (`DO2`, MIDI 36) : la carte de
-  **position 0** (nœud CAN 2), canal occupé le plus bas, joue **DO2**.
-- Les cartes de `uid_position.h` sont parcourues de la **position la plus basse
-  vers la plus haute** (`0 → 4`).
+  **position 0** joue **DO2** sur son **canal occupé le plus haut** (canal 11 si
+  occupé).
+- Position 0 = carte physiquement la plus grave, quel que soit son rang dans la
+  chaîne CAN. Les cartes de `uid_position.h` sont parcourues de la **position la
+  plus basse vers la plus haute** (`0 → 4`).
 - Le bloc courant commence à la touche courante (initialement **1**) et
   **monte**.
 - La taille d'un bloc = nombre de canaux occupés de la carte.
-- Dans un bloc, les **canaux occupés triés par index croissant** reçoivent les
-  **touches croissantes** du bloc.
-- Les canaux non occupés sont sautés (trous autorisés).
+- Dans un bloc, les **canaux occupés sont parcourus de 11 vers 0** (ADR-0028) :
+  le canal occupé le plus haut reçoit la **touche la plus grave** du bloc, le
+  canal occupé le plus bas (canal 0 si occupé) la **plus aiguë**.
+- Les canaux non occupés sont sautés : le bloc reste **compact** (trous
+  autorisés). La propriété « canal 11 = la plus grave » n'est vraie que si le
+  canal 11 est occupé ; sinon c'est le canal occupé le plus haut qui prend la
+  première touche du bloc.
 - Les touches non attribuées (total occupé < 49) sont celles du **haut** (aigu).
+- Bornes de contrôle : touche 1 ↔ canal occupé le plus haut de la carte de
+  position 0 (DO2) ; touche 49 (si attribuée) ↔ canal occupé le plus bas de la
+  carte la plus aiguë (canal 0 si occupé).
 
 ### Exemple
 
 Carte unique en position 0, avec canaux `0`, `1` et `2` occupés :
 
-| Canal | Touche | Note MIDI | Note |
+| Touche | Canal | Note MIDI | Note |
 |---|---|---|---|
-| 0 | 1 | 36 | DO2 |
-| 1 | 2 | 37 | DO#2 / RÉb2 |
-| 2 | 3 | 38 | RÉ2 |
+| 1 | 2 | 36 | DO2 |
+| 2 | 1 | 37 | DO#2 / RÉb2 |
+| 3 | 0 | 38 | RÉ2 |
 
 Une carte placée en position 1 recevrait le bloc immédiatement plus aigu,
 commençant à la touche 4.
 
 Exemple à 2 cartes :
 
-* position 0, `3` canaux occupés → touches `1,2,3`
-* position 1, `2` canaux occupés → touches `4,5`
-* dans chaque bloc, les canaux occupés les plus bas reçoivent les touches les
-  plus graves du bloc.
+* position 0, `3` canaux occupés (`0,1,3`) → touches `1,2,3` : canal 3 → 1,
+  canal 1 → 2, canal 0 → 3 ;
+* position 1, `2` canaux occupés (`0,1`) → touches `4,5` : canal 1 → 4, canal 0 → 5.
+* dans chaque bloc, le canal occupé le plus haut reçoit la touche la plus grave.
+
+### Lignes de diagnostic `[CARD]` et `[MAP]`
+
+- `[CARD]` : `channels` est listé par index **croissant** ; `keys` et `notes`
+  sont **décroissants**, paires alignées par index. Exemple (carte seule,
+  bitmap `0x00B`) :
+  `[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=3,2,1 notes=RE2(38),DO#2(37),DO2(36)`.
+- `[MAP]` : une ligne par touche **croissante** (canal 11 → 0 à l'intérieur de
+  chaque bloc) ; c'est elle qui fait foi canal par canal.
+
+### Constat de convention position ↔ nœud (à confirmer)
+
+Seed du 2026-10-28 (`firmware/clavier/src/uid_position.h`) : carte 1 de la chaîne
+= AIGU en position 4 ; carte 5 = GRAVE en position 0. La convention
+« position = nœud − 2 » énoncée dans le commentaire de ce fichier n'est pas
+tranchée ici : **à confirmer par l'humain**.
 
 ### Contiguïté des positions et motif `ANCHOR_SHIFT`
 

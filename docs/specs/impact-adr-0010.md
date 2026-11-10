@@ -31,7 +31,7 @@ devenir le **miroir** de la version actuelle :
 | Ancre | touche **49** (`COMMISSIONING_KEY_MAX`) | touche **1** (`COMMISSIONING_KEY_MIN`) |
 | Parcours des positions | **4 → 0** | **0 → 4** |
 | Sens du remplissage | descendant (`current_high`, `block_start = current_high - N + 1`) | ascendant (`current_low`, `block_start = current_low`, puis `current_low = block_end + 1`) |
-| Dans un bloc | canaux occupés croissants → touches croissantes | **inchangé** |
+| Dans un bloc | canaux occupés croissants → touches croissantes | **inversé par ADR-0028** : canaux occupés parcourus 11 → 0 → touches croissantes (canal occupé le plus haut = touche la plus grave du bloc) |
 | Touches non attribuées | au **grave** | à l'**aigu** |
 
 Invariants de comportement à conserver : canaux non occupés sautés (trous

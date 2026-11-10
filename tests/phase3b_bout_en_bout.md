@@ -46,14 +46,16 @@ Après une écriture réussie :
 
 1. Jouer les touches des notes graves MIDI 36/37/38 (DO2, DO#2, RE2).
 2. Vérifier que les solénoïdes correspondent à la règle d'assignation
-   **ascendante** (ADR-0010 : ancrage sur la touche 1 = DO2) :
-   * la carte de **position 0**, canal occupé le plus bas, joue **DO2**
+   **ascendante inter-cartes** (ADR-0010 : ancrage sur la touche 1 = DO2) avec
+   **sens intra-carte inversé** (ADR-0028) :
+   * la carte de **position 0**, canal occupé le plus **haut**, joue **DO2**
      (touche 1, MIDI 36) ; avec 3 canaux occupés elle prend les touches
      **1, 2, 3**, donc MIDI **36, 37, 38** ;
    * si la carte de position 1 a 2 canaux occupés, elle prend les touches
      **4, 5** (MIDI **39, 40**), immédiatement après le bloc de la position 0 ;
-   * dans chaque bloc, les canaux occupés croissants reçoivent les touches
-     croissantes ;
+   * dans chaque bloc, les canaux occupés sont parcourus de **11 vers 0** et
+     reçoivent les touches croissantes : canal occupé le plus haut = note la plus
+     grave du bloc, canal 0 = la plus aiguë ;
    * **banc sans position 0** (cas fréquent pendant le bring-up) : le bloc grave
      est attribué à la position présente la plus basse et la table est
      `PROVISIONAL` avec `flags=0x40` (`ANCHOR_SHIFT`) ; les lignes `[MAP]`
@@ -140,9 +142,11 @@ le préfixe `[T+… ms]` est omis ici pour la lisibilité.
 
 * aucun `[STATUS] code=PROFILE_SYNC_FAILED` lorsque toutes les cartes attendues
   sont présentes ;
-* la durée mesurée `duree=` est du même ordre que le délai de 1 000 ms si l'échec
-  survient, et faible (quelques ms) en cas de succès : c'est elle, et non le
-  `delai=` configuré, qui fait foi sur le temps réellement écoulé.
+* la durée mesurée `duree=` **inclut désormais le scan de présence préalable**
+  (~500 ms) exécuté au début de chaque sync : un succès n'est donc plus de
+  « quelques ms » mais de l'ordre de la demi-seconde. Elle reste du même ordre que
+  le délai de 1 000 ms si l'échec survient ; c'est elle, et non le `delai=`
+  configuré, qui fait foi sur le temps réellement écoulé.
 
 ### Contre-épreuve (même résultat par les deux chemins)
 
@@ -272,8 +276,10 @@ conserve `keys` pour cette carte). Une carte **remplacée** (UID différent) don
 ## Addendum — exemples de session PuTTY
 
 Les exemples ci-dessous **s'ajoutent** aux lignes existantes `[STATUS]`,
-`[SELFTEST]` et `[TABLE]`. Ils suivent la règle d'assignation **ascendante**
-(ADR-0010 : ancrage sur la touche 1 = DO2) et les cartes y sont volontairement
+`[SELFTEST]` et `[TABLE]`. Ils suivent la règle d'assignation **ascendante
+inter-cartes** (ADR-0010 : ancrage sur la touche 1 = DO2) et le **sens
+intra-carte inversé** (ADR-0028 : canaux parcourus 11 → 0, `keys`/`notes`
+décroissants pour des `channels` croissants). Les cartes y sont volontairement
 déclarées aux positions hautes (4, 3) sans position 0 : c'est le cas d'un banc
 partiel, d'où le motif `ANCHOR_SHIFT` (`flags=0x40`). Les lignes `[CARD]` sont
 émises par position croissante.
@@ -289,7 +295,7 @@ partiel, d'où le motif `ANCHOR_SHIFT` (`flags=0x40`). Les lignes `[CARD]` sont
 [STATUS] code=TABLE_PARTIAL
 [STATUS] code=TABLE_WRITTEN
 [TABLE] state=PROVISIONAL flags=0x40 cards=1 keys=3
-[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=1,2,3 notes=DO2(36),DO#2(37),RE2(38)
+[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=3,2,1 notes=RE2(38),DO#2(37),DO2(36)
 [SUMMARY] cards_ok=1/1 channels=3 keys=3/49 missing_keys=4-49 table=WRITTEN calib=ON
 ```
 
@@ -305,7 +311,7 @@ Exemple : la nouvelle carte arrive en position 3 avec canaux `0,1`.
 ```text
 [BOOT] table=loaded cards=1
 [HELP] bouton Moteur 3 s = auto-test ; table rechargee depuis la flash
-[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=1,2,3 notes=DO2(36),DO#2(37),RE2(38)
+[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=3,2,1 notes=RE2(38),DO#2(37),DO2(36)
 [TRIGGER] bouton Moteur recu -> auto-test lance (req=43)
 [STATUS] code=SELFTEST_STARTED
 [SELFTEST] req=43 pos=4 status=OK bitmap=0x00B faults=0x000 tag=29B1
@@ -315,8 +321,8 @@ Exemple : la nouvelle carte arrive en position 3 avec canaux `0,1`.
 [DIFF] pos=3 ancien=0x000 nouveau=0x003
 [STATUS] code=TABLE_WRITTEN
 [TABLE] state=PROVISIONAL flags=0x40 cards=2 keys=5
-[CARD] pos=3 node=5 uid=AA10203040506070 state=OK bitmap=0x003 channels=0,1 keys=1,2 notes=DO2(36),DO#2(37)
-[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=3,4,5 notes=RE2(38),RE#2(39),MI2(40)
+[CARD] pos=3 node=5 uid=AA10203040506070 state=OK bitmap=0x003 channels=0,1 keys=2,1 notes=DO#2(37),DO2(36)
+[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=5,4,3 notes=MI2(40),RE#2(39),RE2(38)
 [SUMMARY] cards_ok=2/2 channels=5 keys=5/49 missing_keys=6-49 table=DIFFERS_WRITTEN calib=ON
 ```
 
@@ -340,8 +346,8 @@ Exemple : la carte de position 4 passe de `0,1,3` à `0,1,2,3`.
 [DIFF] pos=4 ancien=0x00B nouveau=0x00F
 [STATUS] code=TABLE_WRITTEN
 [TABLE] state=PROVISIONAL flags=0x40 cards=2 keys=6
-[CARD] pos=3 node=5 uid=AA10203040506070 state=OK bitmap=0x003 channels=0,1 keys=1,2 notes=DO2(36),DO#2(37)
-[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00F channels=0,1,2,3 keys=3,4,5,6 notes=RE2(38),RE#2(39),MI2(40),FA2(41)
+[CARD] pos=3 node=5 uid=AA10203040506070 state=OK bitmap=0x003 channels=0,1 keys=2,1 notes=DO#2(37),DO2(36)
+[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00F channels=0,1,2,3 keys=6,5,4,3 notes=FA2(41),MI2(40),RE#2(39),RE2(38)
 [SUMMARY] cards_ok=2/2 channels=6 keys=6/49 missing_keys=7-49 table=DIFFERS_WRITTEN calib=ON
 ```
 

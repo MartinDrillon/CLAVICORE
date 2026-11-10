@@ -2,6 +2,7 @@
 #define PROFILE_SYNC_LOGIC_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #define PROFILE_SYNC_MAX_ATTEMPTS 3u
@@ -97,9 +98,32 @@ static inline profile_probe_action_t profile_sync_classify_probe(bool result_ok,
     return PROFILE_PROBE_FAIL;
 }
 
-static inline bool profile_sync_all_confirmed(uint8_t expected, uint8_t direct,
-                                              uint8_t reconciled) {
-    return (uint8_t)(direct + reconciled) >= expected;
+// Verdict par ENSEMBLE, pas par comptage (ADR-0016, correction) : chaque entrée
+// ATTENDUE doit être confirmée PAR SON UID. Une confirmation portant sur une
+// autre entrée ne satisfait jamais un attendu manquant : c'est ce comptage
+// (`direct + reconciled >= expected`) qui affichait « sync ok » en réconciliant
+// une carte qui n'était pas l'attendue (faux positif du banc).
+// `expected[i]` : l'entrée i est attendue ; `confirmed[i]` : l'entrée i a été
+// confirmée (acquittement direct ou réconciliation NVM).
+// Un ensemble attendu VIDE n'est PAS un succès : bus muet ou aucune carte en
+// ligne doit produire un échec explicite, jamais un « sync ok 0/0 » trivial.
+static inline bool profile_sync_all_confirmed(const bool *expected, const bool *confirmed,
+                                              size_t count) {
+    size_t expected_count = 0u;
+
+    if (expected == NULL || confirmed == NULL) {
+        return false;
+    }
+    for (size_t i = 0u; i < count; ++i) {
+        if (!expected[i]) {
+            continue;
+        }
+        ++expected_count;
+        if (!confirmed[i]) {
+            return false;
+        }
+    }
+    return expected_count > 0u;
 }
 
 static inline profile_next_action_t profile_sync_next_action(bool active, bool failed,

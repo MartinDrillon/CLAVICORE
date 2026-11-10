@@ -155,15 +155,27 @@ l'impulsion n'existe pas et le transfert est rejeté (`result=7`).
 
 ## 4. Échec d'acquittement (diagnostic)
 
-### 4.1 Cas attendu : une carte réellement muette
+### 4.1 Cas attendu : une carte absente ou réellement muette
 
-Couper une carte **après** le scan UID, puis `p set min_rest_ms 12` : après
-ADR-0023, le Clavier effectue trois tentatives et une sonde (environ 6,5 s en
-réglage), puis émet `[STATUS] PROFILE_SYNC_FAILED`, un verdict
+**Carte coupée avant la sync** (débranchée puis `p set min_rest_ms 12`, ou
+reboot Clavier sans la carte) : le scan de présence du début de sync ne la voit
+pas. Le Clavier émet `[STATUS] code=BOARD_MISSING pos=N` et une ligne
+`[CARD] … pos=N … state=MISSING` portant l'UID de la **bonne position**
+(recherche par `.position` dans `uid_position.h`). La carte absente **ne bloque
+plus le test des cartes présentes** : la propagation se conclut sur les cartes
+présentes, et le verdict ne confirme que les UID réellement présents
+(`sync ok N/N`, N = cartes présentes). Aucune compensation par un autre UID.
+
+**Carte présente mais réellement muette** (coupée **après** le scan de présence,
+ou acquittements perdus) : après ADR-0023, le Clavier effectue trois tentatives
+et une sonde (environ 6,5 s en réglage), puis émet
+`[STATUS] code=PROFILE_SYNC_FAILED`, un verdict
 `[PROFILE] sync echec ... tentatives=3/3 ...`, une ligne par carte muette et
 aucun `0x401`. Le profil actif ne change pas. Une seule carte momentanément
 muette doit au contraire produire `sync reprise` puis `sync ok`, sans commande
-manuelle supplémentaire.
+manuelle supplémentaire. Si **aucune** carte ne répond au scan de présence, le
+verdict est `[PROFILE] bus muet: aucune carte n'a repondu a la requete d'UID`
+puis `PROFILE_SYNC_FAILED` — jamais `sync ok`.
 
 ### 4.2 Cas « carte présente, acquittement manquant » (historique avant ADR-0023)
 

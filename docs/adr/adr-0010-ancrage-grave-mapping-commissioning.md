@@ -7,9 +7,11 @@ tags: ["architecture", "firmware", "protocol"]
 supersedes: ""
 superseded_by: ""
 ---
-
 ### Status
+
 **Accepted**
+
+**Amendée partiellement par [ADR-0028]** (§1 point canaux, §5 exemples) : dans un bloc, les canaux occupés sont parcourus de 11 vers 0. Le reste de la décision reste en vigueur.
 
 **Remplace partiellement ADR-0004** : sa « décision §6 — Règle d'assignation
 (descendante, ancrée sur la touche 49) » et les alternatives ALT-007/ALT-008

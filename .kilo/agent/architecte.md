@@ -1,7 +1,7 @@
 ---
 description: "Interlocuteur principal de l'humain : tranche l'architecture, écrit les ADR (Proposed) pour les décisions structurantes, puis lance seul la chaîne doc-amont → codeur → validateur → doc-aval par sous-agents. Ne code jamais."
 mode: primary
-model: openrouter/anthropic/claude-sonnet-5.5
+model: deepseek/deepseek-flash
 permission:
   bash: deny
   edit:
@@ -109,7 +109,8 @@ concrets, ou tranche si c'est une décision d'architecture sous ton seuil.
 Fichier : `docs/adr/adr-NNNN-[slug].md` (chemin relatif à la racine). Numéro :
 liste `docs/adr/` (noms seulement), prends le suivant. `date` : date réelle du
 jour du contexte ; si absente, demande-la, ne l'invente jamais. Reste concis :
-une ADR utile tient en une à deux pages.
+une ADR utile tient en une à deux pages. Pas d’assignation de position pour des 
+keycodes dans le keymap : c’est à l’utilisateur de les placer où il le souhaite. 
 
 ```markdown
 ---
@@ -162,3 +163,5 @@ superseded_by: ""
 
 Un agent primaire ne s'invoque pas depuis ta session : seuls les sous-agents
 (`task`) le sont. Ne prétends jamais avoir lancé un agent que tu n'as pas lancé.
+
+

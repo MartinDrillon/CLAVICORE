@@ -4,12 +4,24 @@ Note de référence pour le **Codeur** et le **Validateur**.
 [ADR-0023](../adr/adr-0023-synchronisation-profil-reprise-verification-etat.md)
 est **`Accepted`** depuis le 2026-10-24.
 
-> **État de cette note (2026-10-24).** ADR-0023 est **implémentée** et
+> **État de cette note (2026-10-31).** ADR-0023 est **implémentée** et
 > **validée par compilation et tests hôte** (harnais `test_profile_sync`, cas
-> H-01 à H-20). La **validation matérielle** (injections CAN, 200 alternances)
+> H-01 à H-21). La **validation matérielle** (injections CAN, 200 alternances)
 > n'est pas exécutée. Voir
-> [`validation-adr-0023-25-2026-10-24.md`](./validation-adr-0023-25-2026-10-24.md) ;
-> les sections ci-dessous décrivent le comportement réellement implémenté.
+> [`validation-adr-0023-25-2026-10-24.md`](./validation-adr-0023-25-2026-10-24.md)
+> pour l'état historique du 2026-10-24 ; les sections ci-dessous décrivent le
+> comportement réellement implémenté.
+>
+> **Correction du 2026-10-31 (ADR-0016, sans nouvelle trame).** La présence est
+> ré-établie **à chaque synchronisation** par la requête UID existante
+> (`UID_REQUEST_MODE_PRESENCE`, timeout du scan de boot, ~500 ms) ; l'ensemble
+> attendu est exactement les cartes qui répondent à cet instant. Les absentes
+> sont signalées `BOARD_MISSING` sans bloquer les présentes ; un bus muet
+> (`expected == 0`) n'émet aucun transfert et échoue explicitement, jamais
+> `sync ok`. Le verdict est **par UID** (`profile_sync_all_confirmed`) et un ACK
+> nommant une carte absente du scan la réintègre. Hôte : 1044 vérifications,
+> 0 échec, `test_profile_sync` 46/46 ; essais de banc en attente
+> (`tests/procedure_adr0023_sync_profil.md` §2.1).
 
 ## 0. Portée exacte
 
@@ -62,7 +74,7 @@ observable et testable sur hôte.
 | Champ | Type / domaine | Règle |
 |---|---|---|
 | `profile_sync_active` | bool | vrai du premier BEGIN jusqu'au verdict final, **sonde comprise** |
-| `profile_sync_expected` | bitmask de positions | calculé **une seule fois** au début depuis les cartes en ligne, règle ADR-0016 inchangée |
+| `profile_sync_expected` | bitmask de positions | **recalculé à chaque synchronisation** après le scan de présence : exactement les cartes qui répondent à cet instant, jamais un cumul depuis le boot (ADR-0016) |
 | `profile_sync_attempt` | 1..3 | tentative courante |
 | `profile_sync_transfer_ids[3]` | u8, 1..255 | identifiants de toutes les tentatives de l'opération |
 | `profile_sync_start_ms` | u32 | début de l'opération, pour `duree=` |
@@ -109,13 +121,18 @@ Règles :
 
 1. Valider le profil et les gardes existantes (`jeu en cours`, opération CAN en
    cours, carte attendue) : **ne pas les modifier**.
-2. Calculer une seule fois `profile_sync_expected` et le tag attendu.
-3. Initialiser les compteurs d'opération à zéro, toutes les cartes attendues à
+2. Émettre le scan de présence par la requête UID existante
+   (`UID_REQUEST_MODE_PRESENCE`, timeout du scan de boot, ~500 ms) ; le transfert
+   ne démarre qu'après sa fin.
+3. Calculer `profile_sync_expected` sur les cartes qui ont répondu à ce scan,
+   signaler les absentes `BOARD_MISSING` et figer le tag attendu.
+4. Initialiser les compteurs d'opération à zéro, toutes les cartes attendues à
    `WAITING`, `profile_sync_failed = false`.
-4. Armer `profile_sync_active = true` et `profile_sync_start_ms`.
-5. Lancer la tentative 1.
+5. Armer `profile_sync_active = true` et `profile_sync_start_ms`.
+6. Lancer la tentative 1.
 
-La règle actuelle quand `attendus = 0` n'est pas modifiée par ADR-0023.
+`expected == 0` (bus muet) n'émet **aucun** transfert : échec explicite
+`[PROFILE] bus muet…` + `PROFILE_SYNC_FAILED`, jamais `sync ok`.
 
 ### 3.2 Une tentative
 
@@ -124,7 +141,8 @@ Pour `profile_sync_attempt = 1..3` :
 1. Allouer un `transfer_id` neuf dans `1..255`, différent des identifiants déjà
    utilisés dans l'opération, et l'ajouter à `profile_sync_transfer_ids`.
 2. Émettre **le transfert complet**, dans l'ordre :
-   `PROFILE_BEGIN`, 11 × `PROFILE_CHUNK`, `PROFILE_COMMIT`.
+   `PROFILE_BEGIN`, 9 × `PROFILE_CHUNK` (format v3, 54 octets),
+   `PROFILE_COMMIT`.
 3. Le payload, le CRC32 et le tag sont identiques à chaque tentative. Seul
    `transfer_id` change.
 4. Armer `profile_sync_deadline_ms` avec le délai existant :
@@ -298,11 +316,12 @@ Cas minimaux :
 | H-13 | aucune réponse de sonde | échec après 500 ms, `ACK_TIMEOUT` |
 | H-14 | sonde impossible à émettre | `CAN_TX_FAIL`, échec explicite |
 | H-15 | trois émissions locales en échec, sonde possible | sonde exécutée, pas de blocage |
-| H-16 | `attendus=0` | comportement actuel préservé, aucun crash |
+| H-16 | `expected == 0` (bus muet) | aucun transfert, `[PROFILE] bus muet…`, `PROFILE_SYNC_FAILED`, jamais `sync ok` |
 | H-17 | 255 → 1 sur les ids | trois ids distincts, rebouclage correct |
 | H-18 | opération en cours pendant la sonde | `p send` et auto-test refusés par les gardes existantes |
 | H-19 | durée et échéances | aucune reprise avant le délai, borne 3 × délai + 500 ms |
 | H-20 | succès nominal | aucune ligne `sync debut` ni doublon `reglage: OK` |
+| H-21 | verdict par UID | un ACK/réconciliation d'une autre carte ne compense pas un attendu manquant |
 
 Les tests doivent vérifier que les compteurs `profile_sync_retries` et
 `profile_sync_reconciled` sont **par opération**, et que `profile_sync_received`

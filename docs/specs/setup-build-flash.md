@@ -46,7 +46,7 @@ deux firmwares sous Windows. Sources : `tests/build_clavier_windows.md`,
 ## 2. Préparation du dépôt
 
 ```powershell
-$ROOT = "D:\Documents\MUSIQUE\EPINETTE\Kit Heugel_Bedard\.kilo\worktrees\nettoyage-log-putty"
+$ROOT = "D:\Documents\MUSIQUE\EPINETTE\Kit Heugel_Bedard"
 Set-Location $ROOT
 git submodule update --init --recursive
 ```
@@ -103,7 +103,7 @@ Artefacts :
 2. Copier le fichier :
 
    ```powershell
-   Copy-Item "$ROOT\build\clavier\clavier.uf2" "X:\"
+   Copy-Item "$ROOT\build\clavier\clavier.uf2" "Xp seend:\"
    ```
 
    (`X:` = lettre du disque BOOTSEL ; la carte redémarre seule après copie.)

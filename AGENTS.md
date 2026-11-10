@@ -46,6 +46,7 @@ devrait en enfreindre un s'arrête et demande confirmation humaine.
    de la table de commissioning, contrat d'une HAL) nécessite une ADR
    (`docs/adr/`) *avant* l'implémentation. Jamais après, jamais en même temps
    dans le même commit sans référence à l'ADR.
+6. **Les positions de keycodes dans le keymap ne sont jamais normatives.** Aucune ADR ni test ne fige la position d'un keycode ; elles appartiennent à l'humain, qui les modifie à la volée.
 
 ## Frontières de modules
 

@@ -129,6 +129,7 @@ static void test_uid_position_table(void) {
 static void test_commissioning_assignment_examples(void) {
     commissioning_runtime_t runtime;
     commissioning_note_target_t target;
+    commissioning_entry_t full_card[] = {make_entry(UID_A, 4u, 0xFFFu)};
     commissioning_entry_t single_hole[] = {make_entry(UID_A, 4u, 0x00Bu)};
     commissioning_entry_t single_sparse[] = {make_entry(UID_A, 4u, 0x841u)};
     commissioning_entry_t two_boards[] = {
@@ -138,40 +139,51 @@ static void test_commissioning_assignment_examples(void) {
 
     // ADR-0010 : ancrage grave. Une carte seule reçoit le bloc grave quel que soit
     // son numéro de position (le décalage est signalé côté Clavier, pas corrigé).
+    // ADR-0028 : dans un bloc, les canaux occupés sont parcourus de 11 vers 0 et
+    // reçoivent les touches croissantes (canal occupé le plus haut = plus grave).
+    // Carte pleine (12 canaux) : canal 11 -> touche 1 (DO2, 36), canal 0 -> 12 (47).
+    CHECK(commissioning_build_runtime(full_card, 1u, &runtime) == COMMISSIONING_OK);
+    CHECK(runtime.partial);
+    CHECK(runtime.position_first_key[4] == 1u && runtime.position_last_key[4] == 12u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 36u, &target) == COMMISSIONING_OK);
+    CHECK(target.channel == 11u && target.key == 1u);
+    CHECK(commissioning_lookup_midi_note(&runtime, 47u, &target) == COMMISSIONING_OK);
+    CHECK(target.channel == 0u && target.key == 12u);
+
     CHECK(commissioning_build_runtime(single_hole, 1u, &runtime) == COMMISSIONING_OK);
     CHECK(runtime.partial);
     CHECK(runtime.position_first_key[4] == 1u && runtime.position_last_key[4] == 3u);
     CHECK(commissioning_lookup_midi_note(&runtime, 36u, &target) == COMMISSIONING_OK);
-    CHECK(target.position == 4u && target.channel == 0u && target.key == 1u);
+    CHECK(target.position == 4u && target.channel == 3u && target.key == 1u);
     CHECK(commissioning_lookup_midi_note(&runtime, 37u, &target) == COMMISSIONING_OK);
     CHECK(target.channel == 1u && target.key == 2u);
     CHECK(commissioning_lookup_midi_note(&runtime, 38u, &target) == COMMISSIONING_OK);
-    CHECK(target.channel == 3u && target.key == 3u);
+    CHECK(target.channel == 0u && target.key == 3u);
     CHECK(commissioning_lookup_midi_note(&runtime, 39u, &target) == COMMISSIONING_NOTE_NOT_FOUND);
 
-    // Trous de bitmap : les canaux occupés croissants montent dans le bloc.
+    // Trous de bitmap : les canaux occupés (11 vers 0) montent dans le bloc.
     CHECK(commissioning_build_runtime(single_sparse, 1u, &runtime) == COMMISSIONING_OK);
     CHECK(commissioning_lookup_midi_note(&runtime, 36u, &target) == COMMISSIONING_OK);
-    CHECK(target.channel == 0u && target.key == 1u);
+    CHECK(target.channel == 11u && target.key == 1u);
     CHECK(commissioning_lookup_midi_note(&runtime, 37u, &target) == COMMISSIONING_OK);
     CHECK(target.channel == 6u && target.key == 2u);
     CHECK(commissioning_lookup_midi_note(&runtime, 38u, &target) == COMMISSIONING_OK);
-    CHECK(target.channel == 11u && target.key == 3u);
+    CHECK(target.channel == 0u && target.key == 3u);
 
     // Deux cartes : la position la plus basse prend le bloc grave.
     CHECK(commissioning_build_runtime(two_boards, 2u, &runtime) == COMMISSIONING_OK);
     CHECK(runtime.position_first_key[3] == 1u && runtime.position_last_key[3] == 2u);
     CHECK(runtime.position_first_key[4] == 3u && runtime.position_last_key[4] == 5u);
     CHECK(commissioning_lookup_midi_note(&runtime, 36u, &target) == COMMISSIONING_OK);
-    CHECK(target.position == 3u && target.channel == 0u && target.key == 1u);
+    CHECK(target.position == 3u && target.channel == 1u && target.key == 1u);
     CHECK(commissioning_lookup_midi_note(&runtime, 37u, &target) == COMMISSIONING_OK);
-    CHECK(target.position == 3u && target.channel == 1u && target.key == 2u);
+    CHECK(target.position == 3u && target.channel == 0u && target.key == 2u);
     CHECK(commissioning_lookup_midi_note(&runtime, 38u, &target) == COMMISSIONING_OK);
-    CHECK(target.position == 4u && target.channel == 0u && target.key == 3u);
+    CHECK(target.position == 4u && target.channel == 3u && target.key == 3u);
     CHECK(commissioning_lookup_midi_note(&runtime, 39u, &target) == COMMISSIONING_OK);
     CHECK(target.position == 4u && target.channel == 1u && target.key == 4u);
     CHECK(commissioning_lookup_midi_note(&runtime, 40u, &target) == COMMISSIONING_OK);
-    CHECK(target.position == 4u && target.channel == 3u && target.key == 5u);
+    CHECK(target.position == 4u && target.channel == 0u && target.key == 5u);
 }
 
 static void test_commissioning_totals_and_duplicates(void) {
@@ -223,13 +235,13 @@ static void test_commissioning_five_boards_total_49(void) {
         CHECK(runtime.position_last_key[position] == expected_last[position]);
     }
     CHECK(commissioning_lookup_midi_note(&runtime, 36u, &target) == COMMISSIONING_OK);
-    CHECK(target.position == 0u && target.key == 1u);
+    CHECK(target.position == 0u && target.channel == 8u && target.key == 1u);
     CHECK(commissioning_lookup_midi_note(&runtime, 44u, &target) == COMMISSIONING_OK);
-    CHECK(target.position == 0u && target.channel == 8u && target.key == 9u);
+    CHECK(target.position == 0u && target.channel == 0u && target.key == 9u);
     CHECK(commissioning_lookup_midi_note(&runtime, 45u, &target) == COMMISSIONING_OK);
-    CHECK(target.position == 1u && target.channel == 0u && target.key == 10u);
+    CHECK(target.position == 1u && target.channel == 9u && target.key == 10u);
     CHECK(commissioning_lookup_midi_note(&runtime, 84u, &target) == COMMISSIONING_OK);
-    CHECK(target.position == 4u && target.key == 49u);
+    CHECK(target.position == 4u && target.channel == 0u && target.key == 49u);
 }
 
 // ADR-0010 §3 : ancrage grave et contiguïté depuis la position 0.
@@ -713,7 +725,7 @@ static void test_diag_lines(void) {
     diag_selftest_report_t report = {42u, 4u, CAN_SELFTEST_STATUS_OK, 0x0A5u, 0x003u, 0xF29Bu};
     diag_selftest_raw_report_t raw = {42u, 4u, 3u, 12u, 345u, 6005u, 3846u};
     diag_card_report_t card = {4u, 6u, {0}, DIAG_CARD_STATE_OK, 0x00Bu,
-                               "0,1,3", "1,2,3", "DO2(36),DO#2(37),RE2(38)"};
+                               "0,1,3", "3,2,1", "RE2(38),DO#2(37),DO2(36)"};
     diag_summary_report_t summary = {1u, 1u, 3u, 3u, "4-49", "WRITTEN", true};
     diag_boot_report_t boot = {0u, 1u, 0u, 1u, "2026-10-22 12:00:00", "loaded", 2u};
 
@@ -767,8 +779,8 @@ static void test_diag_lines(void) {
     CHECK(strcmp(out, "DO6(84)") == 0);
     CHECK(!diag_format_note_name_fr(out, sizeof(out), 35u));
     CHECK(diag_format_card_line(out, sizeof(out), &card) ==
-          strlen("[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=1,2,3 notes=DO2(36),DO#2(37),RE2(38)"));
-    CHECK(strcmp(out, "[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=1,2,3 notes=DO2(36),DO#2(37),RE2(38)") == 0);
+          strlen("[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=3,2,1 notes=RE2(38),DO#2(37),DO2(36)"));
+    CHECK(strcmp(out, "[CARD] pos=4 node=6 uid=E660583883123456 state=OK bitmap=0x00B channels=0,1,3 keys=3,2,1 notes=RE2(38),DO#2(37),DO2(36)") == 0);
     CHECK(diag_format_card_unknown_line(out, sizeof(out), UID_B) ==
           strlen("[CARD_UNKNOWN] uid=AA10203040506070"));
     CHECK(strcmp(out, "[CARD_UNKNOWN] uid=AA10203040506070") == 0);
@@ -853,7 +865,7 @@ static void test_diag_lines(void) {
 static void print_example_case_a(void) {
     char line[DIAG_LOG_LINE_MAX];
     diag_card_report_t card = {4u, 6u, {0}, DIAG_CARD_STATE_OK, 0x00Bu,
-                               "0,1,3", "1,2,3", "DO2(36),DO#2(37),RE2(38)"};
+                               "0,1,3", "3,2,1", "RE2(38),DO#2(37),DO2(36)"};
     diag_summary_report_t summary = {1u, 1u, 3u, 3u, "4-49", "WRITTEN", true};
 
     memcpy(card.uid, UID_A, 8u);

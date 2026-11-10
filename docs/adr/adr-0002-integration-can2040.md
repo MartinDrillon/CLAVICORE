@@ -38,7 +38,7 @@ Faits vérifiés sur can2040 (README, `docs/Features.md`, `docs/API.md`,
    dérogation signalée ci-dessus.
 2. **Dernière version taguée : v1.7.0 (2025-01-02)** — première version à
    supporter les puces rp2350 et à exiger pico-sdk >= 2.0.0. Notre SDK
-   installé est la 2.3.1 (`docs/specs/build_clavier_windows.md`) : compatible.
+   installé est la 2.3.1 (`tests/build_clavier_windows.md`) : compatible.
 3. Compilation : nécessite gcc, `-O2` minimum, et le define
    `-DPICO_RP2350` pour les puces de la famille RP2350 (notre Clavier =
    RP2350A/Pico 2, notre Moteur = RP2354B/RP2350) — **les deux cibles** ont
@@ -103,7 +103,7 @@ Faits vérifiés sur can2040 (README, `docs/Features.md`, `docs/API.md`,
    version reproductible et auditable sans dépendre du réseau au moment de
    la configuration CMake (contrairement à `FetchContent`), ce qui est
    cohérent avec la procédure de build Windows déjà documentée
-   (`docs/specs/build_clavier_windows.md`). Le fichier `COPYING` (GPLv3) du
+   (`tests/build_clavier_windows.md`). Le fichier `COPYING` (GPLv3) du
    sous-module doit être conservé tel quel.
 2. **Bloc PIO** : `pio_num = 0` sur les deux cartes (aucun conflit, premier
    bloc disponible sur les deux familles de puces).
@@ -186,7 +186,7 @@ Faits vérifiés sur can2040 (README, `docs/Features.md`, `docs/API.md`,
   (aucune des deux cibles ne l'a actuellement, car aucune n'en a besoin sans
   can2040).
 * **IMP-002**: Documenter `git submodule update --init --recursive` dans
-  `docs/specs/build_clavier_windows.md` et dans l'équivalent futur pour
+  `tests/build_clavier_windows.md` et dans l'équivalent futur pour
   `moteur`, avant la Phase 3.
 * **IMP-003**: `can_link.c/h` (déjà prévu dans le schéma d'architecture du
   Roadmap) est l'emplacement prévu pour l'appel à `can2040_setup`,

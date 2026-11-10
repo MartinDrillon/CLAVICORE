@@ -94,8 +94,13 @@ static const solenoid_profile_t k_solenoid_profile = {
      `maint_duty_pct <= maint_duty_max_pct`, `probe_duty_pct <=
      probe_duty_max_pct`, et `duty_max_pct >=` chaque duty, y compris
      `impact_duty_pct` ;
-   * polarités `dir_level_pull != dir_level_release` ; durées en ms ≤ 4 000 000.
-   * Aucune durée de phase n'est plafonnée : la valeur saisie est appliquée telle quelle.
+    * polarités `dir_level_pull != dir_level_release` ; durées en ms ≤ 4 000 000.
+    * Aucune durée de phase n'est plafonnée : la valeur saisie est appliquée telle quelle.
+    * Le firmware refuse de compiler si `hold_duty_pct > hold_duty_max_pct`,
+      `probe_duty_pct > probe_duty_max_pct` ou `maint_duty_pct > maint_duty_max_pct`
+      (`_Static_assert`). Un profil qui ne passe pas `solenoid_profile_validate()`
+      n'est jamais envoyé : la synchronisation échoue (`PROFILE_SYNC_FAILED`), l'auto-test
+      est impossible et la table de commissioning n'est pas écrite.
 3. Contrôler le bon sens physique (ADR-0014 : **aucune borne ne vous arrête**) :
    une durée ou un duty trop élevé peut détruire une bobine ou un driver.
    `impact_duration_us = 0` désactive la phase IMPACT.

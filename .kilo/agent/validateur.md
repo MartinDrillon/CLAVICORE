@@ -1,7 +1,7 @@
 ---
 description: "Sous-agent de la chaîne : compile, exécute les tests à la profondeur adaptée (N0/N1/N2), analyse les logs GCC/CMake et diagnostique sans réécrire l'architecture. Utilisable aussi directement via /valider."
 mode: all
-model: openrouter/anthropic/claude-sonnet-5.5
+model: deepseek/deepseek-flash
 steps: 40
 permission:
   bash:

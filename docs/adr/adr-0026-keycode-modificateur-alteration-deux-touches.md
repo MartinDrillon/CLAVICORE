@@ -9,7 +9,8 @@ superseded_by: ""
 ---
 
 ### Status
-**Accepted**
+**Accepted** — §6 et IMP-002 (positions des keycodes) **dépréciés** le 2026-10-31
+par ADR-0029 §7 : aucune ADR ne fige la position d'un keycode dans le keymap.
 
 ### Context
 
@@ -36,6 +37,11 @@ Ce mécanisme mobilise cinq positions physiques (74, 75, 81, 82, 83) pour un ré
 5. **Simultanéité déterministe.** Dans un même lot de scan (modificateur et note devenus stables au même cycle), les appuis de modificateurs sont pris en compte avant les appuis de notes ; l'état utilisé est celui du cycle. Les relâchements sont traités après les appuis du lot. Si la note est pressée avant le modificateur (cycles différents), le modificateur n'a aucun effet sur elle, conformément au point 2.
 
 6. **Keymap.** `B` en position 74 (ex-A_re) et `D` en position 75 (ex-A_mi), deux touches adjacentes de la colonne centrale gauche. Les positions 81, 82, 83 passent à `KEYCODE_NONE` (libres) ; 61 et 72 restent libres. Le choix des deux positions est un choix d'ergonomie révisable par l'humain sans changer la sémantique.
+
+> **Déprécié le 2026-10-31 (ADR-0029 §7).** Cette assignation de positions n'est
+> plus normative : la position des keycodes dans le keymap ne doit être figée
+> dans aucune ADR. L'humain place et déplace les keycodes à sa guise ; seul le
+> comportement de `B`/`D` reste en vigueur.
 
 7. **Référence des keycodes.** Un fichier `docs/specs/keycodes.md` liste, une ligne par keycode, les keycodes non-note et leur effet, et les positions assignées. Il est tenu à jour à chaque évolution de la base de keycodes (doc-aval).
 
@@ -72,6 +78,7 @@ Ce mécanisme mobilise cinq positions physiques (74, 75, 81, 82, 83) pour un ré
 
 * **IMP-001**: `keycode.h` — réduire `keycode_alteration_t` à `KEYCODE_ALTERATION_B` et `KEYCODE_ALTERATION_D` (plus une constante de racines pour l'état) ; les états restent indexés par racine naturelle, avec l'horodatage existant. Aucune valeur de keycode n'est persistée, mais la base layer et la spec JSON doivent être mises à jour dans le même lot.
 * **IMP-002**: `keymap.c` — 74 = B, 75 = D, 81/82/83 = `KEYCODE_NONE`. Vérifier `keymap_keycode_for_position` et le nommage (`keycode_name` : « A_b », « A_d » ou équivalent cohérent).
+  **Déprécié le 2026-10-31 (ADR-0029 §7)** : les positions citées ne sont pas normatives. Seuls comptent la présence des keycodes dans la base layer et le nommage.
 * **IMP-003**: `main.c` — suivre l'état maintenu des deux modificateurs (appui/relâchement) et appliquer la bascule au moment de l'appui d'une note, avant `note_state_press`. Prévoir l'ordre déterministe du point 5 (appuis modificateurs → appuis notes → relâchements) dans le traitement d'un lot de scan, sans modifier le contrat `matrix_scan_event_handler_t` si possible.
 * **IMP-004**: Si les deux modificateurs sont maintenus, le dernier pressé des deux encore enfoncés détermine la direction ; le documenter dans le code.
 * **IMP-005**: Tests — test hôte de la résolution (naturelle/dièse/bémol, touche noire selon la direction, bascule aller-retour, conflit dernière pression, bornes MIDI 0/127, SI ↔ DO) et procédure manuelle USB-MIDI dans `tests/` (Note On/Off identiques, note tenue non modifiée).

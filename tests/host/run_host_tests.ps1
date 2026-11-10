@@ -86,3 +86,16 @@ if ($LASTEXITCODE -ne 0) { throw "Compilation hote (alteration) en echec" }
 
 & $exe6
 if ($LASTEXITCODE -ne 0) { throw "Tests hote (alteration) en echec" }
+
+# Moteur pur des combos de positions (ADR-0031), horloge factice.
+$exe7 = Join-Path $out "test_combo.exe"
+& gcc -std=c11 -Wall -Wextra -Werror -pedantic `
+    -I (Join-Path $root "firmware\clavier\src") `
+    (Join-Path $PSScriptRoot "test_combo.c") `
+    (Join-Path $root "firmware\clavier\src\combo.c") `
+    (Join-Path $root "firmware\clavier\src\keymap.c") `
+    -o $exe7
+if ($LASTEXITCODE -ne 0) { throw "Compilation hote (combo) en echec" }
+
+& $exe7
+if ($LASTEXITCODE -ne 0) { throw "Tests hote (combo) en echec" }

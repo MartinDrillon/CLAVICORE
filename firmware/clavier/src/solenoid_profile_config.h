@@ -14,14 +14,15 @@
 // initiales sont celles validées au banc, mais ce ne sont plus des garde-fous.
 //
 // Contrôles structurels appliqués (rejet en bloc, jamais d'écrêtage) :
-//   - duties 0..100 %, plafonds >= valeurs opératoires ;
+//   - duties 0..100 % ;
+//   - hold_duty_pct <= hold_duty_max_pct, probe_duty_pct <= probe_duty_max_pct,
+//     maint_duty_pct <= maint_duty_max_pct, et duty_max_pct >= chaque duty de
+//     phase (impact/pull/hold/release/probe/maint) ;
 //   - la durée de chaque phase (impact/pull/probe) est seule autorité : aucune
 //     borne supérieure n'est vérifiée (ADR-0014, amendement du 2026-10-25) ;
 //   - dir_level_pull != dir_level_release, niveaux 0/1 ;
 //   - pwm_freq_hz dans 1..100000 Hz ;
-//   - durées en ms <= 4 000 000 (représentation µs sur 32 bits) ;
-//   - la fenêtre ADC doit couvrir une période PWM et finir avant la coupure
-//     PROBE (contrôle de mesure côté Moteur).
+//   - durées en ms <= 4 000 000 (représentation µs sur 32 bits).
 //
 // Format complet et sémantique : docs/specs/profil-solenoides.md
 // Procédure : docs/procedure-profil-solenoides.md
@@ -30,24 +31,35 @@
 
 #include "solenoid_profile.h"
 
+// Paires consigne/plafond exprimées en constantes de compilation : le garde-fou
+// _Static_assert ci-dessous vérifie ainsi exactement les valeurs du profil.
+enum {
+    K_PROFILE_HOLD_DUTY_PCT = 25,
+    K_PROFILE_HOLD_DUTY_MAX_PCT = 25,
+    K_PROFILE_PROBE_DUTY_PCT = 20,
+    K_PROFILE_PROBE_DUTY_MAX_PCT = 20,
+    K_PROFILE_MAINT_DUTY_PCT = 100,
+    K_PROFILE_MAINT_DUTY_MAX_PCT = 100,
+};
+
 static const solenoid_profile_t k_solenoid_profile = {
     .pwm_freq_hz = 20000u,          // porteuse PWM, au-dessus du domaine audible
-    .impact_duration_us = 800u,     // IMPACT : impulsion 100 % très courte (ADR-0019)
+    .impact_duration_us = 2000u,     // IMPACT : impulsion 100 % très courte (ADR-0019)
     .impact_duty_pct = 100u,
-    .pull_duration_us = 10000u,     // PULL : attraction, très court
-    .pull_duty_pct = 50u,
-    .hold_duty_pct = 25u,           // HOLD : maintien jusqu'au note off
-    .hold_duty_max_pct = 25u,
+    .pull_duration_us = 12000u,     // PULL : attraction, très court
+    .pull_duty_pct = 100u,
+    .hold_duty_pct = K_PROFILE_HOLD_DUTY_PCT,  // HOLD : maintien jusqu'au note off
+    .hold_duty_max_pct = K_PROFILE_HOLD_DUTY_MAX_PCT,
     .hold_max_ms = 20000u,          // coupure de sécurité du HOLD
-    .release_duration_us = 1000u,   // RELEASE : polarité inversée, court
-    .release_duty_pct = 50u,
+    .release_duration_us = 5000u,   // RELEASE : polarité inversée, court
+    .release_duty_pct = 30u,
     .probe_duration_us = 5000u,     // PROBE : impulsion de l'auto-test IPROPI
-    .probe_duty_pct = 20u,
-    .probe_duty_max_pct = 20u,
-    .maint_duty_pct = 50u,          // MAINTENANCE : poussée inverse tenue
-    .maint_duty_max_pct = 100u,
+    .probe_duty_pct = K_PROFILE_PROBE_DUTY_PCT,
+    .probe_duty_max_pct = K_PROFILE_PROBE_DUTY_MAX_PCT,
+    .maint_duty_pct = K_PROFILE_MAINT_DUTY_PCT,  // MAINTENANCE : poussée inverse tenue
+    .maint_duty_max_pct = K_PROFILE_MAINT_DUTY_MAX_PCT,
     .maint_max_ms = 20000u,         // coupure de sécurité de la MAINTENANCE
-    .maint_min_rest_ms = 2000u,     // repos après une poussée maintenance
+    .maint_min_rest_ms = 200u,     // repos après une poussée maintenance
     .min_rest_ms = 10u,             // repos minimal entre deux cycles
     .dir_safety_delay_us = 200u,    // délai duty=0 -> changement de polarité
     .wake_delay_us = 2000u,         // tWAKE du DRV8874 après réveil
@@ -56,5 +68,15 @@ static const solenoid_profile_t k_solenoid_profile = {
     .dir_level_maint = 1u,          // poussée inverse du jeu normal
     .duty_max_pct = 100u,           // plafond appliqué par le driver
 };
+
+// Garde-fou de cohérence (pas une limite électrique) : la consigne d'une phase
+// ne peut pas dépasser son plafond, sinon solenoid_profile_validate() refuse le
+// profil en bloc (SOLENOID_PROFILE_ERR_DUTY) et la synchronisation échoue.
+_Static_assert(K_PROFILE_HOLD_DUTY_PCT <= K_PROFILE_HOLD_DUTY_MAX_PCT,
+               "hold_duty_pct doit rester <= hold_duty_max_pct");
+_Static_assert(K_PROFILE_PROBE_DUTY_PCT <= K_PROFILE_PROBE_DUTY_MAX_PCT,
+               "probe_duty_pct doit rester <= probe_duty_max_pct");
+_Static_assert(K_PROFILE_MAINT_DUTY_PCT <= K_PROFILE_MAINT_DUTY_MAX_PCT,
+               "maint_duty_pct doit rester <= maint_duty_max_pct");
 
 #endif  // CLAVIER_SOLENOID_PROFILE_CONFIG_H

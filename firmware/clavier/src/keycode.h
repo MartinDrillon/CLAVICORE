@@ -19,6 +19,14 @@ typedef enum {
     KEYCODE_MAINTENANCE_TOGGLE,
     // Annule transpositions et altérations : retour au keymap d'origine.
     KEYCODE_UNTRANSPOSE,
+    // ADR-0029 : armure (CLE) et altération temporaire (TEMP), ajoutés EN FIN
+    // pour ne décaler aucune valeur empaquetée existante.
+    KEYCODE_CLE = 12,
+    KEYCODE_TEMP = 13,
+    // ADR-0030 : transpositions temporaires par côté, ajoutées EN FIN pour ne
+    // décaler aucune valeur empaquetée existante.
+    KEYCODE_TEMP_TRANSPOSE_ST = 14,
+    KEYCODE_TEMP_TRANSPOSE_OCT = 15,
 } keycode_kind_t;
 
 // ADR-0026 : deux directions d'altération, portées par des modificateurs
@@ -31,6 +39,41 @@ typedef enum {
 // Nombre de racines naturelles : l'état d'altération est indexé par racine.
 #define KEYCODE_ALTERATION_ROOT_COUNT 7u
 
+// ADR-0029 : mode d'armure (CLE_B = mineur, CLE_D = majeur) et direction
+// d'altération temporaire (TEMP_B = bémol, TEMP_D = dièse).
+typedef enum {
+    KEYCODE_CLE_MINOR = 0,
+    KEYCODE_CLE_MAJOR = 1,
+} keycode_cle_t;
+
+typedef enum {
+    KEYCODE_TEMP_FLAT = 0,
+    KEYCODE_TEMP_SHARP = 1,
+} keycode_temp_t;
+
+// ADR-0030 : direction d'une transposition temporaire par côté. L'axe (demi-ton
+// ou octave) est porté par le kind ; la valeur commune est 0..3.
+typedef enum {
+    KEYCODE_TEMP_TRANSPOSE_L_UP = 0,
+    KEYCODE_TEMP_TRANSPOSE_L_DOWN = 1,
+    KEYCODE_TEMP_TRANSPOSE_R_UP = 2,
+    KEYCODE_TEMP_TRANSPOSE_R_DOWN = 3,
+} keycode_temp_transpose_t;
+
+// ADR-0030 : familles de modificateurs maintenus et nombre de directions.
+// ALT/CLE/TEMP n'utilisent que les directions 0 et 1 ; TEMP_ST/TEMP_OCT les
+// quatre (L_UP, L_DOWN, R_UP, R_DOWN).
+typedef enum {
+    KEYCODE_MOD_FAMILY_ALT = 0,
+    KEYCODE_MOD_FAMILY_CLE = 1,
+    KEYCODE_MOD_FAMILY_TEMP = 2,
+    KEYCODE_MOD_FAMILY_TEMP_ST = 3,
+    KEYCODE_MOD_FAMILY_TEMP_OCT = 4,
+    KEYCODE_MOD_FAMILY_COUNT = 5,
+} keycode_modifier_family_t;
+
+#define KEYCODE_MODIFIER_DIRECTIONS 4u
+
 typedef struct {
     keycode_kind_t kind;
     uint8_t value;
@@ -42,8 +85,51 @@ typedef struct {
     int16_t right_octaves;
     uint8_t alteration_state[KEYCODE_ALTERATION_ROOT_COUNT];
     uint32_t alteration_change[KEYCODE_ALTERATION_ROOT_COUNT];
+    // ADR-0029 : armure courante par classe (0 naturel, 1 dièse, 2 bémol) et
+    // son horodatage (un seul par armure posée).
+    uint8_t armure_state[KEYCODE_ALTERATION_ROOT_COUNT];
+    uint32_t armure_change;
     uint32_t change_counter;
 } keycode_state_t;
+
+// ADR-0026 / ADR-0029 / ADR-0030 : état des modificateurs maintenus. Il vit
+// hors de keycode_state_t car UNTRANSPOSE ne doit pas annuler un keycode
+// momentané encore enfoncé. seq horodate le dernier appui/relâchement : la
+// direction active est la dernière pressée encore tenue.
+typedef struct {
+    bool held[KEYCODE_MOD_FAMILY_COUNT][KEYCODE_MODIFIER_DIRECTIONS];
+    uint32_t seq[KEYCODE_MOD_FAMILY_COUNT][KEYCODE_MODIFIER_DIRECTIONS];
+    uint32_t counter;
+} keycode_modifiers_t;
+
+// ADR-0029 : noms publics des keycodes non-note, écrits directement dans le
+// keymap (valeur = (kind << 8) | value). Les constructeurs KEYCODE_STORAGE_*
+// du keymap disparaissent ; KEYCODE_STORAGE_PACK/_NOTE restent internes.
+#define NONE 0x0000u
+#define ALT_B 0x0800u
+#define ALT_D 0x0801u
+#define UNTRANSPOSE 0x0B00u
+#define MAINT 0x0A00u
+#define GET_UID 0x0900u
+#define T_GLOB_UP 0x0200u
+#define T_GLOB_DOWN 0x0300u
+#define T_OCT_L_UP 0x0400u
+#define T_OCT_L_DOWN 0x0500u
+#define T_OCT_R_UP 0x0600u
+#define T_OCT_R_DOWN 0x0700u
+#define CLE_B 0x0C00u
+#define CLE_D 0x0C01u
+#define TEMP_B 0x0D00u
+#define TEMP_D 0x0D01u
+// ADR-0030 : transpositions temporaires par côté (demi-ton / octave).
+#define T_TEMP_ST_L_UP 0x0E00u
+#define T_TEMP_ST_L_DOWN 0x0E01u
+#define T_TEMP_ST_R_UP 0x0E02u
+#define T_TEMP_ST_R_DOWN 0x0E03u
+#define T_TEMP_OCT_L_UP 0x0F00u
+#define T_TEMP_OCT_L_DOWN 0x0F01u
+#define T_TEMP_OCT_R_UP 0x0F02u
+#define T_TEMP_OCT_R_DOWN 0x0F03u
 
 #define KEYCODE_NOTE_VALUE(midi_note) ((keycode_t){KEYCODE_NOTE, (midi_note)})
 #define KEYCODE_BEHAVIOR(kind_value) ((keycode_t){(kind_value), 0u})
@@ -53,11 +139,6 @@ typedef struct {
 #define KEYCODE_STORAGE_PACK(kind_value, value) \
     (((kind_value) << 8u) | (value))
 #define KEYCODE_STORAGE_NOTE(midi_note) KEYCODE_STORAGE_PACK(KEYCODE_NOTE, (midi_note))
-#define KEYCODE_STORAGE_BEHAVIOR(kind_value) KEYCODE_STORAGE_PACK((kind_value), 0u)
-#define KEYCODE_STORAGE_ALTERATION(alteration) KEYCODE_STORAGE_PACK(KEYCODE_ALTERATION, (alteration))
-#define KEYCODE_STORAGE_NONE KEYCODE_STORAGE_PACK(KEYCODE_NONE, 0u)
-// Demande d'UID Moteur (ADR-0003) : l'effet de bord (requête CAN) est dans main.c.
-#define KEYCODE_STORAGE_GET_UID KEYCODE_STORAGE_BEHAVIOR(KEYCODE_GET_UID)
 
 // Layout note names map directly to their MIDI note numbers.
 // A flat is an alias for its enharmonic sharp (same MIDI value).
@@ -235,6 +316,34 @@ int8_t keycode_alteration_for_note(const keycode_state_t *state, uint8_t base_mi
 bool keycode_alteration_toggle(keycode_state_t *state, uint8_t direction,
                                uint8_t base_midi_note, uint8_t *root_index,
                                uint8_t *new_state);
+// ADR-0029 : applique l'armure de la tonalité (mode mineur/majeur) sur la
+// tonique = classe naturelle de la note physique de base. Touche noire :
+// *applied = false, état intact (ce n'est pas une erreur). Une nouvelle armure
+// efface les surcouches ALT.
+bool keycode_armure_apply(keycode_state_t *state, keycode_cle_t mode,
+                          uint16_t base_midi_note, bool *applied);
+// ADR-0029 : delta d'altération temporaire pour la note résolue (par pitch
+// class), appliqué en dernier avant la transposition.
+int8_t keycode_temp_delta(keycode_temp_t direction, int16_t resolved_note);
+
+// ADR-0030 : côté d'une position physique (même définition que T_OCT_L/R).
+bool keycode_position_is_left(uint8_t position);
+
+// État des modificateurs maintenus.
+void keycode_modifiers_init(keycode_modifiers_t *modifiers);
+// Horodate l'appui/relâchement d'une direction. Les familles ALT/CLE/TEMP
+// n'acceptent que les directions 0 et 1 ; TEMP_ST/TEMP_OCT les quatre.
+void keycode_modifiers_update(keycode_modifiers_t *modifiers, uint8_t family,
+                              uint8_t direction, bool pressed);
+// Direction active : dernière pressée encore enfoncée parmi
+// [first_direction, first_direction + direction_count). false si aucune.
+bool keycode_modifiers_active(const keycode_modifiers_t *modifiers, uint8_t family,
+                              uint8_t first_direction, uint8_t direction_count,
+                              uint8_t *direction);
+// ADR-0030 : delta momentané total pour une position (demi-ton ±1 + octave ±12
+// du côté) ; 0 si aucun modificateur momentané n'est actif pour ce côté.
+int16_t keycode_momentary_delta(const keycode_modifiers_t *modifiers, uint8_t position);
+
 const char *keycode_name(keycode_t keycode);
 
 #endif

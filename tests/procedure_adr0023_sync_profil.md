@@ -6,10 +6,13 @@ Elle couvre les tests hôte **et** la campagne de banc reproductible de
 (`Accepted`) et de
 [`docs/specs/impact-adr-0023.md`](../docs/specs/impact-adr-0023.md).
 
-> **État au 2026-10-24** : l'implémentation est présente dans
+> **État au 2026-10-31** : l'implémentation est présente dans
 > `firmware/clavier/src/can_link.c` et le harnais `test_profile_sync` est intégré
-> aux tests hôte. La campagne de banc reste à exécuter ; les tests hôte doivent
-> rester verts avant de lancer §2.
+> aux tests hôte. La correction de synchronisation du profil (scan de présence
+> avant chaque sync, verdict par UID, `expected = 0` traité comme échec explicite)
+> est validée **hôte uniquement** (N2) : `run_host_tests.ps1` = **1 044
+> vérifications, 0 échec**, `test_profile_sync` 46/46. **La campagne de banc
+> reste à exécuter** ; les tests hôte doivent rester verts avant de lancer §2.
 
 ## 0. Pré-requis
 
@@ -63,6 +66,12 @@ Critères :
 * aucun fichier de `shared/protocol/` ni aucun fichier Moteur n'a été modifié
   par ce lot.
 
+**Résultat de référence du 2026-10-31** (correction sync profil) :
+`run_host_tests.ps1` = **1 044 vérifications, 0 échec**, dont `test_profile_sync`
+**46/46** ; builds Clavier et Moteur OK ; `clavier.uf2` = **179 712 o**
+(text 93 488 o, bss 11 940 o). Ces résultats sont **hôte uniquement** : ils ne
+valident pas la campagne de banc (§2.1).
+
 Si le harnais n'est pas encore branché au script, **arrêter** : ADR-0023 exige
 des tests hôte, et une compilation seule ne démontre pas les reprises.
 
@@ -71,6 +80,27 @@ des tests hôte, et une compilation seule ne démontre pas les reprises.
 Consigner dans un fichier de résultats :
 `build/logs/adr0023_banc.md` (ne pas recopier tout le journal dans la
 conversation).
+
+### 2.1 À valider sur banc
+
+Ces cas couvrent la correction de synchronisation du profil du 2026-10-31 et ne
+sont **pas** validés au banc à ce jour (seuls les tests hôte le sont). Les
+consigner dans `build/logs/adr0023_banc.md` avec la date et les UID.
+
+| Cas | Manipulation | Attendu |
+|---|---|---|
+| Bus muet | Débrancher **toutes** les cartes Moteur, puis `p send` | `[PROFILE] bus muet: aucune carte n'a repondu a la requete d'UID` + `[STATUS] code=PROFILE_SYNC_FAILED` ; **jamais** `sync ok`, même avec `acquittements=0/0` |
+| Carte branchée après le boot | Clavier sous tension sans la carte, puis brancher la carte et lancer `p send` / un auto-test | La carte est prise en compte **sans reboot** (scan de présence refait au début de la sync, ~500 ms) ; verdict `sync ok N/N` avec N incluant la carte |
+| Chaîne complète | Cartes présentes et commissionnées, `p send` sans changement de profil | Un seul verdict `sync ok N/N` : tous les UID attendus confirmés, aucun autre UID ne compense un attendu manquant |
+| Cohérence `[CARD] pos=` | Une carte débranchée avant la sync, puis un auto-test | `[STATUS] code=BOARD_MISSING pos=N` et `[CARD] … pos=N … state=MISSING` avec l'UID de la **bonne position** (recherche par `.position` dans `uid_position.h`) |
+
+Repères de position pour le contrôle des UID (alignés sur `uid_position.h`) :
+`pos=4` = `A3FA4C99CA526F4B`, `pos=0` = `16B9D6EF71411274`.
+
+Une carte coupée **avant** la sync est donc `BOARD_MISSING` et ne bloque plus les
+cartes présentes ; le verdict ne confirme que les UID réellement présents. Si un
+attendu manque, l'échec est explicite — aucun remapping ni compensation
+silencieuse.
 
 ### T0 — Référence nominale à tag identique
 

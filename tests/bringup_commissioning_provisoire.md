@@ -8,8 +8,10 @@ pour les journées d'assemblage. Décisions de référence :
 - [ADR-0004](../docs/adr/adr-0004-auto-test-ipropi-table-assignation-solenoide-command.md)
   (auto-test IPROPI, table et commande solénoïde)
 - [ADR-0010](../docs/adr/adr-0010-ancrage-grave-mapping-commissioning.md)
-  (règle d'assignation **ascendante** : position 0, canal 0 = DO2 ; motif
-  `ANCHOR_SHIFT`)
+  (règle d'assignation **ascendante inter-cartes** : position 0 = DO2 ; motif
+  `ANCHOR_SHIFT`) et
+  [ADR-0028](../docs/adr/adr-0028-inversion-canal-touche-intra-carte.md)
+  (**sens intra-carte inversé** : canal occupé le plus haut = DO2 du bloc)
 - [ADR-0006](../docs/adr/adr-0006-mode-maintenance-push-only.md) /
   [ADR-0007](../docs/adr/adr-0007-hold-limite-20s.md) (modes d'activation)
 - [docs/specs/CAN.md](../docs/specs/CAN.md) (trames, lignes de journal et règle
@@ -147,9 +149,11 @@ But : comportement électrique d'une carte sous forte charge, avec activations
 1. Débrancher la carte du reste de la chaîne (câblage réduit), la relier au
    Clavier seul, terminaisons adaptées.
 2. Monter 10 à 12 solénoïdes sur cette carte.
-3. Autotest. La règle est **ascendante** (ADR-0010) : une carte seule reçoit les
-   touches à partir de la **touche 1 (DO2)**, soit 12 bobines → touches `1..12`
-   (`ch=0` → touche 1 = DO2). Le vérifier sur les lignes `[MAP]`.
+3. Autotest. La règle est **ascendante inter-cartes** (ADR-0010) et le sens
+   intra-carte est **inversé** (ADR-0028) : une carte seule reçoit les touches à
+   partir de la **touche 1 (DO2)**, soit 12 bobines → touches `1..12`
+   (`ch=11` → touche 1 = DO2, `ch=0` → touche 12 = SI2). Le vérifier sur les
+   lignes `[MAP]`.
    - Si la carte est déclarée à la position qu'elle occupera réellement dans le
      montage final, le mapping lu est celui du montage final.
    - Si elle est déclarée à une position haute (banc isolé, position 0 absente),
@@ -209,8 +213,9 @@ Critères de tri des bobines :
 ## 9. Critères de réussite
 
 - [ ] Aucun autotest ne part au boot
-- [ ] Le canal occupé le plus bas de la carte de **position 0** joue **DO2**
-      (touche 1, MIDI 36) — règle ascendante, ADR-0010
+- [ ] Le canal occupé le plus **haut** de la carte de **position 0** joue **DO2**
+      (touche 1, MIDI 36) — règle ascendante ADR-0010, sens intra-carte inversé
+      ADR-0028
 - [ ] Un autotest demandé écrit la table **même** avec une seule carte présente
 - [ ] `[TABLE] loaded state=PROVISIONAL flags=0x..` est accompagné de
       `[STATUS] code=TABLE_PROVISIONAL`

@@ -1,7 +1,7 @@
 ---
 description: "Sous-agent de la chaîne, AVANT le code : transforme une ADR acceptée en fiche exploitable par le Codeur (structures commentées, séquences, fichiers à modifier, procédure de build/test). Ne tranche aucune décision."
 mode: all
-model: openrouter/anthropic/claude-sonnet-5.5
+model: deepseek/deepseek-flash
 steps: 40
 permission:
   bash: deny
