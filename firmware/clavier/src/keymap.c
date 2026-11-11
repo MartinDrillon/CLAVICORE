@@ -16,14 +16,22 @@ static const uint16_t base_layer[KEYMAP_POSITION_COUNT + 1u] = {
 
     // Manual keys, ordered by canonical position. NE PAS MODIFIER LA MISE EN FORME ! (indentation)
 
-//v3
-  [13] = N_SOLD3,  [14] = N_FAD3,   [15] = N_MI4,   [16] = N_RE4,   [17] = N_DO4,   [18] = N_LAD3,               [19] = N_LAD5,      [20] = N_DO6,   [21] = N_RE6,   [22] = N_MI6,   [23] = N_FAD5,   [24] = N_SOLD5,
-  [25] = N_DOD3,   [26] = N_SI3,    [27] = N_LA3,   [28] = N_SOL3,  [29] = N_FA3,   [30] = N_RED3,               [31] = N_RED5,     [32] = N_FA5,   [33] = N_SOL5,  [34] = N_LA5,   [35] = N_SI5,    [36] = N_DOD5,
-  [37] = N_SOLD2,  [38] = N_FAD2,   [39] = N_MI3,   [40] = N_RE3,   [41] = N_DO3,   [42] = N_LAD2,               [43] = N_LAD4,     [44] = N_DO5,   [45] = N_RE5,   [46] = N_MI5,   [47] = N_FAD4,   [48] = N_SOLD4,
-  [49] = N_DOD2,   [50] = N_SI2,    [51] = N_LA2,   [52] = N_SOL2,  [53] = N_FA2,   [54] = N_RED2,               [55] = N_RED4,     [56] = N_FA4,   [57] = N_SOL4,  [58] = N_LA4,   [59] = N_SI4,    [60] = N_DOD4,
-                   [62] = N_SOLD2,  [63] = N_FAD2,  [64] = N_MI2,   [65] = N_RE2,   [66] = N_DO2,                [67] = N_DO4,      [68] = N_RE4,   [69] = N_MI4,   [70] = N_FAD4,  [71] = N_SOLD4,    
+//  v3
+//  [13] = N_SOLD3,  [14] = N_FAD3,   [15] = N_MI4,   [16] = N_RE4,   [17] = N_DO4,   [18] = N_LAD3,               [19] = N_LAD5,      [20] = N_DO6,   [21] = N_RE6,   [22] = N_MI6,   [23] = N_FAD5,   [24] = N_SOLD5,
+//  [25] = N_DOD3,   [26] = N_SI3,    [27] = N_LA3,   [28] = N_SOL3,  [29] = N_FA3,   [30] = N_RED3,               [31] = N_RED5,     [32] = N_FA5,   [33] = N_SOL5,  [34] = N_LA5,   [35] = N_SI5,    [36] = N_DOD5,
+//  [37] = N_SOLD2,  [38] = N_FAD2,   [39] = N_MI3,   [40] = N_RE3,   [41] = N_DO3,   [42] = N_LAD2,               [43] = N_LAD4,     [44] = N_DO5,   [45] = N_RE5,   [46] = N_MI5,   [47] = N_FAD4,   [48] = N_SOLD4,
+//  [49] = N_DOD2,   [50] = N_SI2,    [51] = N_LA2,   [52] = N_SOL2,  [53] = N_FA2,   [54] = N_RED2,               [55] = N_RED4,     [56] = N_FA4,   [57] = N_SOL4,  [58] = N_LA4,   [59] = N_SI4,    [60] = N_DOD4,
+//                   [62] = N_SOLD2,  [63] = N_FAD2,  [64] = N_MI2,   [65] = N_RE2,   [66] = N_DO2,                [67] = N_DO4,      [68] = N_RE4,   [69] = N_MI4,   [70] = N_FAD4,  [71] = N_SOLD4,    
 
-   
+
+                   
+//v4
+  [13] = N_RED4,  [14] = N_RE4,   [15] = N_DO4,   [16] = N_SI3,  [17] = N_LA3,   [18] = N_LAD3,                              [19] = N_LAD5,     [20] = N_LA5,   [21] = N_SI6,  [22] = N_DO6,   [23] = N_RE6,   [24] = N_RED6,
+  [25] = N_SOLD3, [26] = N_SOL3,  [27] = N_FA3,   [28] = N_MI3,  [29] = N_RE3,   [30] = N_RED3,                              [31] = N_RED5,     [32] = N_RE5,   [33] = N_MI5,  [34] = N_FA5,   [35] = N_SOL5,    [36] = N_SOLD5,
+  [37] = N_DOD3,  [38] = N_DO3,   [39] = N_SI2,   [40] = N_LA2,  [41] = N_SOL2,  [42] = N_SOLD2,                             [43] = N_SOLD4,    [44] = N_SOL4,  [45] = N_LA4,  [46] = N_SI4,   [47] = N_DO5,   [48] = N_DOD5,
+  [49] = N_FAD2,  [50] = N_FA2,   [51] = N_MI2,   [52] = N_RE2,  [53] = N_DO2,   [54] = N_DOD2,                              [55] = N_DOD4,     [56] = N_DO4,   [57] = N_RE4,  [58] = N_MI4,   [59] = N_FA4,    [60] = N_FAD4,
+                                  [62] = N_LAD1,  [63] = N_SI1,  [64] = N_LA1,   [65] = N_SOL1, [66] = N_FA1,  [67] = N_FA3, [68] = N_SOL3,     [69] = N_LA3,   [70] = N_SI3,  [71] = N_LAD4,    
+
 
     [78] = T_OCT_L_UP,
     [77] = T_OCT_L_DOWN,
